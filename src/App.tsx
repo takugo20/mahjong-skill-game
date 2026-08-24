@@ -82,15 +82,14 @@ export default function App() {
     };
   }, []);
 
-  const orientationMismatch =
+    const orientationMismatch =
     (
-      deviceType === "iphone" &&
-      !isPortrait
-    ) ||
-    (
-      deviceType === "ipad" &&
-      isPortrait
-    );
+      deviceType === "iphone" ||
+      deviceType === "ipad"
+    ) &&
+    isPortrait;
+
+  const requiredOrientation = "landscape";
 
   const requiredOrientation =
     deviceType === "iphone"
@@ -123,9 +122,7 @@ export default function App() {
             </strong>
 
             <p>
-              {deviceType === "iphone"
-                ? "iPhoneは縦向きでプレイします。"
-                : "iPadは横向きでプレイします。"}
+              iPhone・iPadは横向きでプレイします。
             </p>
           </div>
         </div>
