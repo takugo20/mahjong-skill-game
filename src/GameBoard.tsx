@@ -292,13 +292,7 @@ export function GameBoard() {
         </p>
 
         <div className="round-corner-panel">
-          <span>
-            {getWindLabel(
-              round.prevailingWind
-            )}
-            風戦
-          </span>
-
+          <span>半荘戦</span>
           <strong>
             {getRoundLabel(round)}
           </strong>
@@ -481,15 +475,7 @@ export function GameBoard() {
                     : "牌を選択"}
           </div>
 
-          <div
-            className={`control-buttons ${
-              canTsumo &&
-              round.phase !== "roundEnd" &&
-              round.phase !== "matchEnd"
-                ? "control-buttons--triple"
-                : ""
-            }`}
-          >
+          <div className="control-buttons">
             {round.phase === "matchEnd" ? (
               <button
                 type="button"
@@ -550,17 +536,6 @@ export function GameBoard() {
                 </button>
               </>
             )}
-
-            {round.phase !== "reaction" &&
-              round.phase !== "matchEnd" && (
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={handleRestart}
-                >
-                  配り直し
-                </button>
-              )}
           </div>
         </section>
         {winResult && (
