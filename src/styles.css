@@ -1329,3 +1329,41 @@ body {
     font-size: 0.63rem;
   }
 }
+
+@media (max-width: 520px)
+  and (orientation: portrait)
+  and (min-height: 601px) {
+  .game-table {
+    grid-template-rows:
+      max-content
+      minmax(0, 1fr)
+      max-content;
+  }
+
+  .opponent-area {
+    gap: 4px;
+  }
+
+  .opponent-area--top > * {
+    flex-shrink: 0;
+  }
+
+  .mahjong-tile--compact {
+    width: 15px;
+    height: 21px;
+    border-bottom-width: 2px;
+  }
+
+  .mahjong-tile--compact .tile-rank {
+    font-size: 0.54rem;
+  }
+
+  .opponent-area--top .opponent-hand,
+  .opponent-area--top .discard-grid {
+    flex-shrink: 0;
+  }
+
+  .discard-grid {
+    row-gap: 1px;
+  }
+}
