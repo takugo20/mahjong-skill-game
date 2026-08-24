@@ -99,6 +99,7 @@ function OpponentArea({
 
       <div
         className="opponent-hand"
+        data-count={`${player.hand.length}枚`}
         aria-label={`${player.name}の手牌${player.hand.length}枚`}
       >
         {Array.from({
