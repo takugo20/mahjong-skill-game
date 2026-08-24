@@ -53,6 +53,7 @@ export interface PlayerState {
   isDealer: boolean;
   riichi: boolean;
   ippatsu: boolean;
+  drawnTileId: string | null;
 }
 
 export interface LastDiscard {
