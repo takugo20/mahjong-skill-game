@@ -1,0 +1,302 @@
+import {
+  describe,
+  expect,
+  it
+} from "vitest";
+import {
+  createInitialGameState,
+  startNextRound
+} from "./engine";
+import type {
+  GameState,
+  SeatIndex,
+  Tile,
+  TileSuit
+} from "./types";
+
+let serialNumber = 0;
+
+function createTile(
+  suit: TileSuit,
+  rank: number
+): Tile {
+  serialNumber += 1;
+
+  return {
+    id: `round-progress-${serialNumber}`,
+    suit,
+    rank,
+    red: false
+  };
+}
+
+function createTiles(
+  suit: TileSuit,
+  ranks: number[]
+): Tile[] {
+  return ranks.map(
+    (rank) => createTile(suit, rank)
+  );
+}
+
+function createTenpaiHand(): Tile[] {
+  return [
+    ...createTiles(
+      "man",
+      [3, 4, 5, 6, 7]
+    ),
+    ...createTiles(
+      "pin",
+      [2, 3, 4]
+    ),
+    ...createTiles(
+      "sou",
+      [6, 7, 8]
+    ),
+    ...createTiles(
+      "honor",
+      [3, 3]
+    )
+  ];
+}
+
+function createNonTenpaiHand(): Tile[] {
+  return [
+    ...createTiles(
+      "man",
+      [1, 2, 4, 5, 7, 8]
+    ),
+    ...createTiles(
+      "pin",
+      [1, 2, 4, 5, 7, 8]
+    ),
+    createTile("honor", 1)
+  ];
+}
+
+function createSeededRandom(
+  initialSeed: number
+): () => number {
+  let seed = initialSeed >>> 0;
+
+  return () => {
+    seed = (
+      seed * 1664525 +
+      1013904223
+    ) >>> 0;
+
+    return seed / 4294967296;
+  };
+}
+
+function finishRoundWithWinner(
+  state: GameState,
+  winnerSeat: SeatIndex
+): void {
+  state.round.phase = "roundEnd";
+  state.round.winResult = {
+    winMethod: "tsumo",
+    winnerSeat,
+    loserSeat: null,
+    winningTile: createTile("man", 2),
+    yakuNames: ["門前清自摸和"],
+    han: 1,
+    fu: 30,
+    yakumanMultiplier: 0,
+    limitName: null,
+    totalPoints: 1000,
+    pointChanges: []
+  };
+}
+
+describe("和了後の局進行", () => {
+  it("親が和了すると同じ局で連荘し本場を増やす", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.players[0].score = 28000;
+    state.round.players[1].score = 24000;
+    state.round.players[2].score = 24000;
+    state.round.players[3].score = 24000;
+    finishRoundWithWinner(state, 0);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(1)
+    );
+
+    expect(result.round.handNumber).toBe(1);
+    expect(result.round.honba).toBe(1);
+    expect(result.round.currentSeat).toBe(0);
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.liveWall).toHaveLength(69);
+    expect(
+      result.round.players.map(
+        (player) => player.hand.length
+      )
+    ).toEqual([
+      14,
+      13,
+      13,
+      13
+    ]);
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      28000,
+      24000,
+      24000,
+      24000
+    ]);
+    expect(result.round.players[0].isDealer).toBe(
+      true
+    );
+    expect(result.round.players[0].seatWind).toBe(
+      "east"
+    );
+    expect(result.playerMp).toBe(840);
+  });
+
+  it("子が和了すると親を交代して次局へ進む", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.honba = 2;
+    state.round.players[0].score = 24000;
+    state.round.players[1].score = 26000;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(2)
+    );
+
+    expect(result.round.handNumber).toBe(2);
+    expect(result.round.honba).toBe(0);
+    expect(result.round.players[1].isDealer).toBe(
+      true
+    );
+    expect(
+      result.round.players.map(
+        (player) => player.seatWind
+      )
+    ).toEqual([
+      "north",
+      "east",
+      "south",
+      "west"
+    ]);
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      24000,
+      26000,
+      25000,
+      25000
+    ]);
+    expect(result.round.currentSeat).toBe(0);
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+  });
+
+  it("流局時に親が聴牌なら連荘する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.phase = "roundEnd";
+    state.round.honba = 1;
+    state.round.riichiPool = 1000;
+    state.round.winResult = null;
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: createTenpaiHand(),
+      drawnTileId: null
+    };
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(3)
+    );
+
+    expect(result.round.handNumber).toBe(1);
+    expect(result.round.honba).toBe(2);
+    expect(result.round.riichiPool).toBe(1000);
+    expect(result.round.players[0].isDealer).toBe(
+      true
+    );
+  });
+
+  it("流局時に親が不聴なら本場を増やして次局へ進む", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.phase = "roundEnd";
+    state.round.honba = 1;
+    state.round.riichiPool = 1000;
+    state.round.winResult = null;
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: createNonTenpaiHand(),
+      drawnTileId: null
+    };
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(4)
+    );
+
+    expect(result.round.handNumber).toBe(2);
+    expect(result.round.honba).toBe(2);
+    expect(result.round.riichiPool).toBe(1000);
+    expect(result.round.players[1].isDealer).toBe(
+      true
+    );
+  });
+
+  it("東4局で親が流れると東風戦を終了する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.handNumber = 4;
+    state.round.players[0].score = 23000;
+    state.round.players[1].score = 27000;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(5)
+    );
+
+    expect(result.round.phase).toBe(
+      "matchEnd"
+    );
+    expect(result.round.handNumber).toBe(4);
+    expect(result.round.winResult).toBeNull();
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      23000,
+      27000,
+      25000,
+      25000
+    ]);
+    expect(result.playerMp).toBe(420);
+    expect(result.notice).toBe(
+      "東風戦が終了しました。最終得点を確認してください。"
+    );
+  });
+});
