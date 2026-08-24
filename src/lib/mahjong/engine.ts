@@ -16,6 +16,9 @@ import type {
   ValidRoundWinResolution
 } from "./roundWin";
 import {
+  isTenpai
+} from "./hand";
+import {
   createFullTileSet,
   getTileLabel,
   getTileTypeKey,
@@ -874,4 +877,248 @@ export function playPlayerDiscard(
     discardedState,
     random
   );
+}
+
+function getDealerSeat(
+  round: RoundState
+): SeatIndex {
+  const dealer = round.players.find(
+    (player) => player.isDealer
+  );
+
+  if (!dealer) {
+    throw new Error(
+      "親のプレイヤーが見つかりません。"
+    );
+  }
+
+  return dealer.seat;
+}
+
+function getSeatWindForDealer(
+  seat: SeatIndex,
+  dealerSeat: SeatIndex
+): Wind {
+  const distance =
+    (seat - dealerSeat + 4) % 4;
+
+  return WINDS[distance];
+}
+
+function preparePlayersForNextRound(
+  players: PlayerState[],
+  dealerSeat: SeatIndex
+): PlayerState[] {
+  return players.map((player) => ({
+    ...player,
+    seatWind: getSeatWindForDealer(
+      player.seat,
+      dealerSeat
+    ),
+    hand: [],
+    melds: [],
+    discards: [],
+    isDealer:
+      player.seat === dealerSeat,
+    riichi: false,
+    ippatsu: false,
+    drawnTileId: null
+  }));
+}
+
+function dealNextRoundHands(
+  players: PlayerState[],
+  dealerSeat: SeatIndex,
+  random: () => number
+): {
+  players: PlayerState[];
+  liveWall: Tile[];
+  deadWall: Tile[];
+} {
+  const shuffledTiles = shuffleTiles(
+    createFullTileSet(),
+    random
+  );
+
+  const deadWall = shuffledTiles.slice(-14);
+  const liveWall = shuffledTiles.slice(0, -14);
+
+  for (
+    let drawIndex = 0;
+    drawIndex < 13;
+    drawIndex += 1
+  ) {
+    for (
+      let seatOffset = 0;
+      seatOffset < 4;
+      seatOffset += 1
+    ) {
+      const seat = (
+        (dealerSeat + seatOffset) % 4
+      ) as SeatIndex;
+
+      const tile = liveWall.shift();
+
+      if (!tile) {
+        throw new Error(
+          "次局の配牌中に通常山が不足しました。"
+        );
+      }
+
+      players[seat].hand.push(tile);
+    }
+  }
+
+  for (const player of players) {
+    player.hand = sortTiles(player.hand);
+  }
+
+  return {
+    players,
+    liveWall,
+    deadWall
+  };
+}
+
+function dealerContinues(
+  round: RoundState,
+  dealerSeat: SeatIndex
+): boolean {
+  if (round.winResult) {
+    return (
+      round.winResult.winnerSeat ===
+      dealerSeat
+    );
+  }
+
+  const dealer = round.players[dealerSeat];
+
+  return isTenpai(
+    dealer.hand,
+    dealer.melds
+  );
+}
+
+function getAdvancedHandNumber(
+  handNumber: RoundState["handNumber"]
+): RoundState["handNumber"] {
+  if (handNumber >= 4) {
+    return 4;
+  }
+
+  return (
+    handNumber + 1
+  ) as RoundState["handNumber"];
+}
+
+export function startNextRound(
+  state: GameState,
+  random: () => number = Math.random
+): GameState {
+  if (state.round.phase !== "roundEnd") {
+    return state;
+  }
+
+  const currentDealerSeat =
+    getDealerSeat(state.round);
+
+  const continues = dealerContinues(
+    state.round,
+    currentDealerSeat
+  );
+
+  const isExhaustiveDraw =
+    state.round.winResult == null;
+
+  if (
+    !continues &&
+    state.round.handNumber === 4
+  ) {
+    return {
+      ...state,
+      round: {
+        ...state.round,
+        phase: "matchEnd",
+        winResult: null
+      },
+      notice:
+        "東風戦が終了しました。最終得点を確認してください。"
+    };
+  }
+
+  const nextDealerSeat = continues
+    ? currentDealerSeat
+    : nextSeat(currentDealerSeat);
+
+  const nextHandNumber = continues
+    ? state.round.handNumber
+    : getAdvancedHandNumber(
+        state.round.handNumber
+      );
+
+  const nextHonba =
+    continues || isExhaustiveDraw
+      ? state.round.honba + 1
+      : 0;
+
+  const preparedPlayers =
+    preparePlayersForNextRound(
+      state.round.players,
+      nextDealerSeat
+    );
+
+  const dealt = dealNextRoundHands(
+    preparedPlayers,
+    nextDealerSeat,
+    random
+  );
+
+  const dealtState: GameState = {
+    ...state,
+    playerMp: Math.min(
+      state.maxMp,
+      state.playerMp + 390
+    ),
+    round: {
+      prevailingWind: "east",
+      handNumber: nextHandNumber,
+      honba: nextHonba,
+      riichiPool:
+        state.round.riichiPool,
+      liveWall: dealt.liveWall,
+      deadWall: dealt.deadWall,
+      players: dealt.players,
+      currentSeat: nextDealerSeat,
+      phase: "drawing",
+      lastDiscard: null,
+      turnNumber: 0,
+      kanCount: 0,
+      doraIndicatorCount: 1,
+      rinshanDrawCount: 0,
+      winResult: null
+    },
+    notice: "次局を開始します。"
+  };
+
+  const startedState =
+    nextDealerSeat === 0
+      ? drawTile(dealtState, 0)
+      : completeCpuTurns(
+          dealtState,
+          random
+        );
+
+  if (
+    startedState.round.phase ===
+    "roundEnd"
+  ) {
+    return startedState;
+  }
+
+  return {
+    ...startedState,
+    notice:
+      `${getRoundLabel(startedState.round)}を開始しました。` +
+      startedState.notice
+  };
 }
