@@ -250,6 +250,7 @@ function createWinningInput(
     chiihou: input.chiihou,
     treatAsClosed:
       input.treatAsClosed,
+    kiriageMangan: true,
     honba: input.round.honba,
     riichiSticks:
       getRiichiStickCount(input.round)
