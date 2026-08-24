@@ -2,12 +2,16 @@ import type {
   Discard,
   GameState,
   PlayerState,
+  RoundPointResult,
   RoundWinResult,
   RoundState,
   SeatIndex,
   Tile,
   Wind
 } from "./types";
+import {
+  resolveExhaustiveDrawSettlement
+} from "./drawSettlement";
 import {
   evaluateRoundWin,
   resolveRoundWin
@@ -184,7 +188,8 @@ export function createInitialGameState(
       kanCount: 0,
       doraIndicatorCount: 1,
       rinshanDrawCount: 0,
-      winResult: null
+      winResult: null,
+      drawResult: null
     },
     playerMp: 420,
     maxMp: 900,
@@ -554,7 +559,115 @@ function finishRoundWithWin(
       phase: "roundEnd",
       riichiPool: 0,
       winResult:
-        createRoundWinResult(resolution)
+        createRoundWinResult(resolution),
+      drawResult: null
+    },
+    notice
+  };
+}
+
+function finishRoundWithExhaustiveDraw(
+  state: GameState,
+  notice: string
+): GameState {
+  if (state.round.drawResult) {
+    return state;
+  }
+
+  const tenpaiPlayerIds =
+    state.round.players
+      .filter((player) =>
+        isTenpai(
+          player.hand,
+          player.melds
+        )
+      )
+      .map((player) => player.id);
+
+  const settlement =
+    resolveExhaustiveDrawSettlement({
+      players: state.round.players.map(
+        (player) => ({
+          id: player.id,
+          wind: player.seatWind,
+          points: player.score
+        })
+      ),
+      tenpaiPlayerIds
+    });
+
+  const pointsAfterById = new Map(
+    settlement.pointChanges.map(
+      (change) => [
+        change.playerId,
+        change.pointsAfter
+      ]
+    )
+  );
+
+  const playersAfter =
+    state.round.players.map((player) => ({
+      ...player,
+      score:
+        pointsAfterById.get(player.id) ??
+        player.score
+    }));
+
+  const seatByPlayerId = new Map(
+    state.round.players.map(
+      (player) => [
+        player.id,
+        player.seat
+      ]
+    )
+  );
+
+  const pointChanges: RoundPointResult[] =
+    settlement.pointChanges.map(
+      (change) => {
+        const seat = seatByPlayerId.get(
+          change.playerId
+        );
+
+        if (seat === undefined) {
+          throw new Error(
+            "流局精算の対象プレイヤーが見つかりません。"
+          );
+        }
+
+        return {
+          ...change,
+          seat
+        };
+      }
+    );
+
+  const tenpaiIdSet = new Set(
+    settlement.tenpaiPlayerIds
+  );
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: playersAfter,
+      phase: "roundEnd",
+      winResult: null,
+      drawResult: {
+        tenpaiSeats:
+          state.round.players
+            .filter((player) =>
+              tenpaiIdSet.has(player.id)
+            )
+            .map((player) => player.seat),
+        notenSeats:
+          state.round.players
+            .filter((player) =>
+              !tenpaiIdSet.has(player.id)
+            )
+            .map((player) => player.seat),
+        pointChanges
+      }
     },
     notice
   };
@@ -1095,7 +1208,8 @@ export function startNextRound(
       kanCount: 0,
       doraIndicatorCount: 1,
       rinshanDrawCount: 0,
-      winResult: null
+      winResult: null,
+      drawResult: null
     },
     notice: "次局を開始します。"
   };
