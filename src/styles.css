@@ -2105,3 +2105,255 @@ body {
     padding: 3px;
   }
 }
+
+/* 和了操作・和了結果 */
+
+.table-actions .win-button {
+  border-color: #ffb6ad;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      180deg,
+      #f45d53,
+      #a41620
+    );
+  box-shadow:
+    0 5px 14px rgb(112 0 12 / 45%),
+    inset 0 1px 0 rgb(255 255 255 / 24%);
+}
+
+.table-actions .win-button:disabled {
+  border-color: #66726b;
+  color: #a7afa9;
+  background: #35423b;
+  box-shadow: none;
+}
+
+.table-actions
+  .control-buttons--triple
+  .primary-button,
+.table-actions
+  .control-buttons--triple
+  .secondary-button {
+  min-height: clamp(27px, 5.2vh, 43px);
+  font-size: clamp(
+    0.62rem,
+    min(1.5vw, 2.4vh),
+    0.96rem
+  );
+}
+
+.win-result-overlay {
+  position: absolute;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(8px, 2vmin, 22px);
+  background: rgb(0 10 5 / 76%);
+  backdrop-filter: blur(4px);
+}
+
+.win-result-card {
+  width: min(92%, 470px);
+  max-height: 94%;
+  padding: clamp(10px, 2vmin, 20px);
+  overflow-y: auto;
+  border: 2px solid #f0c961;
+  border-radius: clamp(11px, 2vmin, 20px);
+  color: #f7fff9;
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      #28583f,
+      #061b10 64%,
+      #020b06
+    );
+  box-shadow:
+    0 22px 60px rgb(0 0 0 / 65%),
+    inset 0 0 0 3px rgb(255 255 255 / 5%);
+}
+
+.win-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: clamp(7px, 1.3vmin, 12px);
+  border-bottom: 1px solid rgb(255 255 255 / 15%);
+}
+
+.win-result-header > div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.win-result-header span {
+  color: #ffdf72;
+  font-size: clamp(
+    0.78rem,
+    2.2vmin,
+    1.05rem
+  );
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.win-result-header strong {
+  font-size: clamp(
+    1.35rem,
+    4vmin,
+    2.25rem
+  );
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 4px #000;
+}
+
+.win-result-yaku {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: clamp(8px, 1.6vmin, 14px) 0;
+}
+
+.win-result-yaku span {
+  padding: 4px 8px;
+  border: 1px solid
+    rgb(255 220 116 / 42%);
+  border-radius: 999px;
+  color: #ffedae;
+  background: rgb(104 68 5 / 44%);
+  font-size: clamp(
+    0.62rem,
+    1.7vmin,
+    0.83rem
+  );
+  font-weight: 800;
+}
+
+.win-result-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: clamp(7px, 1.7vmin, 15px);
+  padding: clamp(7px, 1.4vmin, 13px);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 6%);
+}
+
+.win-result-score strong {
+  font-size: clamp(
+    0.85rem,
+    2.3vmin,
+    1.16rem
+  );
+}
+
+.win-result-score span {
+  color: #ffcf58;
+  font-weight: 900;
+}
+
+.win-result-score b {
+  color: #ffe27d;
+  font-size: clamp(
+    1.15rem,
+    3.4vmin,
+    1.75rem
+  );
+  text-shadow: 0 2px 3px #000;
+}
+
+.win-result-changes {
+  display: grid;
+  gap: 4px;
+  margin: clamp(8px, 1.5vmin, 13px) 0;
+}
+
+.win-result-changes > div {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    auto;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 5%);
+  font-size: clamp(
+    0.62rem,
+    1.7vmin,
+    0.82rem
+  );
+}
+
+.win-result-changes span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win-result-changes strong {
+  min-width: 58px;
+  text-align: right;
+}
+
+.win-result-changes small {
+  min-width: 72px;
+  color: #bbc9c0;
+  text-align: right;
+}
+
+.point-change--plus {
+  color: #7effad;
+}
+
+.point-change--minus {
+  color: #ff8e96;
+}
+
+.win-result-next {
+  display: block;
+  width: min(100%, 220px);
+  margin: 0 auto;
+}
+
+@media (
+  orientation: landscape
+) and (max-height: 500px) {
+  .win-result-card {
+    width: min(88%, 520px);
+    padding: 8px 12px;
+  }
+
+  .win-result-yaku {
+    margin: 6px 0;
+  }
+
+  .win-result-score {
+    padding: 5px;
+  }
+
+  .win-result-changes {
+    grid-template-columns:
+      repeat(2, 1fr);
+    margin: 6px 0;
+  }
+
+  .win-result-changes > div {
+    gap: 5px;
+    padding: 3px 6px;
+  }
+
+  .win-result-changes small {
+    display: none;
+  }
+
+  .win-result-next {
+    min-height: 30px;
+    padding: 4px 10px;
+  }
+}
