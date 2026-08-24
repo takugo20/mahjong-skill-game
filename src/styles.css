@@ -1455,3 +1455,653 @@ body {
   width: 3px;
   height: 44%;
 }
+
+/* 横画面・全画面麻雀卓レイアウト */
+
+.app-shell {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  min-height: 0;
+  margin: 0;
+  padding:
+    max(3px, env(safe-area-inset-top))
+    max(3px, env(safe-area-inset-right))
+    max(3px, env(safe-area-inset-bottom))
+    max(3px, env(safe-area-inset-left));
+  overflow: hidden;
+}
+
+.game-table {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border: clamp(1px, 0.35vmin, 3px)
+    solid #b58b3e;
+  border-radius: clamp(10px, 2vmin, 24px);
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      #38a24e 0,
+      #20853c 48%,
+      #12652f 100%
+    );
+  box-shadow:
+    inset 0 0 60px rgb(0 0 0 / 24%),
+    inset 0 0 0 3px rgb(255 255 255 / 5%);
+}
+
+.game-table::before {
+  inset: clamp(3px, 0.7vmin, 8px);
+  border-color: rgb(255 236 171 / 12%);
+  border-radius: clamp(7px, 1.5vmin, 18px);
+}
+
+.table-notice {
+  position: absolute;
+  z-index: 20;
+  top: 1.5%;
+  left: 1.5%;
+  width: min(22%, 260px);
+  margin: 0;
+  padding: 5px 8px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 7px;
+  color: #e8f5eb;
+  background: rgb(0 25 11 / 64%);
+  font-size: clamp(
+    0.53rem,
+    min(1.2vw, 1.8vh),
+    0.78rem
+  );
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.round-corner-panel {
+  position: absolute;
+  z-index: 10;
+  top: 2%;
+  right: 2%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: #fff;
+  font-weight: 900;
+  line-height: 1.05;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 4px #000;
+}
+
+.round-corner-panel span {
+  font-size: clamp(
+    0.76rem,
+    min(2.4vw, 4vh),
+    1.75rem
+  );
+}
+
+.round-corner-panel strong {
+  margin-top: 3px;
+  font-size: clamp(
+    0.9rem,
+    min(2.8vw, 4.6vh),
+    2rem
+  );
+}
+
+.round-corner-panel small {
+  margin-top: 4px;
+  color: #ffe08a;
+  font-size: clamp(
+    0.52rem,
+    min(1.4vw, 2.2vh),
+    0.86rem
+  );
+}
+
+.opponent-area {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  gap: clamp(4px, 0.8vmin, 10px);
+  overflow: visible;
+}
+
+.opponent-area--top {
+  top: 1.2%;
+  left: 24%;
+  flex-direction: column;
+  align-items: center;
+  width: 52%;
+  height: 15%;
+}
+
+.opponent-area--left {
+  top: 15%;
+  bottom: 21%;
+  left: 0.8%;
+  flex-direction: row;
+  align-items: center;
+  width: 14%;
+}
+
+.opponent-area--right {
+  top: 15%;
+  right: 0.8%;
+  bottom: 21%;
+  flex-direction: row-reverse;
+  align-items: center;
+  width: 14%;
+}
+
+.opponent-hand {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0px, 0.12vw, 2px);
+  min-width: 0;
+}
+
+.opponent-area--top .opponent-hand {
+  flex-direction: row;
+  max-width: 100%;
+}
+
+.opponent-area--left .opponent-hand,
+.opponent-area--right .opponent-hand {
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.opponent-area--top
+  .mahjong-tile--compact {
+  width: clamp(
+    17px,
+    min(3.15vw, 4.6vh),
+    37px
+  );
+  height: auto;
+  aspect-ratio: 25 / 35;
+}
+
+.opponent-area--left
+  .mahjong-tile--compact,
+.opponent-area--right
+  .mahjong-tile--compact {
+  width: clamp(
+    12px,
+    min(2vw, 3vh),
+    24px
+  );
+  height: auto;
+  aspect-ratio: 25 / 35;
+}
+
+.opponent-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.opponent-area--top .opponent-meta {
+  flex-direction: row;
+}
+
+.opponent-area--left .opponent-meta,
+.opponent-area--right .opponent-meta {
+  flex-direction: column;
+}
+
+.opponent-area .player-status {
+  flex: 0 0 auto;
+  padding: clamp(3px, 0.6vmin, 7px);
+  border-color: rgb(255 255 255 / 18%);
+  border-radius: 6px;
+  background: rgb(0 25 12 / 72%);
+  font-size: clamp(
+    0.48rem,
+    min(1.1vw, 1.7vh),
+    0.74rem
+  );
+}
+
+.opponent-area--top .player-status {
+  flex-direction: row;
+  width: auto;
+  min-width: min(34vw, 270px);
+}
+
+.opponent-area--left .player-status,
+.opponent-area--right .player-status {
+  flex-direction: column;
+  width: clamp(28px, 4vw, 42px);
+  min-height: clamp(110px, 28vh, 190px);
+  text-align: center;
+}
+
+.opponent-area--left
+  .player-status__name,
+.opponent-area--right
+  .player-status__name {
+  flex-direction: column;
+}
+
+.opponent-area--left
+  .player-status > strong,
+.opponent-area--right
+  .player-status > strong {
+  writing-mode: vertical-rl;
+}
+
+.opponent-area .wind-badge {
+  width: clamp(17px, 2.6vmin, 25px);
+  height: clamp(17px, 2.6vmin, 25px);
+  font-size: clamp(0.5rem, 1.3vmin, 0.75rem);
+}
+
+.enemy-ability-badge {
+  padding: 3px 7px;
+  font-size: clamp(
+    0.42rem,
+    min(0.9vw, 1.4vh),
+    0.62rem
+  );
+  white-space: nowrap;
+}
+
+.river-position {
+  position: absolute;
+  z-index: 6;
+}
+
+.river-position--top {
+  top: 22%;
+  left: 50%;
+  transform:
+    translateX(-50%)
+    rotate(180deg);
+}
+
+.river-position--left {
+  top: 49%;
+  left: 27%;
+  transform:
+    translate(-50%, -50%)
+    rotate(90deg);
+}
+
+.river-position--right {
+  top: 49%;
+  right: 27%;
+  transform:
+    translate(50%, -50%)
+    rotate(-90deg);
+}
+
+.river-position--bottom {
+  bottom: 24%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.river-position .discard-grid {
+  grid-template-columns:
+    repeat(6, max-content);
+  gap: clamp(1px, 0.16vmin, 3px);
+  min-height: 0;
+  padding: 2px;
+  background: transparent;
+}
+
+.river-position .mahjong-tile--compact {
+  width: clamp(
+    15px,
+    min(2.9vw, 4.4vh),
+    32px
+  );
+  height: auto;
+  aspect-ratio: 25 / 35;
+}
+
+.table-center {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: clamp(
+    130px,
+    min(20vw, 30vh),
+    235px
+  );
+  padding: clamp(5px, 1vmin, 12px);
+  transform: translate(-50%, -50%);
+  border: clamp(1px, 0.25vmin, 2px)
+    solid #d3ad56;
+  border-radius: clamp(5px, 1vmin, 11px);
+  background:
+    linear-gradient(
+      145deg,
+      rgb(2 31 16 / 94%),
+      rgb(1 17 9 / 94%)
+    );
+  box-shadow:
+    0 8px 20px rgb(0 0 0 / 40%),
+    inset 0 0 0 2px rgb(255 255 255 / 4%);
+}
+
+.center-remaining {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: clamp(3px, 0.7vmin, 8px);
+  padding-bottom: clamp(3px, 0.6vmin, 7px);
+  border-bottom: 1px solid
+    rgb(255 255 255 / 14%);
+}
+
+.center-remaining span {
+  color: #eaf5ec;
+  font-size: clamp(
+    0.58rem,
+    min(1.3vw, 2vh),
+    0.86rem
+  );
+  font-weight: 800;
+}
+
+.center-remaining strong {
+  color: #ffe36e;
+  font-size: clamp(
+    1.35rem,
+    min(4vw, 6vh),
+    2.8rem
+  );
+  line-height: 1;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px rgb(255 214 69 / 35%);
+}
+
+.table-center .center-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  margin: clamp(4px, 0.8vmin, 9px) 0;
+}
+
+.table-center .center-stat-grid > div {
+  padding: 3px;
+}
+
+.table-center .dora-panel {
+  gap: 5px;
+}
+
+.table-center .dora-panel > span {
+  font-size: clamp(
+    0.48rem,
+    min(1vw, 1.5vh),
+    0.66rem
+  );
+}
+
+.table-center .mahjong-tile--compact {
+  width: clamp(
+    17px,
+    min(2.8vw, 4.2vh),
+    29px
+  );
+  height: auto;
+  aspect-ratio: 25 / 35;
+}
+
+.human-area {
+  position: absolute;
+  z-index: 10;
+  right: 16%;
+  bottom: 1%;
+  left: 1.5%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(2px, 0.5vh, 6px);
+  height: 21%;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+}
+
+.human-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(5px, 1vw, 12px);
+  min-height: 0;
+}
+
+.human-status-row > .player-status {
+  width: clamp(150px, 25vw, 300px);
+  min-width: 0;
+  padding: clamp(3px, 0.6vmin, 7px)
+    clamp(5px, 1vmin, 10px);
+  font-size: clamp(
+    0.58rem,
+    min(1.3vw, 2vh),
+    0.84rem
+  );
+}
+
+.human-status-row .mp-panel {
+  width: clamp(130px, 22vw, 270px);
+  padding: clamp(3px, 0.6vmin, 7px);
+}
+
+.human-hand {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: clamp(8px, 1.4vw, 20px);
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.human-hand__main,
+.human-hand__drawn {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(0px, 0.18vw, 3px);
+  min-width: 0;
+}
+
+.human-hand__main {
+  flex: 0 1 auto;
+}
+
+.human-hand__drawn {
+  flex: 0 0 auto;
+}
+
+.human-hand .mahjong-tile {
+  width: clamp(
+    27px,
+    min(5.25vw, 9.3vh),
+    66px
+  );
+  height: auto;
+  aspect-ratio: 42 / 58;
+}
+
+.human-hand .tile-rank {
+  font-size: clamp(
+    0.8rem,
+    min(2.7vw, 4.8vh),
+    1.8rem
+  );
+}
+
+.human-hand .tile-suit {
+  font-size: clamp(
+    0.4rem,
+    min(1.3vw, 2.2vh),
+    0.78rem
+  );
+}
+
+.table-actions {
+  position: absolute;
+  z-index: 20;
+  right: 1.2%;
+  bottom: 1.5%;
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  align-items: stretch;
+  gap: clamp(4px, 0.8vmin, 9px);
+  width: 13.5%;
+  min-width: 82px;
+  margin: 0;
+  padding: clamp(4px, 0.8vmin, 9px);
+  border-color: rgb(255 255 255 / 15%);
+  border-radius: clamp(6px, 1vmin, 11px);
+  background: rgb(0 25 11 / 72%);
+}
+
+.table-actions .selection-status {
+  display: block;
+  color: #e5efe8;
+  font-size: clamp(
+    0.48rem,
+    min(1vw, 1.6vh),
+    0.68rem
+  );
+  text-align: center;
+}
+
+.table-actions .control-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.7vmin, 8px);
+}
+
+.table-actions .primary-button,
+.table-actions .secondary-button {
+  width: 100%;
+  min-height: clamp(34px, 7vh, 58px);
+  padding: 4px;
+  border-width: 2px;
+  border-radius: clamp(5px, 0.9vmin, 10px);
+  font-size: clamp(
+    0.7rem,
+    min(1.8vw, 3vh),
+    1.15rem
+  );
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.table-actions .primary-button {
+  color: #2a1800;
+  background:
+    linear-gradient(
+      180deg,
+      #ffec83,
+      #f4a009
+    );
+}
+
+.table-actions .secondary-button {
+  color: #fff;
+  background:
+    linear-gradient(
+      180deg,
+      #3fc176,
+      #087137
+    );
+  box-shadow: 0 4px 10px rgb(0 0 0 / 30%);
+}
+
+.orientation-overlay {
+  display: none;
+}
+
+.orientation-device-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.orientation-arrow {
+  color: #ffe183;
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+
+@media (orientation: portrait) {
+  .orientation-overlay {
+    display: flex;
+  }
+}
+
+@media (
+  orientation: landscape
+) and (max-height: 500px) {
+  .table-notice {
+    width: 19%;
+    padding: 3px 5px;
+  }
+
+  .opponent-area--top {
+    height: 14%;
+  }
+
+  .opponent-area--left,
+  .opponent-area--right {
+    top: 14%;
+    bottom: 20%;
+  }
+
+  .river-position--top {
+    top: 20%;
+  }
+
+  .river-position--bottom {
+    bottom: 23%;
+  }
+
+  .human-area {
+    height: 20%;
+  }
+
+  .human-status-row > .player-status,
+  .human-status-row .mp-panel {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .mp-gauge {
+    display: none;
+  }
+
+  .table-actions {
+    padding: 3px;
+  }
+}
