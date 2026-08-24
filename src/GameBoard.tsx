@@ -3,11 +3,16 @@ import {
 } from "react";
 import { TileView } from "./components/TileView";
 import {
+  canPlayerRon,
+  canPlayerTsumo,
   createInitialGameState,
+  declarePlayerRon,
+  declarePlayerTsumo,
   getDoraIndicators,
   getRoundLabel,
   getWindLabel,
-  playPlayerDiscard
+  playPlayerDiscard,
+  skipPlayerRon
 } from "./lib/mahjong/engine";
 import {
   getTileLabel
@@ -39,6 +44,16 @@ interface OpponentAreaProps {
 
 function formatScore(score: number): string {
   return score.toLocaleString("ja-JP");
+}
+
+function formatPointChange(
+  change: number
+): string {
+  if (change > 0) {
+    return `+${formatScore(change)}`;
+  }
+
+  return formatScore(change);
 }
 
 function River({
@@ -166,6 +181,16 @@ export function GameBoard() {
     round.currentSeat === 0 &&
     round.phase === "discarding";
 
+  const canTsumo =
+    canPlayerTsumo(gameState);
+
+  const canRon =
+    round.phase === "reaction" &&
+    canPlayerRon(gameState);
+
+  const winResult =
+    round.winResult ?? null;
+
   function handleTileSelection(
     tileId: string
   ) {
@@ -195,6 +220,30 @@ export function GameBoard() {
     setSelectedTileId(null);
   }
 
+  function handleTsumo() {
+    setGameState((currentState) =>
+      declarePlayerTsumo(currentState)
+    );
+
+    setSelectedTileId(null);
+  }
+
+  function handleRon() {
+    setGameState((currentState) =>
+      declarePlayerRon(currentState)
+    );
+
+    setSelectedTileId(null);
+  }
+
+  function handleSkipRon() {
+    setGameState((currentState) =>
+      skipPlayerRon(currentState)
+    );
+
+    setSelectedTileId(null);
+  }
+  
   function handleRestart() {
     setGameState(createInitialGameState());
     setSelectedTileId(null);
@@ -407,14 +456,25 @@ export function GameBoard() {
           aria-label="操作欄"
         >
           <div className="selection-status">
-            {selectedTile
-              ? `${getTileLabel(
-                  selectedTile
-                )}を選択中`
-              : "牌を選択"}
+            {round.phase === "reaction"
+              ? "ロン可能"
+              : canTsumo
+                ? "ツモ和了可能"
+                : selectedTile
+                  ? `${getTileLabel(
+                      selectedTile
+                    )}を選択中`
+                  : "牌を選択"}
           </div>
 
-          <div className="control-buttons">
+          <div
+            className={`control-buttons ${
+              canTsumo &&
+              round.phase !== "roundEnd"
+                ? "control-buttons--triple"
+                : ""
+            }`}
+          >
             {round.phase === "roundEnd" ? (
               <button
                 type="button"
@@ -423,29 +483,169 @@ export function GameBoard() {
               >
                 次局
               </button>
+            ) : round.phase === "reaction" ? (
+              <>
+                <button
+                  type="button"
+                  className="primary-button win-button"
+                  disabled={!canRon}
+                  onClick={handleRon}
+                >
+                  ロン
+                </button>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleSkipRon}
+                >
+                  見逃す
+                </button>
+              </>
             ) : (
-              <button
-                type="button"
-                className="primary-button"
-                disabled={
-                  !selectedTileId ||
-                  !canDiscard
-                }
-                onClick={handleDiscard}
-              >
-                打牌
-              </button>
+              <>
+                {canTsumo && (
+                  <button
+                    type="button"
+                    className="primary-button win-button"
+                    onClick={handleTsumo}
+                  >
+                    ツモ
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={
+                    !selectedTileId ||
+                    !canDiscard
+                  }
+                  onClick={handleDiscard}
+                >
+                  打牌
+                </button>
+              </>
             )}
 
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleRestart}
-            >
-              配り直し
-            </button>
+            {round.phase !== "reaction" && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleRestart}
+              >
+                配り直し
+              </button>
+            )}
           </div>
         </section>
+        {winResult && (
+          <section
+            className="win-result-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label="和了結果"
+          >
+            <article className="win-result-card">
+              <header className="win-result-header">
+                <div>
+                  <span>
+                    {winResult.winMethod === "tsumo"
+                      ? "ツモ"
+                      : "ロン"}
+                  </span>
+
+                  <strong>和了</strong>
+                </div>
+
+                <TileView
+                  tile={winResult.winningTile}
+                  compact
+                  highlighted
+                />
+              </header>
+
+              <div className="win-result-yaku">
+                {winResult.yakuNames.map(
+                  (name) => (
+                    <span key={name}>{name}</span>
+                  )
+                )}
+              </div>
+
+              <div className="win-result-score">
+                <strong>
+                  {winResult.yakumanMultiplier > 0
+                    ? winResult.limitName ?? "役満"
+                    : `${winResult.han}翻 ${winResult.fu ?? 0}符`}
+                </strong>
+
+                {winResult.limitName &&
+                  winResult.yakumanMultiplier === 0 && (
+                    <span>
+                      {winResult.limitName}
+                    </span>
+                  )}
+
+                <b>
+                  {formatScore(
+                    winResult.totalPoints
+                  )}
+                  点
+                </b>
+              </div>
+
+              <div className="win-result-changes">
+                {winResult.pointChanges.map(
+                  (change) => {
+                    const changedPlayer =
+                      round.players[change.seat];
+
+                    return (
+                      <div key={change.playerId}>
+                        <span>
+                          {getWindLabel(
+                            changedPlayer.seatWind
+                          )}
+                          ・{changedPlayer.name}
+                        </span>
+
+                        <strong
+                          className={
+                            change.change > 0
+                              ? "point-change--plus"
+                              : change.change < 0
+                                ? "point-change--minus"
+                                : ""
+                          }
+                        >
+                          {formatPointChange(
+                            change.change
+                          )}
+                        </strong>
+
+                        <small>
+                          {formatScore(
+                            change.pointsAfter
+                          )}
+                          点
+                        </small>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="primary-button win-result-next"
+                onClick={handleRestart}
+              >
+                次局へ
+              </button>
+            </article>
+          </section>
+        )}
       </section>
 
       <div
