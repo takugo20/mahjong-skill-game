@@ -9,7 +9,9 @@ import {
   createInitialGameState,
   declarePlayerTsumo,
   drawTile,
-  skipPlayerRon
+  playPlayerDiscard,
+  skipPlayerRon,
+  startNextRound
 } from "./engine";
 import type {
   Discard,
@@ -88,6 +90,21 @@ function createNonWinningHand(): Tile[] {
     ),
     createTile("honor", 1)
   ];
+}
+
+function createSeededRandom(
+  initialSeed: number
+): () => number {
+  let seed = initialSeed >>> 0;
+
+  return () => {
+    seed = (
+      seed * 1664525 +
+      1013904223
+    ) >>> 0;
+
+    return seed / 4294967296;
+  };
 }
 
 function createRonState(): {
@@ -279,5 +296,123 @@ describe("振聴フラグの発生と解除", () => {
       result.round.players[0]
         .riichiFuriten
     ).toBe(true);
+  });
+});
+
+describe("CPUと次局の振聴処理", () => {
+  it("CPUも自分の捨て牌による振聴でロンできない", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const completedHand =
+      createCompletedPinfuHand();
+    const winningTile = completedHand[0];
+    const playerHand = [
+      ...createNonWinningHand(),
+      winningTile
+    ];
+
+    state.round.deadWall = Array.from(
+      { length: 14 },
+      () => createTile("honor", 7)
+    );
+    state.round.liveWall = [
+      createTile("honor", 2),
+      createTile("honor", 3),
+      createTile("honor", 4),
+      createTile("man", 9)
+    ];
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: playerHand,
+      drawnTileId: winningTile.id
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: completedHand.slice(1),
+      discards: [
+        createDiscard(
+          createTile("man", 5)
+        )
+      ],
+      drawnTileId: null
+    };
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: createNonWinningHand(),
+      drawnTileId: null
+    };
+    state.round.players[3] = {
+      ...state.round.players[3],
+      hand: createNonWinningHand(),
+      drawnTileId: null
+    };
+
+    const result = playPlayerDiscard(
+      state,
+      winningTile.id,
+      () => 0.5
+    );
+
+    expect(result.round.winResult).toBeNull();
+    expect(result.round.currentSeat).toBe(0);
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+  });
+
+  it("次局開始時に全員の振聴フラグを解除する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.phase = "roundEnd";
+    state.round.winResult = {
+      winMethod: "tsumo",
+      winnerSeat: 1,
+      loserSeat: null,
+      winningTile: createTile("man", 2),
+      yakuNames: ["門前清自摸和"],
+      han: 1,
+      fu: 30,
+      yakumanMultiplier: 0,
+      limitName: null,
+      totalPoints: 1000,
+      pointChanges: []
+    };
+
+    for (const player of state.round.players) {
+      player.temporaryFuriten = true;
+      player.riichiFuriten = true;
+    }
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(12)
+    );
+
+    expect(
+      result.round.players.map(
+        (player) =>
+          player.temporaryFuriten
+      )
+    ).toEqual([
+      false,
+      false,
+      false,
+      false
+    ]);
+    expect(
+      result.round.players.map(
+        (player) => player.riichiFuriten
+      )
+    ).toEqual([
+      false,
+      false,
+      false,
+      false
+    ]);
   });
 });
