@@ -7,7 +7,8 @@ import {
   createInitialGameState,
   discardTile,
   getDoraIndicators,
-  playPlayerDiscard
+  playPlayerDiscard,
+  skipPlayerRon
 } from "./engine";
 import {
   createFullTileSet,
@@ -150,11 +151,20 @@ describe("通常のツモ・打牌", () => {
     const selectedTile =
       state.round.players[0].hand[0];
 
-    const nextState = playPlayerDiscard(
+    let nextState = playPlayerDiscard(
       state,
       selectedTile.id,
       () => 0.5
     );
+
+    while (
+      nextState.round.phase === "reaction"
+    ) {
+      nextState = skipPlayerRon(
+        nextState,
+        () => 0.5
+      );
+    }
 
     expect(nextState.round.currentSeat).toBe(0);
     expect(nextState.round.phase).toBe("discarding");
