@@ -89,6 +89,22 @@ export interface RoundDrawResult {
   pointChanges: RoundPointResult[];
 }
 
+export interface MatchRankingResult {
+  rank: 1 | 2 | 3 | 4;
+  playerId: string;
+  seat: SeatIndex;
+  pointsBeforePool: number;
+  riichiPoolAward: number;
+  finalPoints: number;
+}
+
+export interface MatchResult {
+  provisionalLeaderId: string;
+  riichiPoolRecipientId: string | null;
+  riichiPoolAward: number;
+  rankings: MatchRankingResult[];
+}
+
 export interface RoundState {
   prevailingWind: Wind;
   handNumber: 1 | 2 | 3 | 4;
@@ -109,7 +125,10 @@ export interface RoundState {
 
 export interface GameState {
   round: RoundState;
+  initialDealerSeat: SeatIndex;
+  matchResult: MatchResult | null;
   playerMp: number;
   maxMp: number;
   notice: string;
+}
 }
