@@ -335,10 +335,6 @@ describe("役牌", () => {
         [1, 2, 3]
       ),
       ...createTiles(
-        "sou",
-        [1, 2, 3]
-      ),
-      ...createTiles(
         "honor",
         [2, 2]
       )
