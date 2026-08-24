@@ -375,7 +375,7 @@ describe("和了後の局進行", () => {
       true
     );
   });
-    it("点数移動後に0点未満のプレイヤーがいると飛び終了する", () => {
+  it("点数移動後に0点未満のプレイヤーがいると飛び終了する", () => {
     const state = createInitialGameState(
       () => 0.5
     );
@@ -432,12 +432,12 @@ describe("和了後の局進行", () => {
     expect(result.round.phase).toBe(
       "discarding"
     );
-
     expect(result.round.prevailingWind).toBe(
       "east"
     );
-
     expect(result.round.handNumber).toBe(2);
-    expect(result.round.players[2].score).
-
+    expect(
+      result.round.players[2].score
+    ).toBe(0);
+  });
 });
