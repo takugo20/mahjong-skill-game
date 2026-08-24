@@ -2321,6 +2321,80 @@ body {
   margin: 0 auto;
 }
 
+.draw-result-count {
+  color: #ffe27d;
+  font-size: clamp(
+    0.78rem,
+    2.2vmin,
+    1.05rem
+  );
+  letter-spacing: 0.08em;
+}
+
+.draw-result-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: clamp(8px, 2vmin, 18px);
+  margin: clamp(8px, 1.6vmin, 14px) 0;
+  padding: clamp(7px, 1.4vmin, 13px);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 6%);
+}
+
+.draw-result-summary span {
+  color: #bbc9c0;
+  font-size: clamp(
+    0.68rem,
+    1.8vmin,
+    0.88rem
+  );
+  font-weight: 800;
+}
+
+.draw-result-summary strong {
+  color: #ffe27d;
+  font-size: clamp(
+    0.9rem,
+    2.5vmin,
+    1.2rem
+  );
+}
+
+.draw-result-changes > div {
+  grid-template-columns:
+    auto
+    minmax(0, 1fr)
+    auto
+    auto;
+}
+
+.draw-status {
+  min-width: 38px;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-align: center;
+  font-size: clamp(
+    0.56rem,
+    1.5vmin,
+    0.72rem
+  );
+  line-height: 1.1;
+}
+
+.draw-status--tenpai {
+  border-color: rgb(104 255 162 / 42%);
+  color: #8effb6;
+  background: rgb(13 104 55 / 42%);
+}
+
+.draw-status--noten {
+  border-color: rgb(255 135 143 / 42%);
+  color: #ff9ea5;
+  background: rgb(117 22 31 / 42%);
+}
+
 @media (
   orientation: landscape
 ) and (max-height: 500px) {
@@ -2337,6 +2411,11 @@ body {
     padding: 5px;
   }
 
+  .draw-result-summary {
+    margin: 6px 0;
+    padding: 5px;
+  }
+
   .win-result-changes {
     grid-template-columns:
       repeat(2, 1fr);
@@ -2350,6 +2429,13 @@ body {
 
   .win-result-changes small {
     display: none;
+  }
+
+  .draw-result-changes > div {
+    grid-template-columns:
+      auto
+      minmax(0, 1fr)
+      auto;
   }
 
   .win-result-next {
