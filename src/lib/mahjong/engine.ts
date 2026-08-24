@@ -1122,16 +1122,44 @@ function dealerContinues(
   );
 }
 
-function getAdvancedHandNumber(
-  handNumber: RoundState["handNumber"]
-): RoundState["handNumber"] {
-  if (handNumber >= 4) {
-    return 4;
+interface RoundPosition {
+  prevailingWind:
+    RoundState["prevailingWind"];
+  handNumber: RoundState["handNumber"];
+}
+
+function isHanchanFinalHand(
+  round: RoundState
+): boolean {
+  return (
+    round.prevailingWind === "south" &&
+    round.handNumber === 4
+  );
+}
+
+function getAdvancedRoundPosition(
+  round: RoundState
+): RoundPosition {
+  if (round.handNumber < 4) {
+    return {
+      prevailingWind:
+        round.prevailingWind,
+      handNumber: (
+        round.handNumber + 1
+      ) as RoundState["handNumber"]
+    };
   }
 
-  return (
-    handNumber + 1
-  ) as RoundState["handNumber"];
+  if (round.prevailingWind === "east") {
+    return {
+      prevailingWind: "south",
+      handNumber: 1
+    };
+  }
+
+  throw new Error(
+    "南4局を越えて次局を開始できません。"
+  );
 }
 
 export function startNextRound(
@@ -1155,7 +1183,7 @@ export function startNextRound(
 
   if (
     !continues &&
-    state.round.handNumber === 4
+    isHanchanFinalHand(state.round)
   ) {
     return {
       ...state,
@@ -1165,7 +1193,7 @@ export function startNextRound(
         winResult: null
       },
       notice:
-        "東風戦が終了しました。最終得点を確認してください。"
+        "半荘戦が終了しました。最終得点を確認してください。"
     };
   }
 
@@ -1173,11 +1201,17 @@ export function startNextRound(
     ? currentDealerSeat
     : nextSeat(currentDealerSeat);
 
-  const nextHandNumber = continues
-    ? state.round.handNumber
-    : getAdvancedHandNumber(
-        state.round.handNumber
-      );
+  const nextPosition: RoundPosition =
+    continues
+      ? {
+          prevailingWind:
+            state.round.prevailingWind,
+          handNumber:
+            state.round.handNumber
+        }
+      : getAdvancedRoundPosition(
+          state.round
+        );
 
   const nextHonba =
     continues || isExhaustiveDraw
@@ -1203,8 +1237,10 @@ export function startNextRound(
       state.playerMp + 390
     ),
     round: {
-      prevailingWind: "east",
-      handNumber: nextHandNumber,
+      prevailingWind:
+        nextPosition.prevailingWind,
+      handNumber:
+        nextPosition.handNumber,
       honba: nextHonba,
       riichiPool:
         state.round.riichiPool,
