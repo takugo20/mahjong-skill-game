@@ -100,7 +100,6 @@ export interface RoundState {
   rinshanDrawCount: number;
   winResult?: RoundWinResult | null;
 }
-}
 
 export interface GameState {
   round: RoundState;
