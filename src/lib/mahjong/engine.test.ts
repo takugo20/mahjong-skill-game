@@ -255,3 +255,4 @@ describe("通常のツモ・打牌", () => {
 
     expect(nextState.playerMp).toBe(450);
   });
+});
