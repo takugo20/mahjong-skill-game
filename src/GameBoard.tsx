@@ -195,6 +195,9 @@ export function GameBoard() {
   const drawResult =
     round.drawResult ?? null;
 
+  const matchResult =
+    gameState.matchResult;
+
   function handleTileSelection(
     tileId: string
   ) {
@@ -743,6 +746,103 @@ export function GameBoard() {
                   onClick={handleNextRound}
                 >
                   次局へ
+                </button>
+              </article>
+            </section>
+          )}
+        {matchResult &&
+          round.phase === "matchEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="対局結果"
+            >
+              <article className="win-result-card match-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>半荘戦</span>
+
+                    <strong>対局終了</strong>
+                  </div>
+
+                  <b className="match-result-title">
+                    最終順位
+                  </b>
+                </header>
+
+                <div className="match-result-rankings">
+                  {matchResult.rankings.map(
+                    (ranking) => {
+                      const rankedPlayer =
+                        round.players.find(
+                          (candidate) =>
+                            candidate.id ===
+                            ranking.playerId
+                        );
+
+                      if (!rankedPlayer) {
+                        return null;
+                      }
+
+                      return (
+                        <div
+                          key={ranking.playerId}
+                          className={`match-result-row ${
+                            ranking.rank === 1
+                              ? "match-result-row--first"
+                              : ""
+                          }`}
+                        >
+                          <strong className="match-result-rank">
+                            {ranking.rank}位
+                          </strong>
+
+                          <div className="match-result-player">
+                            <b>
+                              {rankedPlayer.name}
+                            </b>
+
+                            {ranking.seat ===
+                              gameState.initialDealerSeat && (
+                                <span>起家</span>
+                              )}
+                          </div>
+
+                          <span className="match-result-award">
+                            {ranking.riichiPoolAward > 0
+                              ? `供託 +${formatScore(
+                                  ranking.riichiPoolAward
+                                )}点`
+                              : ""}
+                          </span>
+
+                          <strong className="match-result-points">
+                            {formatScore(
+                              ranking.finalPoints
+                            )}
+                            点
+                          </strong>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <p className="match-result-summary">
+                  {matchResult.riichiPoolAward > 0
+                    ? `残った供託${formatScore(
+                        matchResult.riichiPoolAward
+                      )}点は、供託加算前の暫定1位が取得しました。`
+                    : "残った供託点はありません。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleRestart}
+                >
+                  新しい対局
                 </button>
               </article>
             </section>
