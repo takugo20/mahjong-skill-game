@@ -180,7 +180,8 @@ export function createInitialGameState(
       turnNumber: 0,
       kanCount: 0,
       doraIndicatorCount: 1,
-      rinshanDrawCount: 0
+      rinshanDrawCount: 0,
+      winResult: null
     },
     playerMp: 420,
     maxMp: 900,
@@ -414,6 +415,207 @@ function chooseCpuDiscard(
   return selectedTile;
 }
 
+function getUraDoraIndicators(
+  round: RoundState
+): Tile[] {
+  return DORA_INDICATOR_INDEXES
+    .slice(0, round.doraIndicatorCount)
+    .map(
+      (index) => round.deadWall[index + 1]
+    )
+    .filter(
+      (tile): tile is Tile =>
+        tile !== undefined
+    );
+}
+
+function createPlayerWinInput(
+  state: GameState,
+  winMethod: "tsumo" | "ron"
+) {
+  const player = state.round.players[0];
+
+  return {
+    round: state.round,
+    winnerSeat: 0 as const,
+    winMethod,
+    doraIndicators:
+      getDoraIndicators(state.round),
+    uraDoraIndicators:
+      player.riichi
+        ? getUraDoraIndicators(
+            state.round
+          )
+        : undefined
+  };
+}
+
+export function canPlayerTsumo(
+  state: GameState
+): boolean {
+  try {
+    return evaluateRoundWin(
+      createPlayerWinInput(
+        state,
+        "tsumo"
+      )
+    ).valid;
+  } catch {
+    return false;
+  }
+}
+
+export function canPlayerRon(
+  state: GameState
+): boolean {
+  if (
+    state.round.lastDiscard?.seat === 0
+  ) {
+    return false;
+  }
+
+  try {
+    return evaluateRoundWin(
+      createPlayerWinInput(
+        state,
+        "ron"
+      )
+    ).valid;
+  } catch {
+    return false;
+  }
+}
+
+function createRoundWinResult(
+  resolution:
+    ValidRoundWinResolution
+): RoundWinResult {
+  const best = resolution.evaluation.best;
+
+  const yakuNames = best.isYakuman
+    ? best.yakuman.map(
+        (yakuman) => yakuman.name
+      )
+    : best.normalYaku.map(
+        (yaku) => yaku.name
+      );
+
+  return {
+    winMethod: resolution.winMethod,
+    winnerSeat: resolution.winnerSeat,
+    loserSeat: resolution.loserSeat,
+    winningTile: resolution.winningTile,
+    yakuNames,
+    han: best.totalHan,
+    fu: best.fu?.fu ?? null,
+    yakumanMultiplier:
+      best.yakumanMultiplier,
+    limitName: best.score.limitName,
+    totalPoints: best.score.totalPoints,
+    pointChanges:
+      resolution.pointChanges
+  };
+}
+
+function finishRoundWithWin(
+  state: GameState,
+  resolution:
+    ValidRoundWinResolution
+): GameState {
+  const winner =
+    state.round.players[
+      resolution.winnerSeat
+    ];
+
+  const loser =
+    resolution.loserSeat === null
+      ? null
+      : state.round.players[
+          resolution.loserSeat
+        ];
+
+  const notice =
+    resolution.winMethod === "tsumo"
+      ? `${winner.name}がツモ和了しました。`
+      : `${winner.name}が${loser?.name ?? "他家"}からロン和了しました。`;
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: resolution.playersAfter,
+      phase: "roundEnd",
+      riichiPool: 0,
+      winResult:
+        createRoundWinResult(resolution)
+    },
+    notice
+  };
+}
+
+export function declarePlayerTsumo(
+  state: GameState
+): GameState {
+  if (!canPlayerTsumo(state)) {
+    return {
+      ...state,
+      notice: "現在の手牌ではツモ和了できません。"
+    };
+  }
+
+  const resolution = resolveRoundWin(
+    createPlayerWinInput(
+      state,
+      "tsumo"
+    )
+  );
+
+  if (!resolution.valid) {
+    return {
+      ...state,
+      notice: "ツモ和了の精算に失敗しました。"
+    };
+  }
+
+  return finishRoundWithWin(
+    state,
+    resolution
+  );
+}
+
+export function declarePlayerRon(
+  state: GameState
+): GameState {
+  if (
+    state.round.phase !== "reaction" ||
+    !canPlayerRon(state)
+  ) {
+    return {
+      ...state,
+      notice: "現在はロン和了できません。"
+    };
+  }
+
+  const resolution = resolveRoundWin(
+    createPlayerWinInput(
+      state,
+      "ron"
+    )
+  );
+
+  if (!resolution.valid) {
+    return {
+      ...state,
+      notice: "ロン和了の精算に失敗しました。"
+    };
+  }
+
+  return finishRoundWithWin(
+    state,
+    resolution
+  );
+}
+
 function completeCpuTurns(
   state: GameState,
   random: () => number
@@ -452,6 +654,28 @@ function completeCpuTurns(
     );
 
     processedCpuCount += 1;
+
+    if (canPlayerRon(nextState)) {
+      const lastDiscard =
+        nextState.round.lastDiscard;
+
+      if (!lastDiscard) {
+        throw new Error(
+          "ロン対象の捨て牌が見つかりません。"
+        );
+      }
+
+      return {
+        ...nextState,
+        round: {
+          ...nextState.round,
+          phase: "reaction"
+        },
+        notice:
+          `${nextState.round.players[lastDiscard.seat].name}の` +
+          `${getTileLabel(lastDiscard.discard.tile)}にロンできます。`
+      };
+    }
   }
 
   if (
@@ -462,6 +686,41 @@ function completeCpuTurns(
   }
 
   return nextState;
+}
+
+export function skipPlayerRon(
+  state: GameState,
+  random: () => number = Math.random
+): GameState {
+  if (state.round.phase !== "reaction") {
+    return state;
+  }
+
+  if (state.round.liveWall.length === 0) {
+    return {
+      ...state,
+      round: {
+        ...state.round,
+        phase: "roundEnd"
+      },
+      notice:
+        "ロンを見送りました。通常山が尽きたため、荒牌平局です。"
+    };
+  }
+
+  const resumedState: GameState = {
+    ...state,
+    round: {
+      ...state.round,
+      phase: "drawing"
+    },
+    notice: "ロンを見送りました。"
+  };
+
+  return completeCpuTurns(
+    resumedState,
+    random
+  );
 }
 
 export function playPlayerDiscard(
