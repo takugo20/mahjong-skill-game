@@ -61,6 +61,28 @@ export interface LastDiscard {
   discard: Discard;
 }
 
+export interface RoundPointResult {
+  playerId: string;
+  seat: SeatIndex;
+  pointsBefore: number;
+  change: number;
+  pointsAfter: number;
+}
+
+export interface RoundWinResult {
+  winMethod: "tsumo" | "ron";
+  winnerSeat: SeatIndex;
+  loserSeat: SeatIndex | null;
+  winningTile: Tile;
+  yakuNames: string[];
+  han: number;
+  fu: number | null;
+  yakumanMultiplier: number;
+  limitName: string | null;
+  totalPoints: number;
+  pointChanges: RoundPointResult[];
+}
+
 export interface RoundState {
   prevailingWind: Wind;
   handNumber: 1 | 2 | 3 | 4;
@@ -76,6 +98,8 @@ export interface RoundState {
   kanCount: number;
   doraIndicatorCount: number;
   rinshanDrawCount: number;
+  winResult?: RoundWinResult | null;
+}
 }
 
 export interface GameState {
