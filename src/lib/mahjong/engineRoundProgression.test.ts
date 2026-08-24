@@ -375,4 +375,69 @@ describe("和了後の局進行", () => {
       true
     );
   });
+    it("点数移動後に0点未満のプレイヤーがいると飛び終了する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.players[0].score = 30100;
+    state.round.players[1].score = 25000;
+    state.round.players[2].score = -100;
+    state.round.players[3].score = 45000;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(8)
+    );
+
+    expect(result.round.phase).toBe(
+      "matchEnd"
+    );
+
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      30100,
+      25000,
+      -100,
+      45000
+    ]);
+
+    expect(result.playerMp).toBe(420);
+
+    expect(result.notice).toBe(
+      "持ち点が0点未満のプレイヤーがいるため、半荘戦が終了しました。"
+    );
+  });
+
+  it("持ち点が0点ちょうどなら対局を続行する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.players[0].score = 25000;
+    state.round.players[1].score = 50000;
+    state.round.players[2].score = 0;
+    state.round.players[3].score = 25000;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(9)
+    );
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+
+    expect(result.round.prevailingWind).toBe(
+      "east"
+    );
+
+    expect(result.round.handNumber).toBe(2);
+    expect(result.round.players[2].score).
+
 });
