@@ -314,6 +314,55 @@ describe("局内ロン和了", () => {
       }
     });
   });
+    it("子の4翻30符ロンを切り上げ満貫とする", () => {
+    const round = createRound();
+    const completedHand =
+      createPinfuHand();
+    const winningTile =
+      completedHand[0];
+
+    round.currentSeat = 3;
+    round.phase = "drawing";
+    round.players[1] = {
+      ...round.players[1],
+      hand: completedHand.slice(1),
+      riichi: true
+    };
+    round.lastDiscard = {
+      seat: 2,
+      discard: createDiscard(winningTile)
+    };
+
+    const result = resolveRoundWin({
+      round,
+      winnerSeat: 1,
+      winMethod: "ron",
+      doraIndicators: [
+        createTile("man", 1),
+        createTile("man", 1)
+      ]
+    });
+
+    expect(result.valid).toBe(true);
+
+    if (!result.valid) {
+      throw new Error(
+        "切り上げ満貫が成立しませんでした"
+      );
+    }
+
+    expect(
+      result.evaluation.best.totalHan
+    ).toBe(4);
+    expect(
+      result.evaluation.best.fu?.fu
+    ).toBe(30);
+    expect(
+      result.evaluation.best.score.limit
+    ).toBe("mangan");
+    expect(getChange(result, 1)).toBe(8000);
+    expect(getChange(result, 2)).toBe(-8000);
+  });
 });
 
 describe("供託点の検証", () => {
