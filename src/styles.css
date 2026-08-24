@@ -953,3 +953,379 @@ button.mahjong-tile--selected:hover:not(:disabled) {
     transition-duration: 0.01ms !important;
   }
 }
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  min-height: 0;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows:
+    auto
+    minmax(0, 1fr)
+    auto;
+  gap: clamp(3px, 1vh, 8px);
+  width: min(100%, 1280px);
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding:
+    max(5px, env(safe-area-inset-top))
+    max(5px, env(safe-area-inset-right))
+    max(5px, env(safe-area-inset-bottom))
+    max(5px, env(safe-area-inset-left));
+}
+
+.app-header {
+  min-height: 0;
+  margin: 0;
+}
+
+.game-table {
+  grid-template-rows:
+    minmax(70px, 0.25fr)
+    minmax(150px, 0.45fr)
+    minmax(100px, 0.3fr);
+  gap: clamp(3px, 1vmin, 10px);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(4px, 1.2vmin, 12px);
+  overflow: hidden;
+}
+
+.opponent-area,
+.human-area {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.discard-grid {
+  min-height: 0;
+}
+
+.human-area {
+  gap: clamp(2px, 0.7vh, 7px);
+  padding-top: clamp(2px, 0.7vh, 7px);
+}
+
+.human-hand {
+  justify-content: center;
+  gap: min(3px, 0.18vw);
+  width: 100%;
+  min-height: 0;
+  padding: clamp(3px, 0.8vh, 10px) 0 2px;
+  overflow: hidden;
+}
+
+.human-hand .mahjong-tile {
+  width: min(42px, 6.65%);
+  height: auto;
+  aspect-ratio: 42 / 58;
+}
+
+.human-hand .tile-rank {
+  font-size: clamp(
+    0.7rem,
+    3.5vw,
+    1.48rem
+  );
+}
+
+.human-hand .tile-suit {
+  margin-top: 1px;
+  font-size: clamp(
+    0.38rem,
+    1.5vw,
+    0.7rem
+  );
+}
+
+.control-panel {
+  min-height: 0;
+  margin-top: 0;
+}
+
+@media (max-width: 1100px),
+  (max-height: 800px) {
+  .opponent-area--left .opponent-hand,
+  .opponent-area--right .opponent-hand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+  }
+
+  .opponent-area--left
+    .opponent-hand
+    .mahjong-tile,
+  .opponent-area--right
+    .opponent-hand
+    .mahjong-tile {
+    display: none;
+  }
+
+  .opponent-area--left
+    .opponent-hand::after,
+  .opponent-area--right
+    .opponent-hand::after {
+    padding: 3px 6px;
+    border: 1px solid
+      rgb(255 255 255 / 14%);
+    border-radius: 999px;
+    color: #c9d7ce;
+    background: rgb(0 20 12 / 48%);
+    content: "手牌 " attr(data-count);
+    font-size: 0.58rem;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-header h1 {
+    font-size: 1rem;
+  }
+
+  .app-kicker {
+    margin-bottom: 1px;
+    font-size: 0.48rem;
+  }
+
+  .version-badge {
+    padding: 3px 6px;
+    font-size: 0.52rem;
+  }
+
+  .game-table {
+    grid-template-columns:
+      50px
+      minmax(0, 1fr)
+      50px;
+    border-width: 1px;
+  }
+
+  .human-status-row {
+    min-height: 0;
+  }
+
+  .human-status-row > .player-status {
+    min-width: 105px;
+  }
+
+  .control-panel {
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto;
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .game-notice {
+    overflow: hidden;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .control-buttons {
+    display: flex;
+    gap: 4px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 36px;
+    padding: 5px 7px;
+    font-size: 0.67rem;
+    white-space: nowrap;
+  }
+}
+
+@media (max-height: 600px) {
+  .app-shell {
+    gap: 3px;
+    padding:
+      max(3px, env(safe-area-inset-top))
+      max(3px, env(safe-area-inset-right))
+      max(3px, env(safe-area-inset-bottom))
+      max(3px, env(safe-area-inset-left));
+  }
+
+  .app-header {
+    height: 25px;
+  }
+
+  .app-header h1 {
+    font-size: 0.96rem;
+  }
+
+  .app-kicker {
+    display: none;
+  }
+
+  .version-badge {
+    padding: 2px 6px;
+    font-size: 0.5rem;
+  }
+
+  .game-table {
+    grid-template-rows:
+      68px
+      minmax(100px, 1fr)
+      60px;
+    gap: 3px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .game-table::before {
+    display: none;
+  }
+
+  .mahjong-tile--compact {
+    width: 12px;
+    height: 17px;
+    border-bottom-width: 1px;
+  }
+
+  .mahjong-tile--compact .tile-rank {
+    font-size: 0.45rem;
+  }
+
+  .mahjong-tile--compact .tile-suit {
+    display: none;
+  }
+
+  .opponent-area--top .opponent-hand {
+    display: none;
+  }
+
+  .opponent-area--left .player-status,
+  .opponent-area--right .player-status {
+    flex-direction: row;
+    padding: 2px;
+  }
+
+  .opponent-area--left
+    .player-status__name
+    > span:last-child,
+  .opponent-area--right
+    .player-status__name
+    > span:last-child {
+    display: none;
+  }
+
+  .opponent-area--left
+    .opponent-hand::after,
+  .opponent-area--right
+    .opponent-hand::after {
+    padding: 2px 4px;
+    font-size: 0.48rem;
+  }
+
+  .enemy-ability-badge {
+    display: none;
+  }
+
+  .discard-grid {
+    gap: 1px;
+    padding: 1px;
+  }
+
+  .table-center {
+    padding: 5px;
+    border-radius: 8px;
+  }
+
+  .round-heading {
+    padding-bottom: 3px;
+  }
+
+  .round-heading strong {
+    font-size: 0.82rem;
+  }
+
+  .center-stat-grid {
+    margin: 3px 0;
+  }
+
+  .center-stat-grid > div {
+    padding: 2px 1px;
+  }
+
+  .dora-panel {
+    gap: 3px;
+  }
+
+  .human-area > .discard-grid {
+    display: none;
+  }
+
+  .human-status-row {
+    gap: 3px;
+  }
+
+  .human-status-row .player-status {
+    padding: 2px 4px;
+  }
+
+  .mp-panel {
+    padding: 2px 5px;
+  }
+
+  .mp-gauge {
+    display: none;
+  }
+
+  .human-hand {
+    gap: min(2px, 0.14vw);
+    padding: 2px 0 1px;
+  }
+
+  .human-hand .mahjong-tile {
+    width: min(28px, 6.65%);
+  }
+
+  .human-hand .tile-rank {
+    font-size: clamp(
+      0.62rem,
+      2.5vw,
+      1rem
+    );
+  }
+
+  .human-hand .tile-suit {
+    font-size: 0.4rem;
+  }
+
+  .control-panel {
+    min-height: 36px;
+    gap: 4px;
+    padding: 3px 5px;
+  }
+
+  .game-notice {
+    overflow: hidden;
+    font-size: 0.62rem;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 32px;
+    padding: 3px 7px;
+    font-size: 0.63rem;
+  }
+}
