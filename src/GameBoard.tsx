@@ -43,6 +43,12 @@ interface OpponentAreaProps {
   position: OpponentPosition;
 }
 
+interface GameBoardProps {
+  initialState?: ReturnType<
+    typeof createInitialGameState
+  >;
+}
+
 function formatScore(score: number): string {
   return score.toLocaleString("ja-JP");
 }
@@ -140,11 +146,17 @@ function OpponentArea({
   );
 }
 
-export function GameBoard() {
+export function GameBoard({
+  initialState
+}: GameBoardProps = {}) {
   const [
     gameState,
     setGameState
-  ] = useState(createInitialGameState);
+  ] = useState(
+    () =>
+      initialState ??
+      createInitialGameState()
+  );
 
   const [
     selectedTileId,
