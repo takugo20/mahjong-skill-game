@@ -2,13 +2,22 @@ import type {
   Discard,
   GameState,
   PlayerState,
+  RoundWinResult,
   RoundState,
   SeatIndex,
   Tile,
   Wind
 } from "./types";
 import {
+  evaluateRoundWin,
+  resolveRoundWin
+} from "./roundWin";
+import type {
+  ValidRoundWinResolution
+} from "./roundWin";
+import {
   createFullTileSet,
+  getTileLabel,
   getTileTypeKey,
   isDora,
   sortTiles
