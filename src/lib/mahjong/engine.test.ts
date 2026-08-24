@@ -59,6 +59,7 @@ function createSafeCpuHand(): Tile[] {
       createTestTile(suit, rank)
   );
 }
+
 describe("麻雀牌の構成", () => {
   it("136枚が重複しない物理牌として生成される", () => {
     const tiles = createFullTileSet();
