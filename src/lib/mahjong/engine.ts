@@ -13,6 +13,9 @@ import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
 import {
+  resolveMatchSettlement
+} from "./matchSettlement";
+import {
   evaluateRoundWin,
   resolveRoundWin
 } from "./roundWin";
@@ -191,6 +194,8 @@ export function createInitialGameState(
       winResult: null,
       drawResult: null
     },
+    initialDealerSeat: 0,
+    matchResult: null,
     playerMp: 420,
     maxMp: 900,
     notice: "東1局を開始しました。捨てる牌を選んでください。"
@@ -1162,6 +1167,63 @@ function getAdvancedRoundPosition(
   );
 }
 
+function finishMatch(
+  state: GameState,
+  notice: string
+): GameState {
+  const settlement =
+    resolveMatchSettlement({
+      players: state.round.players.map(
+        (player) => ({
+          id: player.id,
+          seat: player.seat,
+          points: player.score
+        })
+      ),
+      riichiPool: state.round.riichiPool,
+      initialDealerSeat:
+        state.initialDealerSeat
+    });
+
+  const finalPointsById = new Map(
+    settlement.playersAfter.map(
+      (player) => [
+        player.id,
+        player.points
+      ]
+    )
+  );
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      riichiPool: 0,
+      players: state.round.players.map(
+        (player) => ({
+          ...player,
+          score:
+            finalPointsById.get(player.id) ??
+            player.score
+        })
+      ),
+      phase: "matchEnd",
+      winResult: null,
+      drawResult: null
+    },
+    matchResult: {
+      provisionalLeaderId:
+        settlement.provisionalLeaderId,
+      riichiPoolRecipientId:
+        settlement.riichiPoolRecipientId,
+      riichiPoolAward:
+        settlement.riichiPoolAward,
+      rankings: settlement.rankings
+    },
+    notice
+  };
+}
+
 export function startNextRound(
   state: GameState,
   random: () => number = Math.random
@@ -1175,16 +1237,10 @@ export function startNextRound(
       (player) => player.score < 0
     )
   ) {
-    return {
-      ...state,
-      round: {
-        ...state.round,
-        phase: "matchEnd",
-        winResult: null
-      },
-      notice:
-        "持ち点が0点未満のプレイヤーがいるため、半荘戦が終了しました。"
-    };
+    return finishMatch(
+      state,
+      "持ち点が0点未満のプレイヤーがいるため、半荘戦が終了しました。"
+    );
   }
 
   const currentDealerSeat =
@@ -1202,16 +1258,10 @@ export function startNextRound(
     !continues &&
     isHanchanFinalHand(state.round)
   ) {
-    return {
-      ...state,
-      round: {
-        ...state.round,
-        phase: "matchEnd",
-        winResult: null
-      },
-      notice:
-        "半荘戦が終了しました。最終得点を確認してください。"
-    };
+    return finishMatch(
+      state,
+      "半荘戦が終了しました。最終得点を確認してください。"
+    );
   }
 
   const nextDealerSeat = continues
@@ -1249,6 +1299,7 @@ export function startNextRound(
 
   const dealtState: GameState = {
     ...state,
+    matchResult: null,
     playerMp: Math.min(
       state.maxMp,
       state.playerMp + 390
