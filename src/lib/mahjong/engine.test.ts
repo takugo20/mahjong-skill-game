@@ -14,7 +14,51 @@ import {
   createFullTileSet,
   getTileTypeKey
 } from "./tiles";
+import type {
+  Tile,
+  TileSuit
+} from "./types";
 
+let serialNumber = 0;
+
+function createTestTile(
+  suit: TileSuit,
+  rank: number
+): Tile {
+  serialNumber += 1;
+
+  return {
+    id: `engine-test-${serialNumber}`,
+    suit,
+    rank,
+    red: false
+  };
+}
+
+function createSafeCpuHand(): Tile[] {
+  const types: Array<
+    [TileSuit, number]
+  > = [
+    ["man", 1],
+    ["man", 2],
+    ["man", 4],
+    ["man", 5],
+    ["man", 7],
+    ["man", 8],
+    ["pin", 1],
+    ["pin", 2],
+    ["pin", 4],
+    ["pin", 5],
+    ["pin", 7],
+    ["pin", 8],
+    ["honor", 1]
+  ];
+
+  return types.map(
+    ([suit, rank]) =>
+      createTestTile(suit, rank)
+  );
+}
 describe("麻雀牌の構成", () => {
   it("136枚が重複しない物理牌として生成される", () => {
     const tiles = createFullTileSet();
