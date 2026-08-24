@@ -53,6 +53,8 @@ export interface PlayerState {
   isDealer: boolean;
   riichi: boolean;
   ippatsu: boolean;
+  temporaryFuriten?: boolean;
+  riichiFuriten?: boolean;
   drawnTileId: string | null;
 }
 
