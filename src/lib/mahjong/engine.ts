@@ -13,6 +13,9 @@ import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
 import {
+  getFuritenStatus
+} from "./furiten";
+import {
   resolveMatchSettlement
 } from "./matchSettlement";
 import {
@@ -68,6 +71,8 @@ function createPlayer(
     isDealer: seat === 0,
     riichi: false,
     ippatsu: false,
+    temporaryFuriten: false,
+    riichiFuriten: false,
     drawnTileId: null
   };
 }
@@ -232,9 +237,10 @@ export function drawTile(
       ...currentPlayer.hand,
       drawnTile
     ]),
+    temporaryFuriten: false,
     drawnTileId: drawnTile.id
   };
-
+  
   const updatedMp =
     seat === 0
       ? Math.min(
@@ -461,6 +467,23 @@ function createWinInput(
   };
 }
 
+function isPlayerFuriten(
+  state: GameState,
+  seat: SeatIndex
+): boolean {
+  const player = state.round.players[seat];
+
+  return getFuritenStatus({
+    concealedTiles: player.hand,
+    melds: player.melds,
+    discards: player.discards,
+    temporaryFuriten:
+      player.temporaryFuriten,
+    riichiFuriten:
+      player.riichiFuriten
+  }).isFuriten;
+}
+
 export function canPlayerTsumo(
   state: GameState
 ): boolean {
@@ -487,6 +510,10 @@ export function canPlayerRon(
   }
 
   try {
+    if (isPlayerFuriten(state, 0)) {
+      return false;
+    }
+
     return evaluateRoundWin(
       createWinInput(
         state,
@@ -745,6 +772,16 @@ function getValidWinResolution(
   winMethod: "tsumo" | "ron"
 ): ValidRoundWinResolution | null {
   try {
+    if (
+      winMethod === "ron" &&
+      isPlayerFuriten(
+        state,
+        winnerSeat
+      )
+    ) {
+      return null;
+    }
+
     const resolution = resolveRoundWin(
       createWinInput(
         state,
@@ -937,17 +974,41 @@ export function skipPlayerRon(
     return state;
   }
 
-  if (state.round.liveWall.length === 0) {
+  const player = state.round.players[0];
+
+  const skippedPlayer: PlayerState = {
+    ...player,
+    temporaryFuriten:
+      player.riichi ? false : true,
+    riichiFuriten:
+      player.riichi ||
+      player.riichiFuriten === true
+  };
+
+  const skippedState: GameState = {
+    ...state,
+    round: {
+      ...state.round,
+      players: replacePlayer(
+        state.round.players,
+        skippedPlayer
+      )
+    }
+  };
+
+  if (
+    skippedState.round.liveWall.length === 0
+  ) {
     return finishRoundWithExhaustiveDraw(
-      state,
+      skippedState,
       "ロンを見送りました。通常山が尽きたため、荒牌平局です。"
     );
   }
 
   const resumedState: GameState = {
-    ...state,
+    ...skippedState,
     round: {
-      ...state.round,
+      ...skippedState.round,
       phase: "drawing"
     },
     notice: "ロンを見送りました。"
@@ -1041,9 +1102,10 @@ function preparePlayersForNextRound(
     melds: [],
     discards: [],
     isDealer:
-      player.seat === dealerSeat,
-    riichi: false,
+      player.seat === dealerSeat,    riichi: false,
     ippatsu: false,
+    temporaryFuriten: false,
+    riichiFuriten: false,
     drawnTileId: null
   }));
 }
