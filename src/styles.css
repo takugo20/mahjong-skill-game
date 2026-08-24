@@ -2381,6 +2381,124 @@ body {
   background: rgb(117 22 31 / 42%);
 }
 
+.match-result-card {
+  width: min(94%, 540px);
+}
+
+.match-result-title {
+  color: #ffe27d;
+  font-size: clamp(
+    0.8rem,
+    2.2vmin,
+    1.08rem
+  );
+  letter-spacing: 0.08em;
+}
+
+.match-result-rankings {
+  display: grid;
+  gap: clamp(5px, 1vmin, 9px);
+  margin: clamp(10px, 2vmin, 17px) 0;
+}
+
+.match-result-row {
+  display: grid;
+  grid-template-columns:
+    auto
+    minmax(0, 1fr)
+    auto
+    auto;
+  align-items: center;
+  gap: clamp(7px, 1.5vmin, 13px);
+  padding: clamp(7px, 1.3vmin, 11px);
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 5%);
+}
+
+.match-result-row--first {
+  border-color: rgb(255 220 111 / 55%);
+  background:
+    linear-gradient(
+      90deg,
+      rgb(142 94 6 / 44%),
+      rgb(255 255 255 / 6%)
+    );
+}
+
+.match-result-rank {
+  min-width: 35px;
+  color: #ffe27d;
+  font-size: clamp(
+    0.85rem,
+    2.4vmin,
+    1.15rem
+  );
+  text-align: center;
+}
+
+.match-result-player {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.match-result-player b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-result-player span {
+  flex: none;
+  padding: 2px 6px;
+  border: 1px solid rgb(126 255 173 / 38%);
+  border-radius: 999px;
+  color: #8effb6;
+  background: rgb(13 104 55 / 38%);
+  font-size: clamp(
+    0.52rem,
+    1.3vmin,
+    0.68rem
+  );
+  font-weight: 800;
+}
+
+.match-result-award {
+  min-width: 78px;
+  color: #8effb6;
+  font-size: clamp(
+    0.58rem,
+    1.5vmin,
+    0.76rem
+  );
+  font-weight: 800;
+  text-align: right;
+}
+
+.match-result-points {
+  min-width: 82px;
+  font-size: clamp(
+    0.78rem,
+    2vmin,
+    1rem
+  );
+  text-align: right;
+}
+
+.match-result-summary {
+  margin: 0 0 clamp(9px, 1.7vmin, 14px);
+  color: #c5d3ca;
+  font-size: clamp(
+    0.58rem,
+    1.5vmin,
+    0.76rem
+  );
+  line-height: 1.5;
+  text-align: center;
+}
+
 @media (
   orientation: landscape
 ) and (max-height: 500px) {
@@ -2400,6 +2518,20 @@ body {
   .draw-result-summary {
     margin: 6px 0;
     padding: 5px;
+  }
+
+  .match-result-rankings {
+    gap: 4px;
+    margin: 6px 0;
+  }
+
+  .match-result-row {
+    gap: 6px;
+    padding: 4px 7px;
+  }
+
+  .match-result-summary {
+    display: none;
   }
 
   .win-result-changes {
