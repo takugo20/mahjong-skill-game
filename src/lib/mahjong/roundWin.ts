@@ -1,342 +1,367 @@
-import {
-  describe,
-  expect,
-  it
-} from "vitest";
-import {
-  evaluateRoundWin,
-  resolveRoundWin
-} from "./roundWin";
 import type {
-  Discard,
-  Meld,
+  PlayerPointChange
+} from "./settlement";
+import {
+  resolveWinningSettlement
+} from "./settlement";
+import type {
+  InvalidWinningHandEvaluation,
+  ValidWinningHandEvaluation,
+  WinningHandEvaluationInput,
+  WinningHandEvaluationResult
+} from "./winning";
+import {
+  evaluateWinningHand
+} from "./winning";
+import type {
   PlayerState,
   RoundState,
   SeatIndex,
-  Tile,
-  TileSuit,
-  Wind
+  Tile
 } from "./types";
+import type {
+  WinMethod
+} from "./yaku";
 
-let serialNumber = 0;
+export interface RoundWinActionInput {
+  round: RoundState;
+  winnerSeat: SeatIndex;
+  winMethod: WinMethod;
+  doraIndicators: readonly Tile[];
+  uraDoraIndicators?: readonly Tile[];
+  treatAsClosed?: boolean;
+  doubleRiichi?: boolean;
+  rinshan?: boolean;
+  chankan?: boolean;
+  tenhou?: boolean;
+  chiihou?: boolean;
+}
 
-function createTile(
-  suit: TileSuit,
-  rank: number,
-  red = false
-): Tile {
-  serialNumber += 1;
+export interface RoundPointChange
+  extends PlayerPointChange {
+  seat: SeatIndex;
+}
+
+export interface ValidRoundWinResolution {
+  valid: true;
+  winMethod: WinMethod;
+  winnerSeat: SeatIndex;
+  loserSeat: SeatIndex | null;
+  winningTile: Tile;
+  evaluation:
+    ValidWinningHandEvaluation;
+  pointChanges: RoundPointChange[];
+  playersAfter: PlayerState[];
+}
+
+export interface InvalidRoundWinResolution {
+  valid: false;
+  reason:
+    InvalidWinningHandEvaluation["reason"];
+  evaluation:
+    InvalidWinningHandEvaluation;
+}
+
+export type RoundWinResolution =
+  | ValidRoundWinResolution
+  | InvalidRoundWinResolution;
+
+interface WinSource {
+  winner: PlayerState;
+  loser: PlayerState | null;
+  winningTile: Tile;
+}
+
+function getPlayer(
+  round: RoundState,
+  seat: SeatIndex,
+  role: string
+): PlayerState {
+  const player = round.players.find(
+    (candidate) =>
+      candidate.seat === seat
+  );
+
+  if (!player) {
+    throw new Error(
+      `${role}のプレイヤーが見つかりません`
+    );
+  }
+
+  return player;
+}
+
+function getTsumoSource(
+  input: RoundWinActionInput,
+  winner: PlayerState
+): WinSource {
+  if (
+    input.round.phase !== "discarding" ||
+    input.round.currentSeat !==
+      input.winnerSeat
+  ) {
+    throw new Error(
+      "現在はツモ和了を宣言できる手番ではありません"
+    );
+  }
+
+  if (!winner.drawnTileId) {
+    throw new Error(
+      "ツモ和了に必要なツモ牌がありません"
+    );
+  }
+
+  const winningTile = winner.hand.find(
+    (tile) =>
+      tile.id === winner.drawnTileId
+  );
+
+  if (!winningTile) {
+    throw new Error(
+      "ツモ牌が手牌内に見つかりません"
+    );
+  }
 
   return {
-    id: `round-win-${serialNumber}`,
-    suit,
-    rank,
-    red
+    winner,
+    loser: null,
+    winningTile
   };
 }
 
-function createTiles(
-  suit: TileSuit,
-  ranks: number[]
-): Tile[] {
-  return ranks.map(
-    (rank) => createTile(suit, rank)
+function getRonSource(
+  input: RoundWinActionInput,
+  winner: PlayerState
+): WinSource {
+  const lastDiscard =
+    input.round.lastDiscard;
+
+  if (!lastDiscard) {
+    throw new Error(
+      "ロン和了の対象となる捨て牌がありません"
+    );
+  }
+
+  if (
+    lastDiscard.seat ===
+      input.winnerSeat
+  ) {
+    throw new Error(
+      "自分の捨て牌ではロン和了できません"
+    );
+  }
+
+  const loser = getPlayer(
+    input.round,
+    lastDiscard.seat,
+    "放銃者"
+  );
+
+  return {
+    winner,
+    loser,
+    winningTile:
+      lastDiscard.discard.tile
+  };
+}
+
+function getWinSource(
+  input: RoundWinActionInput
+): WinSource {
+  const winner = getPlayer(
+    input.round,
+    input.winnerSeat,
+    "和了者"
+  );
+
+  return input.winMethod === "tsumo"
+    ? getTsumoSource(input, winner)
+    : getRonSource(input, winner);
+}
+
+function getRiichiStickCount(
+  round: RoundState
+): number {
+  if (
+    !Number.isInteger(round.riichiPool) ||
+    round.riichiPool < 0 ||
+    round.riichiPool % 1000 !== 0
+  ) {
+    throw new Error(
+      "供託点は1000点単位で指定してください"
+    );
+  }
+
+  return round.riichiPool / 1000;
+}
+
+function toTileType(tile: Tile): {
+  suit: Tile["suit"];
+  rank: number;
+} {
+  return {
+    suit: tile.suit,
+    rank: tile.rank
+  };
+}
+
+function createWinningInput(
+  input: RoundWinActionInput,
+  source: WinSource
+): WinningHandEvaluationInput {
+  const concealedTiles =
+    input.winMethod === "ron"
+      ? [
+          ...source.winner.hand,
+          source.winningTile
+        ]
+      : [...source.winner.hand];
+
+  return {
+    concealedTiles,
+    melds: source.winner.melds,
+    winningTile:
+      toTileType(source.winningTile),
+    winMethod: input.winMethod,
+    seatWind: source.winner.seatWind,
+    prevailingWind:
+      input.round.prevailingWind,
+    doraIndicators:
+      input.doraIndicators.map(
+        toTileType
+      ),
+    uraDoraIndicators:
+      input.uraDoraIndicators?.map(
+        toTileType
+      ),
+    riichi: source.winner.riichi,
+    doubleRiichi:
+      input.doubleRiichi,
+    ippatsu: source.winner.ippatsu,
+    rinshan: input.rinshan,
+    chankan: input.chankan,
+    haitei:
+      input.winMethod === "tsumo" &&
+      input.round.liveWall.length === 0,
+    houtei:
+      input.winMethod === "ron" &&
+      input.round.liveWall.length === 0,
+    tenhou: input.tenhou,
+    chiihou: input.chiihou,
+    treatAsClosed:
+      input.treatAsClosed,
+    honba: input.round.honba,
+    riichiSticks:
+      getRiichiStickCount(input.round)
+  };
+}
+
+export function evaluateRoundWin(
+  input: RoundWinActionInput
+): WinningHandEvaluationResult {
+  const source = getWinSource(input);
+
+  return evaluateWinningHand(
+    createWinningInput(input, source)
   );
 }
 
-function createPlayer(
-  seat: SeatIndex,
-  wind: Wind
-): PlayerState {
-  return {
-    id: `player-${seat}`,
-    name:
-      seat === 0
-        ? "あなた"
-        : `CPU ${seat}`,
-    seat,
-    seatWind: wind,
-    score: 25000,
-    hand: [],
-    melds: [],
-    discards: [],
-    isDealer: seat === 0,
-    riichi: false,
-    ippatsu: false,
-    drawnTileId: null
-  };
+function createPointChanges(
+  round: RoundState,
+  changes:
+    readonly PlayerPointChange[]
+): RoundPointChange[] {
+  return changes.map((change) => {
+    const player = round.players.find(
+      (candidate) =>
+        candidate.id === change.playerId
+    );
+
+    if (!player) {
+      throw new Error(
+        "点数移動の対象プレイヤーが見つかりません"
+      );
+    }
+
+    return {
+      ...change,
+      seat: player.seat
+    };
+  });
 }
 
-function createRound(): RoundState {
-  return {
-    prevailingWind: "east",
-    handNumber: 1,
-    honba: 0,
-    riichiPool: 0,
-    liveWall: [createTile("man", 9)],
-    deadWall: [],
-    players: [
-      createPlayer(0, "east"),
-      createPlayer(1, "south"),
-      createPlayer(2, "west"),
-      createPlayer(3, "north")
-    ],
-    currentSeat: 0,
-    phase: "discarding",
-    lastDiscard: null,
-    turnNumber: 0,
-    kanCount: 0,
-    doraIndicatorCount: 1,
-    rinshanDrawCount: 0
-  };
+function applyScores(
+  players: readonly PlayerState[],
+  changes:
+    readonly PlayerPointChange[]
+): PlayerState[] {
+  const changeByPlayerId = new Map(
+    changes.map((change) => [
+      change.playerId,
+      change.pointsAfter
+    ])
+  );
+
+  return players.map((player) => ({
+    ...player,
+    score:
+      changeByPlayerId.get(player.id) ??
+      player.score
+  }));
 }
 
-function createPinfuHand(): Tile[] {
-  return [
-    ...createTiles(
-      "man",
-      [2, 3, 4, 5, 6, 7]
-    ),
-    ...createTiles(
-      "pin",
-      [2, 3, 4]
-    ),
-    ...createTiles(
-      "sou",
-      [6, 7, 8]
-    ),
-    ...createTiles(
-      "honor",
-      [3, 3]
-    )
-  ];
-}
+export function resolveRoundWin(
+  input: RoundWinActionInput
+): RoundWinResolution {
+  const source = getWinSource(input);
+  const winningInput = createWinningInput(
+    input,
+    source
+  );
 
-function createDiscard(
-  tile: Tile
-): Discard {
-  return {
-    tile,
-    tsumogiri: true,
-    riichiDeclaration: false,
-    faceDown: false,
-    called: false
-  };
-}
+  const {
+    winMethod: _winMethod,
+    seatWind: _seatWind,
+    ...hand
+  } = winningInput;
 
-function getChange(
-  result:
-    ReturnType<typeof resolveRoundWin>,
-  seat: SeatIndex
-): number | undefined {
-  if (!result.valid) {
-    return undefined;
+  const settlement =
+    resolveWinningSettlement({
+      players: input.round.players.map(
+        (player) => ({
+          id: player.id,
+          wind: player.seatWind,
+          points: player.score
+        })
+      ),
+      winnerId: source.winner.id,
+      loserId: source.loser?.id,
+      winMethod: input.winMethod,
+      hand
+    });
+
+  if (!settlement.valid) {
+    return {
+      valid: false,
+      reason: settlement.reason,
+      evaluation: settlement.evaluation
+    };
   }
 
-  return result.pointChanges.find(
-    (change) => change.seat === seat
-  )?.change;
+  return {
+    valid: true,
+    winMethod: input.winMethod,
+    winnerSeat: source.winner.seat,
+    loserSeat: source.loser?.seat ?? null,
+    winningTile: source.winningTile,
+    evaluation: settlement.evaluation,
+    pointChanges: createPointChanges(
+      input.round,
+      settlement.pointChanges
+    ),
+    playersAfter: applyScores(
+      input.round.players,
+      settlement.pointChanges
+    )
+  };
 }
-
-describe("局内ツモ和了", () => {
-  it("ツモ牌を和了牌として点数を精算する", () => {
-    const round = createRound();
-    const hand = createPinfuHand();
-    const winningTile = hand[0];
-
-    round.currentSeat = 1;
-    round.honba = 1;
-    round.riichiPool = 1000;
-    round.players[1] = {
-      ...round.players[1],
-      hand,
-      riichi: true,
-      drawnTileId: winningTile.id
-    };
-
-    const result = resolveRoundWin({
-      round,
-      winnerSeat: 1,
-      winMethod: "tsumo",
-      doraIndicators: []
-    });
-
-    expect(result.valid).toBe(true);
-
-    if (!result.valid) {
-      throw new Error(
-        "ツモ和了が成立しませんでした"
-      );
-    }
-
-    expect(result.winningTile).toBe(
-      winningTile
-    );
-    expect(result.loserSeat).toBeNull();
-    expect(
-      result.evaluation.best.totalHan
-    ).toBe(3);
-    expect(
-      result.evaluation.best.fu?.fu
-    ).toBe(20);
-    expect(getChange(result, 1)).toBe(4000);
-    expect(getChange(result, 0)).toBe(-1400);
-    expect(getChange(result, 2)).toBe(-800);
-    expect(getChange(result, 3)).toBe(-800);
-    expect(
-      result.playersAfter[1].score
-    ).toBe(29000);
-    expect(round.players[1].score).toBe(25000);
-  });
-
-  it("他家の手番ではツモを宣言できない", () => {
-    const round = createRound();
-    const hand = createPinfuHand();
-
-    round.currentSeat = 0;
-    round.players[1] = {
-      ...round.players[1],
-      hand,
-      drawnTileId: hand[0].id
-    };
-
-    expect(() =>
-      evaluateRoundWin({
-        round,
-        winnerSeat: 1,
-        winMethod: "tsumo",
-        doraIndicators: []
-      })
-    ).toThrow(
-      "現在はツモ和了を宣言できる手番ではありません"
-    );
-  });
-});
-
-describe("局内ロン和了", () => {
-  it("最後の捨て牌を手牌へ加えて精算する", () => {
-    const round = createRound();
-    const completedHand =
-      createPinfuHand();
-    const winningTile =
-      completedHand[0];
-
-    round.honba = 2;
-    round.riichiPool = 1000;
-    round.currentSeat = 3;
-    round.phase = "drawing";
-    round.players[1] = {
-      ...round.players[1],
-      hand: completedHand.slice(1),
-      riichi: true
-    };
-    round.players[2] = {
-      ...round.players[2],
-      discards: [
-        createDiscard(winningTile)
-      ]
-    };
-    round.lastDiscard = {
-      seat: 2,
-      discard: createDiscard(winningTile)
-    };
-
-    const result = resolveRoundWin({
-      round,
-      winnerSeat: 1,
-      winMethod: "ron",
-      doraIndicators: []
-    });
-
-    expect(result.valid).toBe(true);
-
-    if (!result.valid) {
-      throw new Error(
-        "ロン和了が成立しませんでした"
-      );
-    }
-
-    expect(result.winnerSeat).toBe(1);
-    expect(result.loserSeat).toBe(2);
-    expect(getChange(result, 1)).toBe(3600);
-    expect(getChange(result, 2)).toBe(-2600);
-    expect(getChange(result, 0)).toBe(0);
-    expect(getChange(result, 3)).toBe(0);
-  });
-
-  it("役なしなら精算しない", () => {
-    const round = createRound();
-    const winningTile =
-      createTile("pin", 4);
-
-    const meld: Meld = {
-      kind: "chi",
-      tiles: createTiles(
-        "man",
-        [2, 3, 4]
-      )
-    };
-
-    round.currentSeat = 3;
-    round.phase = "drawing";
-    round.players[1] = {
-      ...round.players[1],
-      hand: [
-        ...createTiles("pin", [5, 6]),
-        ...createTiles("sou", [6, 7, 8]),
-        ...createTiles("man", [6, 7, 8]),
-        ...createTiles("honor", [3, 3])
-      ],
-      melds: [meld]
-    };
-    round.lastDiscard = {
-      seat: 2,
-      discard: createDiscard(winningTile)
-    };
-
-    const doraIndicator =
-      createTile("honor", 2);
-
-    const result = resolveRoundWin({
-      round,
-      winnerSeat: 1,
-      winMethod: "ron",
-      doraIndicators: [doraIndicator]
-    });
-
-    expect(result).toEqual({
-      valid: false,
-      reason: "noYaku",
-      evaluation: {
-        valid: false,
-        reason: "noYaku",
-        candidates: []
-      }
-    });
-  });
-});
-
-describe("供託点の検証", () => {
-  it("1000点単位でない供託を拒否する", () => {
-    const round = createRound();
-    const hand = createPinfuHand();
-
-    round.riichiPool = 500;
-    round.players[0] = {
-      ...round.players[0],
-      hand,
-      drawnTileId: hand[0].id
-    };
-
-    expect(() =>
-      evaluateRoundWin({
-        round,
-        winnerSeat: 0,
-        winMethod: "tsumo",
-        doraIndicators: []
-      })
-    ).toThrow(
-      "供託点は1000点単位で指定してください"
-    );
-  });
-});
