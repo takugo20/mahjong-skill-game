@@ -13,7 +13,8 @@ import {
   getTileLabel
 } from "./lib/mahjong/tiles";
 import type {
-  PlayerState
+  PlayerState,
+  Tile
 } from "./lib/mahjong/types";
 
 type OpponentPosition =
@@ -21,9 +22,19 @@ type OpponentPosition =
   | "left"
   | "right";
 
+type RiverPosition =
+  | OpponentPosition
+  | "bottom";
+
 interface RiverProps {
   player: PlayerState;
+  position: RiverPosition;
   lastDiscardTileId: string | null;
+}
+
+interface OpponentAreaProps {
+  player: PlayerState;
+  position: OpponentPosition;
 }
 
 function formatScore(score: number): string {
@@ -32,20 +43,21 @@ function formatScore(score: number): string {
 
 function River({
   player,
+  position,
   lastDiscardTileId
 }: RiverProps) {
+  const classes = [
+    "discard-grid",
+    `discard-grid--${position}`
+  ];
+
   if (player.discards.length === 0) {
-    return (
-      <div
-        className="discard-grid discard-grid--empty"
-        aria-label={`${player.name}の河`}
-      />
-    );
+    classes.push("discard-grid--empty");
   }
 
   return (
     <div
-      className="discard-grid"
+      className={classes.join(" ")}
       aria-label={`${player.name}の河`}
     >
       {player.discards.map((discard) => (
@@ -62,41 +74,15 @@ function River({
   );
 }
 
-interface OpponentAreaProps {
-  player: PlayerState;
-  position: OpponentPosition;
-  lastDiscardTileId: string | null;
-}
-
 function OpponentArea({
   player,
-  position,
-  lastDiscardTileId
+  position
 }: OpponentAreaProps) {
   return (
     <section
       className={`opponent-area opponent-area--${position}`}
       aria-label={player.name}
     >
-      <div className="player-status">
-        <div className="player-status__name">
-          <span className="wind-badge">
-            {getWindLabel(player.seatWind)}
-          </span>
-          <span>{player.name}</span>
-        </div>
-
-        <strong>
-          {formatScore(player.score)}
-        </strong>
-      </div>
-
-      {player.seat === 2 && (
-        <div className="enemy-ability-badge">
-          特殊能力者
-        </div>
-      )}
-
       <div
         className="opponent-hand"
         data-count={`${player.hand.length}枚`}
@@ -113,10 +99,27 @@ function OpponentArea({
         ))}
       </div>
 
-      <River
-        player={player}
-        lastDiscardTileId={lastDiscardTileId}
-      />
+      <div className="opponent-meta">
+        <div className="player-status">
+          <div className="player-status__name">
+            <span className="wind-badge">
+              {getWindLabel(player.seatWind)}
+            </span>
+
+            <span>{player.name}</span>
+          </div>
+
+          <strong>
+            {formatScore(player.score)}点
+          </strong>
+        </div>
+
+        {player.seat === 2 && (
+          <div className="enemy-ability-badge">
+            特殊能力者
+          </div>
+        )}
+      </div>
     </section>
   );
 }
@@ -139,6 +142,20 @@ export function GameBoard() {
     (tile) => tile.id === selectedTileId
   );
 
+  const drawnTile =
+    player.drawnTileId === null
+      ? undefined
+      : player.hand.find(
+          (tile) =>
+            tile.id === player.drawnTileId
+        );
+
+  const mainHandTiles = drawnTile
+    ? player.hand.filter(
+        (tile) => tile.id !== drawnTile.id
+      )
+    : player.hand;
+
   const doraIndicators =
     getDoraIndicators(round);
 
@@ -157,7 +174,9 @@ export function GameBoard() {
     }
 
     setSelectedTileId((current) =>
-      current === tileId ? null : tileId
+      current === tileId
+        ? null
+        : tileId
     );
   }
 
@@ -181,63 +200,129 @@ export function GameBoard() {
     setSelectedTileId(null);
   }
 
+  function renderPlayerTile(tile: Tile) {
+    return (
+      <TileView
+        key={tile.id}
+        tile={tile}
+        selected={
+          selectedTileId === tile.id
+        }
+        highlighted={
+          player.drawnTileId === tile.id
+        }
+        disabled={!canDiscard}
+        onSelect={handleTileSelection}
+      />
+    );
+  }
+
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <div>
-          <p className="app-kicker">
-            SKILL MAHJONG
-          </p>
-          <h1>麻雀スキルゲーム</h1>
+      <section
+        className="game-table"
+        aria-label="麻雀卓"
+      >
+        <p
+          className="game-notice table-notice"
+          aria-live="polite"
+        >
+          {gameState.notice}
+        </p>
+
+        <div className="round-corner-panel">
+          <span>
+            {getWindLabel(
+              round.prevailingWind
+            )}
+            風戦
+          </span>
+
+          <strong>
+            {getRoundLabel(round)}
+          </strong>
+
+          <small>
+            {round.honba}本場
+          </small>
         </div>
 
-        <div className="version-badge">
-          試作版 0.1
-        </div>
-      </header>
-
-      <section className="game-table">
         <OpponentArea
           player={round.players[2]}
           position="top"
-          lastDiscardTileId={lastDiscardTileId}
         />
 
         <OpponentArea
           player={round.players[3]}
           position="left"
-          lastDiscardTileId={lastDiscardTileId}
         />
+
+        <OpponentArea
+          player={round.players[1]}
+          position="right"
+        />
+
+        <div className="river-position river-position--top">
+          <River
+            player={round.players[2]}
+            position="top"
+            lastDiscardTileId={lastDiscardTileId}
+          />
+        </div>
+
+        <div className="river-position river-position--left">
+          <River
+            player={round.players[3]}
+            position="left"
+            lastDiscardTileId={lastDiscardTileId}
+          />
+        </div>
+
+        <div className="river-position river-position--right">
+          <River
+            player={round.players[1]}
+            position="right"
+            lastDiscardTileId={lastDiscardTileId}
+          />
+        </div>
+
+        <div className="river-position river-position--bottom">
+          <River
+            player={player}
+            position="bottom"
+            lastDiscardTileId={lastDiscardTileId}
+          />
+        </div>
 
         <section
           className="table-center"
           aria-label="卓中央の情報"
         >
-          <div className="round-heading">
+          <div className="center-remaining">
+            <span>残り</span>
+
             <strong>
-              {getRoundLabel(round)}
+              {round.liveWall.length}
             </strong>
-            <span>{round.honba}本場</span>
+
+            <span>枚</span>
           </div>
 
           <div className="center-stat-grid">
             <div>
-              <span>残り</span>
-              <strong>
-                {round.liveWall.length}
-              </strong>
-            </div>
-
-            <div>
               <span>供託</span>
               <strong>
-                {formatScore(round.riichiPool)}
+                {formatScore(
+                  round.riichiPool
+                )}
               </strong>
             </div>
 
             <div>
               <span>槓</span>
-              <strong>{round.kanCount}</strong>
+              <strong>
+                {round.kanCount}
+              </strong>
             </div>
           </div>
 
@@ -256,35 +341,28 @@ export function GameBoard() {
           </div>
         </section>
 
-        <OpponentArea
-          player={round.players[1]}
-          position="right"
-          lastDiscardTileId={lastDiscardTileId}
-        />
-
         <section className="human-area">
-          <River
-            player={player}
-            lastDiscardTileId={lastDiscardTileId}
-          />
-
           <div className="human-status-row">
             <div className="player-status">
               <div className="player-status__name">
                 <span className="wind-badge">
-                  {getWindLabel(player.seatWind)}
+                  {getWindLabel(
+                    player.seatWind
+                  )}
                 </span>
+
                 <span>{player.name}</span>
               </div>
 
               <strong>
-                {formatScore(player.score)}
+                {formatScore(player.score)}点
               </strong>
             </div>
 
             <div className="mp-panel">
               <div className="mp-panel__label">
                 <span>MP</span>
+
                 <strong>
                   {gameState.playerMp}
                   ／
@@ -310,73 +388,111 @@ export function GameBoard() {
             className="human-hand"
             aria-label="プレイヤーの手牌"
           >
-            {player.hand.map((tile) => (
-              <TileView
-                key={tile.id}
-                tile={tile}
-                selected={
-                  selectedTileId === tile.id
+            <div className="human-hand__main">
+              {mainHandTiles.map(
+                renderPlayerTile
+              )}
+            </div>
+
+            {drawnTile && (
+              <div className="human-hand__drawn">
+                {renderPlayerTile(drawnTile)}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section
+          className="control-panel table-actions"
+          aria-label="操作欄"
+        >
+          <div className="selection-status">
+            {selectedTile
+              ? `${getTileLabel(
+                  selectedTile
+                )}を選択中`
+              : "牌を選択"}
+          </div>
+
+          <div className="control-buttons">
+            {round.phase === "roundEnd" ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleRestart}
+              >
+                次局
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="primary-button"
+                disabled={
+                  !selectedTileId ||
+                  !canDiscard
                 }
-                highlighted={
-                  player.drawnTileId === tile.id
-                }
-                disabled={!canDiscard}
-                onSelect={handleTileSelection}
-              />
-            ))}
+                onClick={handleDiscard}
+              >
+                打牌
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleRestart}
+            >
+              配り直し
+            </button>
           </div>
         </section>
       </section>
 
-      <section
-        className="control-panel"
-        aria-label="操作欄"
+      <div
+        className="orientation-overlay"
+        role="status"
+        aria-label="端末を横向きにしてください"
       >
-        <p
-          className="game-notice"
-          aria-live="polite"
-        >
-          {gameState.notice}
-        </p>
-
-        <div className="selection-status">
-          {selectedTile
-            ? `${getTileLabel(selectedTile)}を選択中`
-            : "手牌を1枚選択してください"}
-        </div>
-
-        <div className="control-buttons">
-          {round.phase === "roundEnd" ? (
-            <button
-              type="button"
-              className="primary-button"
-              onClick={handleRestart}
+        <div className="orientation-card">
+          <div className="orientation-device-row">
+            <div
+              className="
+                orientation-device
+                orientation-device--portrait
+              "
+              aria-hidden="true"
             >
-              局を再開
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="primary-button"
-              disabled={
-                !selectedTileId ||
-                !canDiscard
-              }
-              onClick={handleDiscard}
-            >
-              この牌を捨てる
-            </button>
-          )}
+              <span />
+            </div>
 
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={handleRestart}
-          >
-            最初から
-          </button>
+            <div
+              className="orientation-arrow"
+              aria-hidden="true"
+            >
+              →
+            </div>
+
+            <div
+              className="
+                orientation-device
+                orientation-device--landscape
+              "
+              aria-hidden="true"
+            >
+              <span />
+            </div>
+          </div>
+
+          <strong>
+            端末を横向きにしてください
+          </strong>
+
+          <p>
+            麻雀卓全体を表示するため、
+            横画面でプレイします。
+          </p>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
