@@ -1367,3 +1367,91 @@ body {
     row-gap: 1px;
   }
 }
+
+.orientation-overlay {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  background:
+    radial-gradient(
+      circle at center,
+      #17452f,
+      #020906 75%
+    );
+}
+
+.orientation-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 360px);
+  padding: 28px 20px;
+  border: 1px solid #c99b42;
+  border-radius: 20px;
+  color: #f5fff8;
+  background: rgb(2 22 13 / 92%);
+  box-shadow:
+    0 20px 50px rgb(0 0 0 / 45%);
+  text-align: center;
+}
+
+.orientation-card strong {
+  margin-top: 20px;
+  color: #ffe183;
+  font-size: 1.05rem;
+}
+
+.orientation-card p {
+  margin: 8px 0 0;
+  color: #c4d4ca;
+  font-size: 0.82rem;
+}
+
+.orientation-device {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #ffe183;
+  border-radius: 9px;
+  background: #0b291c;
+  box-shadow:
+    0 0 20px rgb(255 215 99 / 20%);
+}
+
+.orientation-device--portrait {
+  width: 40px;
+  height: 66px;
+}
+
+.orientation-device--landscape {
+  width: 72px;
+  height: 46px;
+}
+
+.orientation-device span {
+  width: 44%;
+  height: 3px;
+  border-radius: 999px;
+  background: #ffe183;
+}
+
+.orientation-device--portrait span {
+  position: absolute;
+  bottom: 5px;
+}
+
+.orientation-device--landscape span {
+  position: absolute;
+  right: 5px;
+  width: 3px;
+  height: 44%;
+}
