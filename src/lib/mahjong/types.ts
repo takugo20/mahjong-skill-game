@@ -83,6 +83,12 @@ export interface RoundWinResult {
   pointChanges: RoundPointResult[];
 }
 
+export interface RoundDrawResult {
+  tenpaiSeats: SeatIndex[];
+  notenSeats: SeatIndex[];
+  pointChanges: RoundPointResult[];
+}
+
 export interface RoundState {
   prevailingWind: Wind;
   handNumber: 1 | 2 | 3 | 4;
@@ -96,9 +102,9 @@ export interface RoundState {
   lastDiscard: LastDiscard | null;
   turnNumber: number;
   kanCount: number;
-  doraIndicatorCount: number;
-  rinshanDrawCount: number;
+  doraIndicatorCount: number;  rinshanDrawCount: number;
   winResult?: RoundWinResult | null;
+  drawResult?: RoundDrawResult | null;
 }
 
 export interface GameState {
