@@ -193,6 +193,22 @@ describe("通常のツモ・打牌", () => {
       () => 0.5
     );
 
+    for (let seat = 1; seat < 4; seat += 1) {
+      state.round.players[seat] = {
+        ...state.round.players[seat],
+        hand: createSafeCpuHand(),
+        drawnTileId: null
+      };
+    }
+
+    state.round.liveWall = [
+      createTestTile("honor", 2),
+      createTestTile("honor", 3),
+      createTestTile("honor", 4),
+      createTestTile("honor", 6),
+      ...state.round.liveWall.slice(4)
+    ];
+
     const selectedTile =
       state.round.players[0].hand[0];
 
@@ -239,4 +255,3 @@ describe("通常のツモ・打牌", () => {
 
     expect(nextState.playerMp).toBe(450);
   });
-});
