@@ -213,14 +213,10 @@ export function drawTile(
   const drawnTile = round.liveWall[0];
 
   if (!drawnTile) {
-    return {
-      ...state,
-      round: {
-        ...round,
-        phase: "roundEnd"
-      },
-      notice: "通常山が尽きたため、荒牌平局です。"
-    };
+    return finishRoundWithExhaustiveDraw(
+      state,
+      "通常山が尽きたため、荒牌平局です。"
+    );
   }
 
   const currentPlayer = round.players[seat];
@@ -915,6 +911,16 @@ function completeCpuTurns(
     nextState = drawTile(nextState, 0);
   }
 
+  if (
+    nextState.round.phase === "roundEnd" &&
+    !nextState.round.winResult
+  ) {
+    return finishRoundWithExhaustiveDraw(
+      nextState,
+      nextState.notice
+    );
+  }
+
   return nextState;
 }
 
@@ -927,15 +933,10 @@ export function skipPlayerRon(
   }
 
   if (state.round.liveWall.length === 0) {
-    return {
-      ...state,
-      round: {
-        ...state.round,
-        phase: "roundEnd"
-      },
-      notice:
-        "ロンを見送りました。通常山が尽きたため、荒牌平局です。"
-    };
+    return finishRoundWithExhaustiveDraw(
+      state,
+      "ロンを見送りました。通常山が尽きたため、荒牌平局です。"
+    );
   }
 
   const resumedState: GameState = {
@@ -983,7 +984,10 @@ export function playPlayerDiscard(
   }
 
   if (discardedState.round.phase === "roundEnd") {
-    return discardedState;
+    return finishRoundWithExhaustiveDraw(
+      discardedState,
+      discardedState.notice
+    );
   }
 
   return completeCpuTurns(
@@ -1100,6 +1104,12 @@ function dealerContinues(
   if (round.winResult) {
     return (
       round.winResult.winnerSeat ===
+      dealerSeat
+    );
+  }
+
+  if (round.drawResult) {
+    return round.drawResult.tenpaiSeats.includes(
       dealerSeat
     );
   }
