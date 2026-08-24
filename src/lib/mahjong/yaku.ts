@@ -457,9 +457,11 @@ export function evaluateNormalYaku(
     context.decomposition.kind ===
     "standard";
 
-  const pair = isStandard
-    ? context.decomposition.pair
-    : null;
+    const pair =
+    context.decomposition.kind ===
+    "standard"
+      ? context.decomposition.pair
+      : null;
 
   if (
     closed &&
