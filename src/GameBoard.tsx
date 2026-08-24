@@ -12,7 +12,8 @@ import {
   getRoundLabel,
   getWindLabel,
   playPlayerDiscard,
-  skipPlayerRon
+  skipPlayerRon,
+  startNextRound
 } from "./lib/mahjong/engine";
 import {
   getTileLabel
@@ -243,6 +244,14 @@ export function GameBoard() {
 
     setSelectedTileId(null);
   }
+
+  function handleNextRound() {
+    setGameState((currentState) =>
+      startNextRound(currentState)
+    );
+
+    setSelectedTileId(null);
+  }
   
   function handleRestart() {
     setGameState(createInitialGameState());
@@ -456,30 +465,41 @@ export function GameBoard() {
           aria-label="操作欄"
         >
           <div className="selection-status">
-            {round.phase === "reaction"
-              ? "ロン可能"
-              : canTsumo
-                ? "ツモ和了可能"
-                : selectedTile
-                  ? `${getTileLabel(
-                      selectedTile
-                    )}を選択中`
-                  : "牌を選択"}
+            {round.phase === "matchEnd"
+              ? "対局終了"
+              : round.phase === "reaction"
+                ? "ロン可能"
+                : canTsumo
+                  ? "ツモ和了可能"
+                  : selectedTile
+                    ? `${getTileLabel(
+                        selectedTile
+                      )}を選択中`
+                    : "牌を選択"}
           </div>
 
           <div
             className={`control-buttons ${
               canTsumo &&
-              round.phase !== "roundEnd"
+              round.phase !== "roundEnd" &&
+              round.phase !== "matchEnd"
                 ? "control-buttons--triple"
                 : ""
             }`}
           >
-            {round.phase === "roundEnd" ? (
+            {round.phase === "matchEnd" ? (
               <button
                 type="button"
                 className="primary-button"
                 onClick={handleRestart}
+              >
+                新しい対局
+              </button>
+            ) : round.phase === "roundEnd" ? (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleNextRound}
               >
                 次局
               </button>
@@ -528,15 +548,16 @@ export function GameBoard() {
               </>
             )}
 
-            {round.phase !== "reaction" && (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleRestart}
-              >
-                配り直し
-              </button>
-            )}
+            {round.phase !== "reaction" &&
+              round.phase !== "matchEnd" && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleRestart}
+                >
+                  配り直し
+                </button>
+              )}
           </div>
         </section>
         {winResult && (
@@ -639,7 +660,7 @@ export function GameBoard() {
               <button
                 type="button"
                 className="primary-button win-result-next"
-                onClick={handleRestart}
+                onClick={handleNextRound}
               >
                 次局へ
               </button>
