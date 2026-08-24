@@ -2129,20 +2129,6 @@ body {
   box-shadow: none;
 }
 
-.table-actions
-  .control-buttons--triple
-  .primary-button,
-.table-actions
-  .control-buttons--triple
-  .secondary-button {
-  min-height: clamp(27px, 5.2vh, 43px);
-  font-size: clamp(
-    0.62rem,
-    min(1.5vw, 2.4vh),
-    0.96rem
-  );
-}
-
 .win-result-overlay {
   position: absolute;
   z-index: 100;
