@@ -192,6 +192,9 @@ export function GameBoard() {
   const winResult =
     round.winResult ?? null;
 
+  const drawResult =
+    round.drawResult ?? null;
+
   function handleTileSelection(
     tileId: string
   ) {
@@ -667,6 +670,108 @@ export function GameBoard() {
             </article>
           </section>
         )}
+        {drawResult &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="流局結果"
+            >
+              <article className="win-result-card draw-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>荒牌</span>
+
+                    <strong>流局</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    聴牌
+                    {drawResult.tenpaiSeats.length}
+                    人
+                  </b>
+                </header>
+
+                <div className="draw-result-summary">
+                  <span>不聴罰符</span>
+
+                  <strong>
+                    {drawResult.tenpaiSeats.length === 0 ||
+                    drawResult.notenSeats.length === 0
+                      ? "点数移動なし"
+                      : "合計3,000点"}
+                  </strong>
+                </div>
+
+                <div className="win-result-changes draw-result-changes">
+                  {drawResult.pointChanges.map(
+                    (change) => {
+                      const changedPlayer =
+                        round.players[change.seat];
+
+                      const tenpai =
+                        drawResult.tenpaiSeats.includes(
+                          change.seat
+                        );
+
+                      return (
+                        <div key={change.playerId}>
+                          <b
+                            className={
+                              tenpai
+                                ? "draw-status draw-status--tenpai"
+                                : "draw-status draw-status--noten"
+                            }
+                          >
+                            {tenpai
+                              ? "聴牌"
+                              : "不聴"}
+                          </b>
+
+                          <span>
+                            {getWindLabel(
+                              changedPlayer.seatWind
+                            )}
+                            ・{changedPlayer.name}
+                          </span>
+
+                          <strong
+                            className={
+                              change.change > 0
+                                ? "point-change--plus"
+                                : change.change < 0
+                                  ? "point-change--minus"
+                                  : ""
+                            }
+                          >
+                            {formatPointChange(
+                              change.change
+                            )}
+                          </strong>
+
+                          <small>
+                            {formatScore(
+                              change.pointsAfter
+                            )}
+                            点
+                          </small>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
       </section>
 
       <div
