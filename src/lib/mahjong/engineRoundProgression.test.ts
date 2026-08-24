@@ -264,7 +264,7 @@ describe("和了後の局進行", () => {
     );
   });
 
-  it("東4局で親が流れると東風戦を終了する", () => {
+  it("東4局で親が流れると南1局へ進む", () => {
     const state = createInitialGameState(
       () => 0.5
     );
@@ -279,11 +279,19 @@ describe("和了後の局進行", () => {
       createSeededRandom(5)
     );
 
-    expect(result.round.phase).toBe(
-      "matchEnd"
+    expect(result.round.prevailingWind).toBe(
+      "south"
     );
-    expect(result.round.handNumber).toBe(4);
+    expect(result.round.handNumber).toBe(1);
+    expect(result.round.honba).toBe(0);
+    expect(result.round.players[1].isDealer).toBe(
+      true
+    );
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
     expect(result.round.winResult).toBeNull();
+
     expect(
       result.round.players.map(
         (player) => player.score
@@ -294,9 +302,77 @@ describe("和了後の局進行", () => {
       25000,
       25000
     ]);
+
+    expect(result.playerMp).toBe(840);
+  });
+
+  it("南4局で親が流れると半荘戦を終了する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.prevailingWind = "south";
+    state.round.handNumber = 4;
+    state.round.players[0].score = 23000;
+    state.round.players[1].score = 27000;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(6)
+    );
+
+    expect(result.round.phase).toBe(
+      "matchEnd"
+    );
+    expect(result.round.prevailingWind).toBe(
+      "south"
+    );
+    expect(result.round.handNumber).toBe(4);
+    expect(result.round.winResult).toBeNull();
+
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      23000,
+      27000,
+      25000,
+      25000
+    ]);
+
     expect(result.playerMp).toBe(420);
     expect(result.notice).toBe(
-      "東風戦が終了しました。最終得点を確認してください。"
+      "半荘戦が終了しました。最終得点を確認してください。"
+    );
+  });
+
+  it("南4局でも親が和了すれば連荘する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.prevailingWind = "south";
+    state.round.handNumber = 4;
+    state.round.honba = 2;
+    finishRoundWithWinner(state, 0);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(7)
+    );
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.prevailingWind).toBe(
+      "south"
+    );
+    expect(result.round.handNumber).toBe(4);
+    expect(result.round.honba).toBe(3);
+    expect(result.round.players[0].isDealer).toBe(
+      true
     );
   });
 });
