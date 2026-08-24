@@ -429,15 +429,17 @@ function getUraDoraIndicators(
     );
 }
 
-function createPlayerWinInput(
+function createWinInput(
   state: GameState,
+  winnerSeat: SeatIndex,
   winMethod: "tsumo" | "ron"
 ) {
-  const player = state.round.players[0];
+  const player =
+    state.round.players[winnerSeat];
 
   return {
     round: state.round,
-    winnerSeat: 0 as const,
+    winnerSeat,
     winMethod,
     doraIndicators:
       getDoraIndicators(state.round),
@@ -455,8 +457,9 @@ export function canPlayerTsumo(
 ): boolean {
   try {
     return evaluateRoundWin(
-      createPlayerWinInput(
+      createWinInput(
         state,
+        0,
         "tsumo"
       )
     ).valid;
@@ -476,8 +479,9 @@ export function canPlayerRon(
 
   try {
     return evaluateRoundWin(
-      createPlayerWinInput(
+      createWinInput(
         state,
+        0,
         "ron"
       )
     ).valid;
@@ -564,8 +568,9 @@ export function declarePlayerTsumo(
   }
 
   const resolution = resolveRoundWin(
-    createPlayerWinInput(
+    createWinInput(
       state,
+      0,
       "tsumo"
     )
   );
@@ -597,8 +602,9 @@ export function declarePlayerRon(
   }
 
   const resolution = resolveRoundWin(
-    createPlayerWinInput(
+    createWinInput(
       state,
+      0,
       "ron"
     )
   );
@@ -616,10 +622,99 @@ export function declarePlayerRon(
   );
 }
 
+function getValidWinResolution(
+  state: GameState,
+  winnerSeat: SeatIndex,
+  winMethod: "tsumo" | "ron"
+): ValidRoundWinResolution | null {
+  try {
+    const resolution = resolveRoundWin(
+      createWinInput(
+        state,
+        winnerSeat,
+        winMethod
+      )
+    );
+
+    return resolution.valid
+      ? resolution
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function finishCpuRonIfAvailable(
+  state: GameState
+): GameState | null {
+  const discarderSeat =
+    state.round.lastDiscard?.seat;
+
+  if (discarderSeat === undefined) {
+    return null;
+  }
+
+  let candidateSeat =
+    nextSeat(discarderSeat);
+
+  for (
+    let checkedCount = 0;
+    checkedCount < 3;
+    checkedCount += 1
+  ) {
+    if (candidateSeat !== 0) {
+      const resolution =
+        getValidWinResolution(
+          state,
+          candidateSeat,
+          "ron"
+        );
+
+      if (resolution) {
+        return finishRoundWithWin(
+          state,
+          resolution
+        );
+      }
+    }
+
+    candidateSeat =
+      nextSeat(candidateSeat);
+  }
+
+  return null;
+}
+
+function finishCpuTsumoIfAvailable(
+  state: GameState,
+  cpuSeat: SeatIndex
+): GameState | null {
+  const resolution =
+    getValidWinResolution(
+      state,
+      cpuSeat,
+      "tsumo"
+    );
+
+  return resolution
+    ? finishRoundWithWin(
+        state,
+        resolution
+      )
+    : null;
+}
+
 function completeCpuTurns(
   state: GameState,
   random: () => number
 ): GameState {
+  const cpuRonState =
+    finishCpuRonIfAvailable(state);
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
+
   let nextState = state;
   let processedCpuCount = 0;
 
@@ -637,6 +732,16 @@ function completeCpuTurns(
 
     if (nextState.round.phase !== "discarding") {
       break;
+    }
+
+    const cpuTsumoState =
+      finishCpuTsumoIfAvailable(
+        nextState,
+        cpuSeat
+      );
+
+    if (cpuTsumoState) {
+      return cpuTsumoState;
     }
 
     const cpuPlayer =
@@ -675,6 +780,15 @@ function completeCpuTurns(
           `${nextState.round.players[lastDiscard.seat].name}の` +
           `${getTileLabel(lastDiscard.discard.tile)}にロンできます。`
       };
+    }
+
+    const otherCpuRonState =
+      finishCpuRonIfAvailable(
+        nextState
+      );
+
+    if (otherCpuRonState) {
+      return otherCpuRonState;
     }
   }
 
@@ -742,6 +856,15 @@ export function playPlayerDiscard(
     state,
     tileId
   );
+
+  const cpuRonState =
+    finishCpuRonIfAvailable(
+      discardedState
+    );
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
 
   if (discardedState.round.phase === "roundEnd") {
     return discardedState;
