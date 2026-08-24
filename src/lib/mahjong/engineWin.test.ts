@@ -98,6 +98,103 @@ function createWinTestState(): GameState {
   return state;
 }
 
+function createNonWinningHand(): Tile[] {
+  return [
+    ...createTiles(
+      "man",
+      [1, 2, 4, 5, 7, 8]
+    ),
+    ...createTiles(
+      "pin",
+      [1, 2, 4, 5, 7, 8]
+    ),
+    createTile("honor", 1)
+  ];
+}
+
+function createCpuReactionState(): {
+  state: GameState;
+  discardedTile: Tile;
+} {
+  const state = createWinTestState();
+  const discardedTile =
+    createTile("honor", 1);
+  const waitingTile =
+    createTile("honor", 7);
+  const ronTile = createTile("honor", 7);
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      ...createTiles(
+        "man",
+        [2, 3, 4]
+      ),
+      ...createTiles(
+        "pin",
+        [2, 3, 4]
+      ),
+      ...createTiles(
+        "sou",
+        [6, 7, 8]
+      ),
+      ...createTiles(
+        "honor",
+        [5, 5, 5]
+      ),
+      waitingTile,
+      discardedTile
+    ],
+    drawnTileId: discardedTile.id
+  };
+
+  state.round.players[1] = {
+    ...state.round.players[1],
+    hand: [
+      ...createTiles(
+        "man",
+        [2, 3, 4, 5, 5]
+      ),
+      ...createTiles(
+        "pin",
+        [2, 3, 4, 5, 5]
+      ),
+      ...createTiles(
+        "sou",
+        [2, 3, 4]
+      )
+    ],
+    drawnTileId: null
+  };
+
+  state.round.players[2] = {
+    ...state.round.players[2],
+    hand: createNonWinningHand(),
+    drawnTileId: null
+  };
+
+  state.round.players[3] = {
+    ...state.round.players[3],
+    hand: createNonWinningHand(),
+    drawnTileId: null
+  };
+
+  state.round.liveWall = [
+    ronTile,
+    createTile("honor", 2),
+    createTile("honor", 3),
+    createTile("honor", 4)
+  ];
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return {
+    state,
+    discardedTile
+  };
+}
+
 describe("プレイヤーのツモ宣言", () => {
   it("和了可能なツモを精算して局を終了する", () => {
     const state = createWinTestState();
@@ -277,16 +374,14 @@ describe("プレイヤーのロン宣言", () => {
 
 describe("CPU手番中のロン待ち", () => {
   it("ロン可能な捨て牌でreaction状態へ移る", () => {
-    const state = createInitialGameState(
-      () => 0.5
-    );
-
-    const selectedTile =
-      state.round.players[0].hand[0];
+    const {
+      state,
+      discardedTile
+    } = createCpuReactionState();
 
     const result = playPlayerDiscard(
       state,
-      selectedTile.id,
+      discardedTile.id,
       () => 0.5
     );
 
@@ -301,16 +396,14 @@ describe("CPU手番中のロン待ち", () => {
   });
 
   it("ロンを見送ると残りの手番を進める", () => {
-    const state = createInitialGameState(
-      () => 0.5
-    );
-
-    const selectedTile =
-      state.round.players[0].hand[0];
+    const {
+      state,
+      discardedTile
+    } = createCpuReactionState();
 
     let result = playPlayerDiscard(
       state,
-      selectedTile.id,
+      discardedTile.id,
       () => 0.5
     );
 
