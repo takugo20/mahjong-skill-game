@@ -440,4 +440,94 @@ describe("和了後の局進行", () => {
       result.round.players[2].score
     ).toBe(0);
   });
+    it("南4局終了時に供託を暫定1位へ付与し最終順位を保存する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.prevailingWind = "south";
+    state.round.handNumber = 4;
+    state.round.riichiPool = 2000;
+    state.round.players[0].score = 29000;
+    state.round.players[1].score = 29000;
+    state.round.players[2].score = 20000;
+    state.round.players[3].score = 20000;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(10)
+    );
+
+    expect(result.round.phase).toBe(
+      "matchEnd"
+    );
+    expect(result.round.riichiPool).toBe(0);
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      31000,
+      29000,
+      20000,
+      20000
+    ]);
+    expect(
+      result.matchResult?.riichiPoolRecipientId
+    ).toBe("player-0");
+    expect(
+      result.matchResult?.riichiPoolAward
+    ).toBe(2000);
+    expect(
+      result.matchResult?.rankings.map(
+        (ranking) => ranking.seat
+      )
+    ).toEqual([0, 1, 2, 3]);
+    expect(
+      result.matchResult?.rankings[0]
+    ).toEqual({
+      rank: 1,
+      playerId: "player-0",
+      seat: 0,
+      pointsBeforePool: 29000,
+      riichiPoolAward: 2000,
+      finalPoints: 31000
+    });
+  });
+
+  it("飛び終了時にも供託と最終順位を精算する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.riichiPool = 1000;
+    state.round.players[0].score = 30000;
+    state.round.players[1].score = 25000;
+    state.round.players[2].score = -100;
+    state.round.players[3].score = 44100;
+    finishRoundWithWinner(state, 1);
+
+    const result = startNextRound(
+      state,
+      createSeededRandom(11)
+    );
+
+    expect(result.round.phase).toBe(
+      "matchEnd"
+    );
+    expect(result.round.riichiPool).toBe(0);
+    expect(
+      result.round.players[3].score
+    ).toBe(45100);
+    expect(
+      result.matchResult?.riichiPoolRecipientId
+    ).toBe("player-3");
+    expect(
+      result.matchResult?.rankings[0].seat
+    ).toBe(3);
+    expect(
+      result.matchResult?.rankings[3].seat
+    ).toBe(2);
+  });
 });
