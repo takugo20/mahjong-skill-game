@@ -1170,6 +1170,23 @@ export function startNextRound(
     return state;
   }
 
+  if (
+    state.round.players.some(
+      (player) => player.score < 0
+    )
+  ) {
+    return {
+      ...state,
+      round: {
+        ...state.round,
+        phase: "matchEnd",
+        winResult: null
+      },
+      notice:
+        "持ち点が0点未満のプレイヤーがいるため、半荘戦が終了しました。"
+    };
+  }
+
   const currentDealerSeat =
     getDealerSeat(state.round);
 
