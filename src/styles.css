@@ -2751,3 +2751,93 @@ body {
     padding: 4px 10px;
   }
 }
+
+.river-position {
+  --river-tile-width: clamp(
+    15px,
+    min(2.9vw, 4.4vh),
+    32px
+  );
+  --river-tile-height: clamp(
+    21px,
+    min(4.06vw, 6.16vh),
+    44.8px
+  );
+}
+
+.river-position .discard-tile {
+  display: grid;
+  width: var(--river-tile-width);
+  height: var(--river-tile-height);
+  place-items: center;
+}
+
+.river-position .discard-tile--riichi {
+  width: var(--river-tile-height);
+}
+
+.discard-tile--riichi
+  .mahjong-tile--compact {
+  transform: rotate(90deg);
+  transform-origin: center;
+}
+
+.riichi-status-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 5px;
+  border: 1px solid rgb(255 211 211 / 72%);
+  border-radius: 999px;
+  color: #fff8f1;
+  background:
+    linear-gradient(
+      180deg,
+      #e94b57,
+      #9d1024
+    );
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 34%),
+    0 0 9px rgb(255 65 83 / 24%);
+  font-size: 0.72em;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.table-actions .riichi-button {
+  border-color: #ffb0aa;
+  color: #fffaf6;
+  background:
+    linear-gradient(
+      180deg,
+      #ee5260,
+      #9f1027
+    );
+  box-shadow:
+    0 4px 10px rgb(0 0 0 / 34%),
+    0 0 12px rgb(255 53 75 / 24%);
+}
+
+.table-actions .riichi-button:disabled {
+  border-color: rgb(255 255 255 / 14%);
+  color: rgb(255 255 255 / 42%);
+  background:
+    linear-gradient(
+      180deg,
+      #60464a,
+      #3b2c2f
+    );
+  box-shadow: none;
+  cursor: default;
+}
+
+.human-hand
+  button.mahjong-tile--highlighted {
+  border-color: #78dfff;
+  box-shadow:
+    0 5px 10px rgb(0 0 0 / 38%),
+    0 0 9px rgb(62 205 255 / 38%);
+}
