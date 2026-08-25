@@ -14,8 +14,64 @@ import {
 } from "./lib/mahjong/engine";
 import type {
   RoundWinResult,
-  SeatIndex
+  SeatIndex,
+  Tile,
+  TileSuit
 } from "./lib/mahjong/types";
+
+let uiTileSerialNumber = 0;
+
+function createTile(
+  suit: TileSuit,
+  rank: number
+): Tile {
+  uiTileSerialNumber += 1;
+
+  return {
+    id: `game-board-${uiTileSerialNumber}`,
+    suit,
+    rank,
+    red: false
+  };
+}
+
+function createTiles(
+  suit: TileSuit,
+  ranks: readonly number[]
+): Tile[] {
+  return ranks.map(
+    (rank) => createTile(suit, rank)
+  );
+}
+
+function createRiichiReadyState() {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const hand = [
+    ...createTiles("man", [2, 3, 4]),
+    ...createTiles("pin", [2, 3, 4]),
+    ...createTiles("sou", [2, 3, 4]),
+    ...createTiles("sou", [6, 7, 8]),
+    createTile("man", 5),
+    createTile("pin", 5)
+  ];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand,
+    melds: [],
+    discards: [],
+    riichi: false,
+    ippatsu: false,
+    drawnTileId: hand[13].id
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
 
 function createRonResult(
   winnerSeat: SeatIndex,
@@ -53,6 +109,71 @@ describe("対局画面", () => {
 
     expect(html).toContain("半荘戦");
     expect(html).not.toContain("配り直し");
+  });
+
+    it("立直可能牌と立直ボタンを表示する", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={createRiichiReadyState()}
+      />
+    );
+
+    expect(html).toContain(
+      "青枠の牌で立直可能"
+    );
+    expect(html).toContain(
+      'class="secondary-button riichi-button" disabled=""'
+    );
+    expect(
+      html.match(
+        /mahjong-tile--highlighted/g
+      )
+    ).toHaveLength(4);
+  });
+
+  it("立直中表示と横向き宣言牌の識別情報を表示する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const declarationTile =
+      createTile("man", 5);
+    const declarationDiscard = {
+      tile: declarationTile,
+      tsumogiri: false,
+      riichiDeclaration: true,
+      faceDown: false,
+      called: false
+    };
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      riichi: true,
+      ippatsu: true,
+      discards: [declarationDiscard]
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      riichi: true,
+      ippatsu: false
+    };
+    state.round.lastDiscard = {
+      seat: 0,
+      discard: declarationDiscard
+    };
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+
+    expect(html).toContain(
+      'class="discard-tile discard-tile--riichi"'
+    );
+    expect(html).toContain(
+      'data-riichi-declaration="true"'
+    );
+    expect(
+      html.match(/riichi-status-badge/g)
+    ).toHaveLength(2);
   });
 
   it("ダブロン結果に2人分の和了内容と合算した点数移動を表示する", () => {
