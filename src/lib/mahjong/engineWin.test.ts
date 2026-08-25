@@ -431,6 +431,16 @@ describe("CPU手番中のロン待ち", () => {
 
   it("最後の捨て牌のロンを見送ると流局する", () => {
     const state = createWinTestState();
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: createNonWinningHand(),
+      drawnTileId: null
+    };
+    state.round.players[3] = {
+      ...state.round.players[3],
+      hand: createNonWinningHand(),
+      drawnTileId: null
+    };
 
     state.round.phase = "reaction";
     state.round.liveWall = [];
