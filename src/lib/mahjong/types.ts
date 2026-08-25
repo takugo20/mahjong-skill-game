@@ -31,6 +31,7 @@ export interface Meld {
   kind: MeldKind;
   tiles: Tile[];
   calledFrom?: SeatIndex;
+  calledTileId?: string;
 }
 
 export interface Discard {
