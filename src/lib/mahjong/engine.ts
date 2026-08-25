@@ -221,6 +221,7 @@ export function createInitialGameState(
       phase: "discarding",
       lastDiscard: null,
       meldCallOptions: [],
+      pendingKan: null,
       turnNumber: 0,
       kanCount: 0,
       doraIndicatorCount: 1,
@@ -657,6 +658,7 @@ function finishRoundWithWin(
       ...state.round,
       players: resolution.playersAfter,
       phase: "roundEnd",
+      pendingKan: null,
       riichiPool: 0,
       winResult:
         createRoundWinResult(
@@ -706,6 +708,7 @@ function finishRoundWithRonCandidates(
         ...state.round,
         players: result.playersAfter,
         phase: "roundEnd",
+        pendingKan: null,
         riichiPool:
           result.riichiPoolAfter,
         winResult: result.winResult,
@@ -741,6 +744,7 @@ function finishRoundWithRonCandidates(
         ...state.round,
         players: result.playersAfter,
         phase: "roundEnd",
+        pendingKan: null,
         riichiPool:
           result.riichiPoolAfter,
         winResult: null,
@@ -761,6 +765,7 @@ function finishRoundWithRonCandidates(
       ...state.round,
       players: result.playersAfter,
       phase: "roundEnd",
+      pendingKan: null,
       riichiPool:
         result.riichiPoolAfter,
       winResult: null,
@@ -865,6 +870,7 @@ function finishRoundWithExhaustiveDraw(
       ...state.round,
       players: playersAfter,
       phase: "roundEnd",
+      pendingKan: null,
       winResult: null,
       doubleRonResult: null,
       drawResult: {
@@ -2333,6 +2339,7 @@ function finishMatch(
         })
       ),
       phase: "matchEnd",
+      pendingKan: null,
       winResult: null,
       doubleRonResult: null,
       drawResult: null,
@@ -2447,6 +2454,7 @@ export function startNextRound(
       phase: "drawing",
       lastDiscard: null,
       meldCallOptions: [],
+      pendingKan: null,
       turnNumber: 0,
       kanCount: 0,
       doraIndicatorCount: 1,
