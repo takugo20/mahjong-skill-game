@@ -1286,6 +1286,167 @@ function createMeldCallDiscardRestriction(
   };
 }
 
+function applyCpuMeldCall(
+  state: GameState,
+  decision: CpuMeldCallDecision
+): GameState {
+  const option = decision.option;
+  const lastDiscard =
+    state.round.lastDiscard;
+  const caller =
+    state.round.players[option.callerSeat];
+
+  if (
+    !lastDiscard ||
+    !caller ||
+    lastDiscard.seat !==
+      option.discarderSeat ||
+    lastDiscard.discard.tile.id !==
+      option.calledTileId
+  ) {
+    return state;
+  }
+
+  const firstHandTile = caller.hand.find(
+    (tile) =>
+      tile.id === option.handTileIds[0]
+  );
+  const secondHandTile = caller.hand.find(
+    (tile) =>
+      tile.id === option.handTileIds[1]
+  );
+
+  if (
+    !firstHandTile ||
+    !secondHandTile ||
+    firstHandTile.id === secondHandTile.id
+  ) {
+    return state;
+  }
+
+  const handTileIds = new Set(
+    option.handTileIds
+  );
+  const remainingHand = caller.hand.filter(
+    (tile) => !handTileIds.has(tile.id)
+  );
+  const handTiles: [Tile, Tile] = [
+    firstHandTile,
+    secondHandTile
+  ];
+  const calledTile =
+    lastDiscard.discard.tile;
+  const calledMeld: Meld = {
+    kind: option.kind,
+    tiles: sortTiles([
+      ...handTiles,
+      calledTile
+    ]),
+    calledFrom: option.discarderSeat,
+    calledTileId: calledTile.id
+  };
+  const calledDiscard: Discard = {
+    ...lastDiscard.discard,
+    called: true
+  };
+
+  const updatedPlayers =
+    state.round.players.map(
+      (player): PlayerState => {
+        const withoutIppatsu = {
+          ...player,
+          ippatsu: false
+        };
+
+        if (
+          player.seat === option.callerSeat
+        ) {
+          return {
+            ...withoutIppatsu,
+            hand: sortTiles(remainingHand),
+            melds: [
+              ...caller.melds,
+              calledMeld
+            ],
+            drawnTileId: null
+          };
+        }
+
+        if (
+          player.seat ===
+          option.discarderSeat
+        ) {
+          return {
+            ...withoutIppatsu,
+            discards: player.discards.map(
+              (discard) =>
+                discard.tile.id ===
+                option.calledTileId
+                  ? calledDiscard
+                  : discard
+            )
+          };
+        }
+
+        return withoutIppatsu;
+      }
+    );
+
+  const callState: GameState = {
+    ...state,
+    round: {
+      ...state.round,
+      players: updatedPlayers,
+      currentSeat: option.callerSeat,
+      phase: "discarding",
+      lastDiscard: {
+        seat: lastDiscard.seat,
+        discard: calledDiscard
+      },
+      meldCallOptions: [],
+      meldCallDiscardRestriction:
+        createMeldCallDiscardRestriction(
+          option,
+          calledTile,
+          handTiles
+        )
+    }
+  };
+
+  const discardedState = discardTile(
+    callState,
+    decision.discardTileId
+  );
+
+  if (
+    discardedState.round.turnNumber ===
+    callState.round.turnNumber
+  ) {
+    throw new Error(
+      "CPUの副露後に打牌できませんでした。"
+    );
+  }
+
+  const actionLabel =
+    option.kind === "pon"
+      ? "ポン"
+      : "チー";
+  const discardedTile =
+    discardedState.round.lastDiscard
+      ?.discard.tile;
+
+  return {
+    ...discardedState,
+    notice:
+      `${caller.name}が${actionLabel}し、` +
+      `${
+        discardedTile
+          ? getTileLabel(discardedTile)
+          : "牌"
+      }を捨てました。`
+  };
+}
+
 export function declarePlayerMeldCall(
   state: GameState,
   optionId: string
