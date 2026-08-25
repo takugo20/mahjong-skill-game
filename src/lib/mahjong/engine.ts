@@ -569,9 +569,12 @@ export function canPlayerRon(
 
 function createRoundWinResult(
   resolution:
-    ValidRoundWinResolution
+    ValidRoundWinResolution,
+  round: RoundState
 ): RoundWinResult {
   const best = resolution.evaluation.best;
+  const winner =
+    round.players[resolution.winnerSeat];
 
   const yakuNames = best.isYakuman
     ? best.yakuman.map(
@@ -587,6 +590,14 @@ function createRoundWinResult(
     loserSeat: resolution.loserSeat,
     winningTile: resolution.winningTile,
     yakuNames,
+    doraCount: best.dora.totalHan,
+    doraIndicatorTiles:
+      getDoraIndicators(round),
+    uraDoraIndicatorTiles:
+      winner.riichi ||
+      winner.doubleRiichi === true
+        ? getUraDoraIndicators(round)
+        : [],
     han: best.totalHan,
     fu: best.fu?.fu ?? null,
     yakumanMultiplier:
@@ -628,7 +639,10 @@ function finishRoundWithWin(
       phase: "roundEnd",
       riichiPool: 0,
       winResult:
-        createRoundWinResult(resolution),
+        createRoundWinResult(
+          resolution,
+          state.round
+        ),
       doubleRonResult: null,
       drawResult: null,
       abortiveDrawResult: null
@@ -645,7 +659,11 @@ function finishRoundWithRonCandidates(
   const result = resolveRonDeclarations({
     players: state.round.players,
     winResults: candidates.map(
-      createRoundWinResult
+      (candidate) =>
+        createRoundWinResult(
+          candidate,
+          state.round
+        )
     ),
     riichiPool: state.round.riichiPool
   });
