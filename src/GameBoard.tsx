@@ -7,10 +7,12 @@ import {
   canPlayerRon,
   canPlayerTsumo,
   createInitialGameState,
+  declarePlayerMeldCall,
   declarePlayerRiichi,
   declarePlayerRon,
   declarePlayerTsumo,
   getDoraIndicators,
+  getPlayerMeldCallOptions,
   getPlayerRiichiDiscardTileIds,
   getRoundLabel,
   getWindLabel,
@@ -22,6 +24,7 @@ import {
   getTileLabel
 } from "./lib/mahjong/tiles";
 import type {
+  MeldCallOption,
   PlayerState,
   Tile
 } from "./lib/mahjong/types";
@@ -119,6 +122,81 @@ function River({
       ))}
     </div>
   );
+}
+
+function getMeldCallHandTiles(
+  option: MeldCallOption,
+  player: PlayerState
+): Tile[] {
+  return option.handTileIds
+    .map((tileId) =>
+      player.hand.find(
+        (tile) => tile.id === tileId
+      )
+    )
+    .filter(
+      (tile): tile is Tile =>
+        tile !== undefined
+    );
+}
+
+function getMeldCallDisplayKey(
+  option: MeldCallOption,
+  player: PlayerState
+): string {
+  const handTiles = getMeldCallHandTiles(
+    option,
+    player
+  );
+
+  if (
+    handTiles.length !==
+    option.handTileIds.length
+  ) {
+    return option.id;
+  }
+
+  const tileKeys = handTiles
+    .map(
+      (tile) =>
+        `${tile.suit}-${tile.rank}-${
+          tile.red ? "red" : "normal"
+        }`
+    )
+    .sort();
+
+  return `${option.kind}:${tileKeys.join("|")}`;
+}
+
+function getMeldCallOptionLabel(
+  option: MeldCallOption,
+  player: PlayerState,
+  showHandTiles: boolean
+): string {
+  const actionLabel =
+    option.kind === "pon"
+      ? "ポン"
+      : "チー";
+
+  if (!showHandTiles) {
+    return actionLabel;
+  }
+
+  const handTileLabels =
+    getMeldCallHandTiles(option, player)
+      .map((tile) =>
+        tile.suit === "honor"
+          ? getTileLabel(tile)
+          : `${tile.red ? "赤" : ""}${
+              tile.rank
+            }`
+      );
+
+  return handTileLabels.length === 0
+    ? actionLabel
+    : `${actionLabel} ${
+        handTileLabels.join("+")
+      }`;
 }
 
 function OpponentArea({
@@ -245,6 +323,48 @@ export function GameBoard({
     round.phase === "reaction" &&
     canPlayerRon(gameState);
 
+  const meldCallOptions =
+    getPlayerMeldCallOptions(gameState);
+
+  const displayedMeldCallOptions =
+    meldCallOptions.filter(
+      (option, index, options) => {
+        const displayKey =
+          getMeldCallDisplayKey(
+            option,
+            player
+          );
+
+        return options.findIndex(
+          (candidate) =>
+            getMeldCallDisplayKey(
+              candidate,
+              player
+            ) === displayKey
+        ) === index;
+      }
+    );
+
+  const canPon =
+    displayedMeldCallOptions.some(
+      (option) => option.kind === "pon"
+    );
+
+  const canChi =
+    displayedMeldCallOptions.some(
+      (option) => option.kind === "chi"
+    );
+
+  const reactionStatus = canRon
+    ? "ロン可能"
+    : canPon && canChi
+      ? "ポン・チー可能"
+      : canPon
+        ? "ポン可能"
+        : canChi
+          ? "チー可能"
+          : "反応を選択";
+
   const winResult =
     round.winResult ?? null;
 
@@ -326,6 +446,19 @@ export function GameBoard({
   function handleSkipRon() {
     setGameState((currentState) =>
       skipPlayerRon(currentState)
+    );
+
+    setSelectedTileId(null);
+  }
+
+  function handleMeldCall(
+    optionId: string
+  ) {
+    setGameState((currentState) =>
+      declarePlayerMeldCall(
+        currentState,
+        optionId
+      )
     );
 
     setSelectedTileId(null);
@@ -565,7 +698,7 @@ export function GameBoard({
             {round.phase === "matchEnd"
               ? "対局終了"
               : round.phase === "reaction"
-                ? "ロン可能"
+                ? reactionStatus
                 : canTsumo
                   ? "ツモ和了可能"
                   : player.riichi
@@ -605,14 +738,46 @@ export function GameBoard({
               </button>
             ) : round.phase === "reaction" ? (
               <>
-                <button
-                  type="button"
-                  className="primary-button win-button"
-                  disabled={!canRon}
-                  onClick={handleRon}
-                >
-                  ロン
-                </button>
+                {canRon && (
+                  <button
+                    type="button"
+                    className="primary-button win-button"
+                    onClick={handleRon}
+                  >
+                    ロン
+                  </button>
+                )}
+
+                {displayedMeldCallOptions.map(
+                  (option) => {
+                    const sameKindCount =
+                      displayedMeldCallOptions
+                        .filter(
+                          (candidate) =>
+                            candidate.kind ===
+                            option.kind
+                        ).length;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className="primary-button"
+                        onClick={() =>
+                          handleMeldCall(
+                            option.id
+                          )
+                        }
+                      >
+                        {getMeldCallOptionLabel(
+                          option,
+                          player,
+                          sameKindCount > 1
+                        )}
+                      </button>
+                    );
+                  }
+                )}
 
                 <button
                   type="button"
