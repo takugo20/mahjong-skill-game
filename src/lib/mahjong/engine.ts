@@ -4,6 +4,7 @@ import type {
   Meld,
   MeldCallDiscardRestriction,
   MeldCallOption,
+  PendingKan,
   PlayerState,
   RoundPointResult,
   RoundWinResult,
@@ -1935,6 +1936,61 @@ export function getPlayerSelfKanOptions(
     liveWallTileCount:
       state.round.liveWall.length
   });
+}
+
+export function declarePlayerSelfKan(
+  state: GameState,
+  optionId: string
+): GameState {
+  const option =
+    getPlayerSelfKanOptions(state).find(
+      (candidate) =>
+        candidate.id === optionId
+    );
+
+  if (!option) {
+    return {
+      ...state,
+      notice:
+        "選択した槓候補は利用できません。"
+    };
+  }
+
+  const player = state.round.players[0];
+
+  const pendingKan: PendingKan =
+    option.kind === "closedKan"
+      ? {
+          ...option,
+          declarerSeat: 0,
+          chankanTileId:
+            player.drawnTileId !== null &&
+            option.tileIds.includes(
+              player.drawnTileId
+            )
+              ? player.drawnTileId
+              : option.tileIds[0]
+        }
+      : {
+          ...option,
+          declarerSeat: 0,
+          chankanTileId: option.tileId
+        };
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      phase: "reaction",
+      pendingKan,
+      meldCallOptions: [],
+      meldCallDiscardRestriction: null
+    },
+    notice:
+      option.kind === "closedKan"
+        ? "暗槓を宣言しました。槍槓を確認します。"
+        : "加槓を宣言しました。槍槓を確認します。"
+  };
 }
 
 export function canPlayerRiichi(
