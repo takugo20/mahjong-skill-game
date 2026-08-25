@@ -174,7 +174,7 @@ describe("和了後の局進行", () => {
 
     const result = startNextRound(
       state,
-      createSeededRandom(2)
+      createSeededRandom(3)
     );
 
     expect(result.round.handNumber).toBe(2);
@@ -426,7 +426,7 @@ describe("和了後の局進行", () => {
 
     const result = startNextRound(
       state,
-      createSeededRandom(9)
+      createSeededRandom(10)
     );
 
     expect(result.round.phase).toBe(
