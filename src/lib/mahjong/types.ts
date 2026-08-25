@@ -13,6 +13,10 @@ export type GamePhase =
   | "roundEnd"
   | "matchEnd";
 
+export type DrawnTileSource =
+  | "liveWall"
+  | "rinshan";
+
 export interface Tile {
   id: string;
   suit: TileSuit;
@@ -58,6 +62,8 @@ export interface PlayerState {
   temporaryFuriten?: boolean;
   riichiFuriten?: boolean;
   drawnTileId: string | null;
+  drawnTileSource?:
+    DrawnTileSource | null;
 }
 
 export interface LastDiscard {
