@@ -765,4 +765,83 @@ describe("プレイヤーの加槓とCPUの槍槓", () => {
       result.round.players[0].melds[0].kind
     ).toBe("closedKan");
   });
+
+    it("国士無双に限って暗槓を槍槓できる", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const kanTiles = createTiles(
+      "honor",
+      [1, 1, 1, 1]
+    );
+    const otherTiles = createTiles(
+      "pin",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+    );
+
+    setPlayerHand(
+      state,
+      [...kanTiles, ...otherTiles],
+      otherTiles[otherTiles.length - 1].id
+    );
+
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...createTiles(
+          "man",
+          [1, 9]
+        ),
+        ...createTiles(
+          "pin",
+          [1, 9]
+        ),
+        ...createTiles(
+          "sou",
+          [1, 9]
+        ),
+        ...createTiles(
+          "honor",
+          [2, 2, 3, 4, 5, 6, 7]
+        )
+      ]
+    };
+    state.round.players[2].hand = [];
+    state.round.players[3].hand = [];
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "暗槓候補が見つかりません。"
+      );
+    }
+
+    const result = playPlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.pendingKan).toBeNull();
+    expect(result.round.kanCount).toBe(0);
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(1);
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "ron",
+      winnerSeat: 1,
+      loserSeat: 0,
+      winningTile: kanTiles[0]
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("国士無双");
+    expect(
+      result.round.players[0].melds
+    ).toEqual([]);
+  });
 });
