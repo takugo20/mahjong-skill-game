@@ -52,6 +52,7 @@ import {
   resolveRoundWin
 } from "./roundWin";
 import type {
+  ChankanWinSource,
   ValidRoundWinResolution
 } from "./roundWin";
 import {
@@ -524,7 +525,8 @@ function getUraDoraIndicators(
 function createWinInput(
   state: GameState,
   winnerSeat: SeatIndex,
-  winMethod: "tsumo" | "ron"
+  winMethod: "tsumo" | "ron",
+  chankanSource?: ChankanWinSource
 ) {
   const player =
     state.round.players[winnerSeat];
@@ -539,6 +541,7 @@ function createWinInput(
       winMethod === "tsumo" &&
       player.drawnTileSource ===
         "rinshan",
+    chankanSource,
     doraIndicators:
       getDoraIndicators(state.round),
     uraDoraIndicators:
@@ -964,7 +967,8 @@ export function declarePlayerRon(
 function getValidWinResolution(
   state: GameState,
   winnerSeat: SeatIndex,
-  winMethod: "tsumo" | "ron"
+  winMethod: "tsumo" | "ron",
+  chankanSource?: ChankanWinSource
 ): ValidRoundWinResolution | null {
   try {
     if (
@@ -981,7 +985,8 @@ function getValidWinResolution(
       createWinInput(
         state,
         winnerSeat,
-        winMethod
+        winMethod,
+        chankanSource
       )
     );
 
@@ -993,10 +998,55 @@ function getValidWinResolution(
   }
 }
 
+function getPendingKanChankanSource(
+  state: GameState
+): ChankanWinSource | null {
+  const pendingKan =
+    state.round.pendingKan;
+
+  if (
+    state.round.phase !== "reaction" ||
+    !pendingKan ||
+    pendingKan.kind !== "addedKan"
+  ) {
+    return null;
+  }
+
+  const declarer =
+    state.round.players[
+      pendingKan.declarerSeat
+    ];
+  const winningTile = declarer?.hand.find(
+    (tile) =>
+      tile.id ===
+      pendingKan.chankanTileId
+  );
+
+  if (!winningTile) {
+    return null;
+  }
+
+  return {
+    declarerSeat:
+      pendingKan.declarerSeat,
+    winningTile
+  };
+}
+
 export function getRonCandidates(
   state: GameState
 ): ValidRoundWinResolution[] {
+  const pendingKan =
+    state.round.pendingKan;
+  const chankanSource =
+    getPendingKanChankanSource(state);
+
+  if (pendingKan && !chankanSource) {
+    return [];
+  }
+
   const discarderSeat =
+    chankanSource?.declarerSeat ??
     state.round.lastDiscard?.seat;
 
   if (discarderSeat === undefined) {
@@ -1018,7 +1068,8 @@ export function getRonCandidates(
       getValidWinResolution(
         state,
         candidateSeat,
-        "ron"
+        "ron",
+        chankanSource ?? undefined
       );
 
     if (resolution) {
@@ -2036,6 +2087,31 @@ export function completePlayerSelfKan(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
+}
+
+export function playPlayerSelfKan(
+  state: GameState,
+  optionId: string
+): GameState {
+  const declaredState =
+    declarePlayerSelfKan(
+      state,
+      optionId
+    );
+
+  if (!declaredState.round.pendingKan) {
+    return declaredState;
+  }
+
+  const cpuChankanState =
+    finishCpuRonIfAvailable(
+      declaredState
+    );
+
+  return cpuChankanState ??
+    completePlayerSelfKan(
+      declaredState
+    );
 }
 
 export function canPlayerRiichi(
