@@ -381,7 +381,8 @@ function updatePlayers(
           melds:
             prepared.meldsAfterDeclaration,
           temporaryFuriten: false,
-          drawnTileId: rinshanTile.id
+          drawnTileId: rinshanTile.id,
+          drawnTileSource: "rinshan"
         };
       }
 
