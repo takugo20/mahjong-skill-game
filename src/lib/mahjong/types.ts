@@ -85,6 +85,30 @@ export interface RoundWinResult {
   pointChanges: RoundPointResult[];
 }
 
+export interface RoundDoubleRonResult {
+  loserSeat: SeatIndex;
+  winResults: [
+    RoundWinResult,
+    RoundWinResult
+  ];
+  pointChanges: RoundPointResult[];
+  riichiPoolRecipientSeat:
+    SeatIndex | null;
+}
+
+export interface RoundTripleRonDrawResult {
+  reason: "tripleRon";
+  discarderSeat: SeatIndex;
+  ronCandidateSeats: [
+    SeatIndex,
+    SeatIndex,
+    SeatIndex
+  ];
+}
+
+export type RoundAbortiveDrawResult =
+  RoundTripleRonDrawResult;
+
 export interface RoundDrawResult {
   tenpaiSeats: SeatIndex[];
   notenSeats: SeatIndex[];
@@ -120,9 +144,14 @@ export interface RoundState {
   lastDiscard: LastDiscard | null;
   turnNumber: number;
   kanCount: number;
-  doraIndicatorCount: number;  rinshanDrawCount: number;
+  doraIndicatorCount: number;
+  rinshanDrawCount: number;
   winResult?: RoundWinResult | null;
+  doubleRonResult?:
+    RoundDoubleRonResult | null;
   drawResult?: RoundDrawResult | null;
+  abortiveDrawResult?:
+    RoundAbortiveDrawResult | null;
 }
 
 export interface GameState {
