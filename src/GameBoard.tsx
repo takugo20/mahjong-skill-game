@@ -8,11 +8,13 @@ import {
   canPlayerTsumo,
   createInitialGameState,
   declarePlayerMeldCall,
+  declarePlayerOpenKan,
   declarePlayerRiichi,
   declarePlayerRon,
   declarePlayerTsumo,
   getDoraIndicators,
   getPlayerMeldCallOptions,
+  getPlayerOpenKanCallOptions,
   getPlayerRiichiDiscardTileIds,
   getPlayerSelfKanOptions,
   getRoundLabel,
@@ -622,6 +624,21 @@ export function GameBoard({
       }
     );
 
+  const openKanCallOptions =
+    getPlayerOpenKanCallOptions(
+      gameState
+    );
+
+  const displayedReactionCallOptions = [
+    ...displayedMeldCallOptions.filter(
+      (option) => option.kind === "pon"
+    ),
+    ...openKanCallOptions,
+    ...displayedMeldCallOptions.filter(
+      (option) => option.kind === "chi"
+    )
+  ];
+
   const canPon =
     displayedMeldCallOptions.some(
       (option) => option.kind === "pon"
@@ -632,16 +649,31 @@ export function GameBoard({
       (option) => option.kind === "chi"
     );
 
+  const canOpenKan =
+    openKanCallOptions.length > 0;
+
+  const reactionActionLabels: string[] = [];
+
+  if (canPon) {
+    reactionActionLabels.push("ポン");
+  }
+
+  if (canOpenKan) {
+    reactionActionLabels.push("大明槓");
+  }
+
+  if (canChi) {
+    reactionActionLabels.push("チー");
+  }
+
   const reactionStatus = canRon
     ? "ロン可能"
-    : canPon && canChi
-      ? "ポン・チー可能"
-      : canPon
-        ? "ポン可能"
-        : canChi
-          ? "チー可能"
-          : "反応を選択";
-
+    : reactionActionLabels.length > 0
+      ? `${reactionActionLabels.join(
+          "・"
+        )}可能`
+      : "反応を選択";
+  
   const winResult =
     round.winResult ?? null;
 
@@ -753,6 +785,19 @@ export function GameBoard({
     setSelectedTileId(null);
   }
 
+    function handleOpenKan(
+    optionId: string
+  ) {
+    setGameState((currentState) =>
+      declarePlayerOpenKan(
+        currentState,
+        optionId
+      )
+    );
+
+    setSelectedTileId(null);
+  }
+  
   function handleSelfKan(
     optionId: string
   ) {
@@ -1054,32 +1099,52 @@ export function GameBoard({
                   </button>
                 )}
 
-                {displayedMeldCallOptions.map(
+                {displayedReactionCallOptions.map(
                   (option) => {
                     const sameKindCount =
-                      displayedMeldCallOptions
+                      displayedReactionCallOptions
                         .filter(
                           (candidate) =>
                             candidate.kind ===
                             option.kind
                         ).length;
 
+                    const openKanTile =
+                      option.kind === "openKan"
+                        ? round.lastDiscard
+                            ?.discard.tile
+                        : null;
+
                     return (
                       <button
                         key={option.id}
                         type="button"
-                        className="primary-button"
+                        className={
+                          option.kind === "openKan"
+                            ? "primary-button kan-button"
+                            : "primary-button"
+                        }
                         onClick={() =>
-                          handleMeldCall(
-                            option.id
-                          )
+                          option.kind === "openKan"
+                            ? handleOpenKan(
+                                option.id
+                              )
+                            : handleMeldCall(
+                                option.id
+                              )
                         }
                       >
-                        {getMeldCallOptionLabel(
-                          option,
-                          player,
-                          sameKindCount > 1
-                        )}
+                        {option.kind === "openKan"
+                          ? openKanTile
+                            ? `大明槓 ${getTileLabel(
+                                openKanTile
+                              )}`
+                            : "大明槓"
+                          : getMeldCallOptionLabel(
+                              option,
+                              player,
+                              sameKindCount > 1
+                            )}
                       </button>
                     );
                   }
