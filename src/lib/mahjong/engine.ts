@@ -16,6 +16,12 @@ import {
   getMeldCallOptions
 } from "./calls";
 import {
+  chooseCpuMeldCall
+} from "./cpuCalls";
+import type {
+  CpuMeldCallDecision
+} from "./cpuCalls";
+import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
 import {
@@ -1076,6 +1082,112 @@ export function getPlayerMeldCallOptions(
   return [
     ...(state.round.meldCallOptions ?? [])
   ];
+}
+
+function getMeldCallSeatDistance(
+  discarderSeat: SeatIndex,
+  callerSeat: SeatIndex
+): number {
+  return (
+    callerSeat - discarderSeat + 4
+  ) % 4;
+}
+
+function compareMeldCallPriority(
+  left: MeldCallOption,
+  right: MeldCallOption,
+  discarderSeat: SeatIndex
+): number {
+  if (left.kind !== right.kind) {
+    return left.kind === "pon" ? -1 : 1;
+  }
+
+  return (
+    getMeldCallSeatDistance(
+      discarderSeat,
+      left.callerSeat
+    ) -
+    getMeldCallSeatDistance(
+      discarderSeat,
+      right.callerSeat
+    )
+  );
+}
+
+function getCpuMeldCallDecisions(
+  state: GameState
+): CpuMeldCallDecision[] {
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (!lastDiscard) {
+    return [];
+  }
+
+  return state.round.players
+    .filter(
+      (player) =>
+        player.seat !== 0 &&
+        player.seat !== lastDiscard.seat
+    )
+    .map((player) => {
+      const options = getMeldCallOptions({
+        callerSeat: player.seat,
+        discarderSeat: lastDiscard.seat,
+        calledTile:
+          lastDiscard.discard.tile,
+        concealedTiles: player.hand,
+        callerRiichi: player.riichi,
+        liveWallTileCount:
+          state.round.liveWall.length
+      });
+
+      return chooseCpuMeldCall({
+        player,
+        prevailingWind:
+          state.round.prevailingWind,
+        calledTile:
+          lastDiscard.discard.tile,
+        options
+      });
+    })
+    .filter(
+      (
+        decision
+      ): decision is CpuMeldCallDecision =>
+        decision !== null
+    )
+    .sort((left, right) =>
+      compareMeldCallPriority(
+        left.option,
+        right.option,
+        lastDiscard.seat
+      )
+    );
+}
+
+function getAvailablePlayerMeldCallOptions(
+  state: GameState,
+  cpuDecision:
+    CpuMeldCallDecision | null
+): MeldCallOption[] {
+  const options =
+    createPlayerMeldCallOptions(state);
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (!cpuDecision || !lastDiscard) {
+    return options;
+  }
+
+  return options.filter(
+    (option) =>
+      compareMeldCallPriority(
+        option,
+        cpuDecision.option,
+        lastDiscard.seat
+      ) < 0
+  );
 }
 
 function getMeldCallNotice(
