@@ -19,6 +19,9 @@ import {
   resolveMatchSettlement
 } from "./matchSettlement";
 import {
+  resolveRonDeclarations
+} from "./multipleRon";
+import {
   evaluateRoundWin,
   resolveRoundWin
 } from "./roundWin";
@@ -197,7 +200,9 @@ export function createInitialGameState(
       doraIndicatorCount: 1,
       rinshanDrawCount: 0,
       winResult: null,
-      drawResult: null
+      doubleRonResult: null,
+      drawResult: null,
+      abortiveDrawResult: null
     },
     initialDealerSeat: 0,
     matchResult: null,
@@ -571,9 +576,110 @@ function finishRoundWithWin(
       riichiPool: 0,
       winResult:
         createRoundWinResult(resolution),
-      drawResult: null
+      doubleRonResult: null,
+      drawResult: null,
+      abortiveDrawResult: null
     },
     notice
+  };
+}
+
+function finishRoundWithRonCandidates(
+  state: GameState,
+  candidates:
+    readonly ValidRoundWinResolution[]
+): GameState {
+  const result = resolveRonDeclarations({
+    players: state.round.players,
+    winResults: candidates.map(
+      createRoundWinResult
+    ),
+    riichiPool: state.round.riichiPool
+  });
+
+  if (result.kind === "singleRon") {
+    const winner =
+      state.round.players[
+        result.winResult.winnerSeat
+      ];
+    const loserSeat =
+      result.winResult.loserSeat;
+    const loser =
+      loserSeat === null
+        ? null
+        : state.round.players[loserSeat];
+
+    return {
+      ...state,
+      round: {
+        ...state.round,
+        players: result.playersAfter,
+        phase: "roundEnd",
+        riichiPool:
+          result.riichiPoolAfter,
+        winResult: result.winResult,
+        doubleRonResult: null,
+        drawResult: null,
+        abortiveDrawResult: null
+      },
+      notice:
+        `${winner.name}が` +
+        `${loser?.name ?? "他家"}からロン和了しました。`
+    };
+  }
+
+  if (result.kind === "doubleRon") {
+    const [firstWin, secondWin] =
+      result.doubleRonResult.winResults;
+    const firstWinner =
+      state.round.players[
+        firstWin.winnerSeat
+      ];
+    const secondWinner =
+      state.round.players[
+        secondWin.winnerSeat
+      ];
+    const loser =
+      state.round.players[
+        result.doubleRonResult.loserSeat
+      ];
+
+    return {
+      ...state,
+      round: {
+        ...state.round,
+        players: result.playersAfter,
+        phase: "roundEnd",
+        riichiPool:
+          result.riichiPoolAfter,
+        winResult: null,
+        doubleRonResult:
+          result.doubleRonResult,
+        drawResult: null,
+        abortiveDrawResult: null
+      },
+      notice:
+        `${firstWinner.name}と${secondWinner.name}が` +
+        `${loser.name}からダブロンしました。`
+    };
+  }
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: result.playersAfter,
+      phase: "roundEnd",
+      riichiPool:
+        result.riichiPoolAfter,
+      winResult: null,
+      doubleRonResult: null,
+      drawResult: null,
+      abortiveDrawResult:
+        result.abortiveDrawResult
+    },
+    notice:
+      "3人のロンが競合したため、三家和で途中流局です。"
   };
 }
 
@@ -581,7 +687,12 @@ function finishRoundWithExhaustiveDraw(
   state: GameState,
   notice: string
 ): GameState {
-  if (state.round.drawResult) {
+  if (
+    state.round.winResult ||
+    state.round.doubleRonResult ||
+    state.round.drawResult ||
+    state.round.abortiveDrawResult
+  ) {
     return state;
   }
 
@@ -664,6 +775,7 @@ function finishRoundWithExhaustiveDraw(
       players: playersAfter,
       phase: "roundEnd",
       winResult: null,
+      doubleRonResult: null,
       drawResult: {
         tenpaiSeats:
           state.round.players
@@ -678,7 +790,8 @@ function finishRoundWithExhaustiveDraw(
             )
             .map((player) => player.seat),
         pointChanges
-      }
+      },
+      abortiveDrawResult: null
     },
     notice
   };
@@ -725,23 +838,25 @@ export function declarePlayerRon(
     };
   }
 
-  const resolution = getRonCandidates(
+  const candidates = getRonCandidates(
     state
-  ).find(
-    (candidate) =>
-      candidate.winnerSeat === 0
   );
 
-  if (!resolution) {
+  if (
+    !candidates.some(
+      (candidate) =>
+        candidate.winnerSeat === 0
+    )
+  ) {
     return {
       ...state,
       notice: "現在はロン和了できません。"
     };
   }
 
-  return finishRoundWithWin(
+  return finishRoundWithRonCandidates(
     state,
-    resolution
+    candidates
   );
 }
 
@@ -819,17 +934,17 @@ export function getRonCandidates(
 function finishCpuRonIfAvailable(
   state: GameState
 ): GameState | null {
-  const resolution = getRonCandidates(
+  const candidates = getRonCandidates(
     state
-  ).find(
+  ).filter(
     (candidate) =>
       candidate.winnerSeat !== 0
   );
 
-  return resolution
-    ? finishRoundWithWin(
+  return candidates.length > 0
+    ? finishRoundWithRonCandidates(
         state,
-        resolution
+        candidates
       )
     : null;
 }
@@ -950,7 +1065,10 @@ function completeCpuTurns(
 
   if (
     nextState.round.phase === "roundEnd" &&
-    !nextState.round.winResult
+    !nextState.round.winResult &&
+    !nextState.round.doubleRonResult &&
+    !nextState.round.drawResult &&
+    !nextState.round.abortiveDrawResult
   ) {
     return finishRoundWithExhaustiveDraw(
       nextState,
@@ -1179,6 +1297,19 @@ function dealerContinues(
     );
   }
 
+    if (round.doubleRonResult) {
+    return round.doubleRonResult
+      .winResults.some(
+        (winResult) =>
+          winResult.winnerSeat ===
+          dealerSeat
+      );
+  }
+
+  if (round.abortiveDrawResult) {
+    return true;
+  }
+
   if (round.drawResult) {
     return round.drawResult.tenpaiSeats.includes(
       dealerSeat
@@ -1275,7 +1406,9 @@ function finishMatch(
       ),
       phase: "matchEnd",
       winResult: null,
-      drawResult: null
+      doubleRonResult: null,
+      drawResult: null,
+      abortiveDrawResult: null
     },
     matchResult: {
       provisionalLeaderId:
@@ -1317,8 +1450,9 @@ export function startNextRound(
     currentDealerSeat
   );
 
-  const isExhaustiveDraw =
-    state.round.winResult == null;
+  const isDraw =
+    state.round.winResult == null &&
+    state.round.doubleRonResult == null;
 
   if (
     !continues &&
@@ -1347,7 +1481,7 @@ export function startNextRound(
         );
 
   const nextHonba =
-    continues || isExhaustiveDraw
+    continues || isDraw
       ? state.round.honba + 1
       : 0;
 
@@ -1389,7 +1523,9 @@ export function startNextRound(
       doraIndicatorCount: 1,
       rinshanDrawCount: 0,
       winResult: null,
-      drawResult: null
+      doubleRonResult: null,
+      drawResult: null,
+      abortiveDrawResult: null
     },
     notice: "次局を開始します。"
   };
