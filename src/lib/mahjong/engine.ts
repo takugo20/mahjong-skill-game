@@ -35,6 +35,9 @@ import type {
   SelfKanOption
 } from "./kan";
 import {
+  executeKan
+} from "./kanExecution";
+import {
   resolveMatchSettlement
 } from "./matchSettlement";
 import {
@@ -1990,6 +1993,48 @@ export function declarePlayerSelfKan(
       option.kind === "closedKan"
         ? "暗槓を宣言しました。槍槓を確認します。"
         : "加槓を宣言しました。槍槓を確認します。"
+  };
+}
+
+export function completePlayerSelfKan(
+  state: GameState
+): GameState {
+  const pendingKan =
+    state.round.pendingKan;
+
+  if (
+    state.round.phase !== "reaction" ||
+    !pendingKan ||
+    pendingKan.declarerSeat !== 0
+  ) {
+    return {
+      ...state,
+      notice:
+        "成立待ちの槓はありません。"
+    };
+  }
+
+  const execution = executeKan({
+    round: {
+      ...state.round,
+      phase: "discarding"
+    },
+    declarerSeat: 0,
+    option: pendingKan
+  });
+  const kanLabel =
+    pendingKan.kind === "closedKan"
+      ? "暗槓"
+      : "加槓";
+
+  return {
+    ...state,
+    round: execution.round,
+    notice:
+      `${kanLabel}が成立し、` +
+      `${getTileLabel(
+        execution.rinshanTile
+      )}を嶺上牌としてツモりました。`
   };
 }
 
