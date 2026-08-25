@@ -23,6 +23,11 @@ import type {
   WinMethod
 } from "./yaku";
 
+export interface ChankanWinSource {
+  declarerSeat: SeatIndex;
+  winningTile: Tile;
+}
+
 export interface RoundWinActionInput {
   round: RoundState;
   winnerSeat: SeatIndex;
@@ -33,6 +38,7 @@ export interface RoundWinActionInput {
   doubleRiichi?: boolean;
   rinshan?: boolean;
   chankan?: boolean;
+  chankanSource?: ChankanWinSource;
   tenhou?: boolean;
   chiihou?: boolean;
 }
@@ -133,6 +139,39 @@ function getRonSource(
   input: RoundWinActionInput,
   winner: PlayerState
 ): WinSource {
+  const chankanSource =
+    input.chankanSource;
+
+  if (chankanSource) {
+    if (
+      chankanSource.declarerSeat ===
+      input.winnerSeat
+    ) {
+      throw new Error(
+        "自分の槓宣言牌ではロン和了できません"
+      );
+    }
+
+    const loser = getPlayer(
+      input.round,
+      chankanSource.declarerSeat,
+      "槓宣言者"
+    );
+
+    return {
+      winner,
+      loser,
+      winningTile:
+        chankanSource.winningTile
+    };
+  }
+
+  if (input.chankan) {
+    throw new Error(
+      "槍槓ロンの対象牌がありません"
+    );
+  }
+
   const lastDiscard =
     input.round.lastDiscard;
 
@@ -239,7 +278,9 @@ function createWinningInput(
       input.doubleRiichi,
     ippatsu: source.winner.ippatsu,
     rinshan: input.rinshan,
-    chankan: input.chankan,
+    chankan:
+      input.chankan === true ||
+      input.chankanSource !== undefined,
     haitei:
       input.winMethod === "tsumo" &&
       input.round.liveWall.length === 0,
