@@ -1,6 +1,8 @@
 import type {
   Discard,
   GameState,
+  Meld,
+  MeldCallDiscardRestriction,
   MeldCallOption,
   PlayerState,
   RoundPointResult,
@@ -321,6 +323,27 @@ export function discardTile(
   }
 
   const discardedTile = currentPlayer.hand[tileIndex];
+
+  const callRestriction =
+    round.meldCallDiscardRestriction;
+
+  if (
+    callRestriction?.callerSeat === seat &&
+    callRestriction.forbiddenTileTypes.some(
+      (tileType) =>
+        isSameTileFace(
+          discardedTile,
+          tileType
+        )
+    )
+  ) {
+    return {
+      ...state,
+      notice:
+        "喰い替えに当たる牌は捨てられません。別の牌を選んでください。"
+    };
+  }
+
   const remainingHand = [...currentPlayer.hand];
   remainingHand.splice(tileIndex, 1);
 
@@ -366,6 +389,7 @@ export function discardTile(
         discard
       },
       meldCallOptions: [],
+      meldCallDiscardRestriction: null,
       turnNumber: round.turnNumber + 1
     },
     notice: wallIsEmpty
@@ -1066,6 +1090,268 @@ function getMeldCallNotice(
     `${getTileLabel(lastDiscard.discard.tile)}に` +
     `${actionLabel}できます。`
   );
+}
+
+function isSameTileFace(
+  left: Pick<Tile, "suit" | "rank">,
+  right: Pick<Tile, "suit" | "rank">
+): boolean {
+  return (
+    left.suit === right.suit &&
+    left.rank === right.rank
+  );
+}
+
+function createMeldCallDiscardRestriction(
+  option: MeldCallOption,
+  calledTile: Tile,
+  handTiles: [Tile, Tile]
+): MeldCallDiscardRestriction {
+  const forbiddenTileTypes:
+    MeldCallDiscardRestriction[
+      "forbiddenTileTypes"
+    ] = [
+      {
+        suit: calledTile.suit,
+        rank: calledTile.rank
+      }
+    ];
+
+  if (
+    option.kind === "chi" &&
+    calledTile.suit !== "honor"
+  ) {
+    const ranks = [
+      calledTile.rank,
+      handTiles[0].rank,
+      handTiles[1].rank
+    ].sort((left, right) => left - right);
+
+    let sujiForbiddenRank: number | null =
+      null;
+
+    if (
+      calledTile.rank === ranks[0] &&
+      ranks[2] < 9
+    ) {
+      sujiForbiddenRank = ranks[2] + 1;
+    } else if (
+      calledTile.rank === ranks[2] &&
+      ranks[0] > 1
+    ) {
+      sujiForbiddenRank = ranks[0] - 1;
+    }
+
+    if (sujiForbiddenRank !== null) {
+      forbiddenTileTypes.push({
+        suit: calledTile.suit,
+        rank: sujiForbiddenRank
+      });
+    }
+  }
+
+  return {
+    callerSeat: option.callerSeat,
+    forbiddenTileTypes
+  };
+}
+
+export function declarePlayerMeldCall(
+  state: GameState,
+  optionId: string
+): GameState {
+  if (state.round.phase !== "reaction") {
+    return {
+      ...state,
+      notice: "現在は副露できません。"
+    };
+  }
+
+  const option =
+    state.round.meldCallOptions?.find(
+      (candidate) =>
+        candidate.id === optionId
+    );
+
+  if (!option || option.callerSeat !== 0) {
+    return {
+      ...state,
+      notice:
+        "選択したチー・ポン候補は利用できません。"
+    };
+  }
+
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    !lastDiscard ||
+    lastDiscard.seat !==
+      option.discarderSeat ||
+    lastDiscard.discard.tile.id !==
+      option.calledTileId
+  ) {
+    return {
+      ...state,
+      notice:
+        "副露対象の捨て牌が見つかりません。"
+    };
+  }
+
+  const originalPlayer =
+    state.round.players[0];
+  const firstHandTile =
+    originalPlayer.hand.find(
+      (tile) =>
+        tile.id === option.handTileIds[0]
+    );
+  const secondHandTile =
+    originalPlayer.hand.find(
+      (tile) =>
+        tile.id === option.handTileIds[1]
+    );
+
+  if (
+    !firstHandTile ||
+    !secondHandTile ||
+    firstHandTile.id === secondHandTile.id
+  ) {
+    return {
+      ...state,
+      notice:
+        "副露に使用する手牌が見つかりません。"
+    };
+  }
+
+  const callState = canPlayerRon(state)
+    ? {
+        ...state,
+        round: {
+          ...state.round,
+          players: replacePlayer(
+            state.round.players,
+            {
+              ...originalPlayer,
+              temporaryFuriten:
+                originalPlayer.riichi
+                  ? originalPlayer
+                      .temporaryFuriten
+                  : true,
+              riichiFuriten:
+                originalPlayer.riichi ||
+                originalPlayer
+                  .riichiFuriten === true
+            }
+          )
+        }
+      }
+    : state;
+
+  const cpuRonState =
+    finishCpuRonIfAvailable(callState);
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
+
+  const callPlayer =
+    callState.round.players[0];
+  const handTileIds = new Set(
+    option.handTileIds
+  );
+  const remainingHand =
+    callPlayer.hand.filter(
+      (tile) => !handTileIds.has(tile.id)
+    );
+
+  const handTiles: [Tile, Tile] = [
+    firstHandTile,
+    secondHandTile
+  ];
+  const calledTile =
+    lastDiscard.discard.tile;
+  const calledMeld: Meld = {
+    kind: option.kind,
+    tiles: sortTiles([
+      ...handTiles,
+      calledTile
+    ]),
+    calledFrom: option.discarderSeat
+  };
+  const calledDiscard: Discard = {
+    ...lastDiscard.discard,
+    called: true
+  };
+
+  const updatedPlayers =
+    callState.round.players.map(
+      (roundPlayer): PlayerState => {
+        const withoutIppatsu = {
+          ...roundPlayer,
+          ippatsu: false
+        };
+
+        if (roundPlayer.seat === 0) {
+          return {
+            ...withoutIppatsu,
+            hand: sortTiles(remainingHand),
+            melds: [
+              ...callPlayer.melds,
+              calledMeld
+            ],
+            drawnTileId: null
+          };
+        }
+
+        if (
+          roundPlayer.seat ===
+          option.discarderSeat
+        ) {
+          return {
+            ...withoutIppatsu,
+            discards:
+              roundPlayer.discards.map(
+                (discard) =>
+                  discard.tile.id ===
+                  option.calledTileId
+                    ? calledDiscard
+                    : discard
+              )
+          };
+        }
+
+        return withoutIppatsu;
+      }
+    );
+
+  const actionLabel =
+    option.kind === "pon"
+      ? "ポン"
+      : "チー";
+
+  return {
+    ...callState,
+    round: {
+      ...callState.round,
+      players: updatedPlayers,
+      currentSeat: 0,
+      phase: "discarding",
+      lastDiscard: {
+        seat: lastDiscard.seat,
+        discard: calledDiscard
+      },
+      meldCallOptions: [],
+      meldCallDiscardRestriction:
+        createMeldCallDiscardRestriction(
+          option,
+          calledTile,
+          handTiles
+        )
+    },
+    notice:
+      `${actionLabel}しました。` +
+      "捨てる牌を選んでください。"
+  };
 }
 
 function completeCpuTurns(
