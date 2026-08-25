@@ -1276,7 +1276,8 @@ export function declarePlayerMeldCall(
       ...handTiles,
       calledTile
     ]),
-    calledFrom: option.discarderSeat
+    calledFrom: option.discarderSeat,
+    calledTileId: calledTile.id
   };
   const calledDiscard: Discard = {
     ...lastDiscard.discard,
