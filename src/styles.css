@@ -2841,3 +2841,112 @@ body {
     0 5px 10px rgb(0 0 0 / 38%),
     0 0 9px rgb(62 205 255 / 38%);
 }
+
+/* 副露面子 */
+
+.meld-area {
+  --meld-tile-width: clamp(
+    22px,
+    min(3.7vw, 7vh),
+    52px
+  );
+  --meld-tile-height: clamp(
+    30px,
+    min(5.1vw, 9.7vh),
+    72px
+  );
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: clamp(3px, 0.55vmin, 7px);
+  min-width: 0;
+}
+
+.meld-group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: clamp(0px, 0.12vw, 2px);
+}
+
+.meld-tile {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  width: var(--meld-tile-width);
+  height: var(--meld-tile-height);
+  place-items: center;
+}
+
+.meld-area
+  .meld-tile
+  .mahjong-tile {
+  width: var(--meld-tile-width);
+  height: var(--meld-tile-height);
+  aspect-ratio: auto;
+}
+
+.meld-tile--called {
+  width: var(--meld-tile-height);
+  height: var(--meld-tile-width);
+  align-self: flex-end;
+}
+
+.meld-tile--called .mahjong-tile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform:
+    translate(-50%, -50%)
+    rotate(90deg);
+  transform-origin: center;
+  box-shadow:
+    0 4px 9px rgb(0 0 0 / 38%),
+    0 0 0 1px rgb(255 220 119 / 42%);
+}
+
+.meld-area--bottom {
+  margin-left: auto;
+}
+
+.meld-area--top {
+  --meld-tile-width: clamp(
+    14px,
+    min(2.5vw, 3.7vh),
+    30px
+  );
+  --meld-tile-height: clamp(
+    20px,
+    min(3.5vw, 5.2vh),
+    42px
+  );
+  max-width: 100%;
+}
+
+.meld-area--left,
+.meld-area--right {
+  --meld-tile-width: clamp(
+    10px,
+    min(1.55vw, 2.35vh),
+    18px
+  );
+  --meld-tile-height: clamp(
+    14px,
+    min(2.17vw, 3.29vh),
+    25px
+  );
+  flex-direction: column;
+  align-items: center;
+  max-height: 100%;
+}
+
+.meld-area--left .meld-group,
+.meld-area--right .meld-group {
+  flex-direction: column;
+  align-items: center;
+}
+
+.meld-area--left .meld-tile--called,
+.meld-area--right .meld-tile--called {
+  align-self: center;
+}
