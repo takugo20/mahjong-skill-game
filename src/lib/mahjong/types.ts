@@ -52,6 +52,7 @@ export interface PlayerState {
   discards: Discard[];
   isDealer: boolean;
   riichi: boolean;
+  doubleRiichi?: boolean;
   ippatsu: boolean;
   temporaryFuriten?: boolean;
   riichiFuriten?: boolean;
