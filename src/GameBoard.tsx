@@ -86,14 +86,28 @@ function River({
       aria-label={`${player.name}の河`}
     >
       {player.discards.map((discard) => (
-        <TileView
+        <span
           key={discard.tile.id}
-          tile={discard.tile}
-          compact
-          highlighted={
-            discard.tile.id === lastDiscardTileId
+          className={
+            discard.riichiDeclaration
+              ? "discard-tile discard-tile--riichi"
+              : "discard-tile"
           }
-        />
+          data-riichi-declaration={
+            discard.riichiDeclaration
+              ? "true"
+              : undefined
+          }
+        >
+          <TileView
+            tile={discard.tile}
+            compact
+            highlighted={
+              discard.tile.id ===
+              lastDiscardTileId
+            }
+          />
+        </span>
       ))}
     </div>
   );
@@ -132,6 +146,11 @@ function OpponentArea({
             </span>
 
             <span>{player.name}</span>
+            {player.riichi && (
+              <span className="riichi-status-badge">
+                立直
+              </span>
+            )}
           </div>
 
           <strong>
@@ -475,6 +494,11 @@ export function GameBoard({
                 </span>
 
                 <span>{player.name}</span>
+                {player.riichi && (
+                  <span className="riichi-status-badge">
+                    立直
+                  </span>
+                )}
               </div>
 
               <strong>
