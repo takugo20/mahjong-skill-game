@@ -4,6 +4,7 @@ import {
   it
 } from "vitest";
 import {
+  completePlayerSelfKan,
   createInitialGameState,
   declarePlayerSelfKan,
   getPlayerSelfKanOptions
@@ -352,6 +353,207 @@ describe("プレイヤーの槓宣言", () => {
     ).toBeNull();
     expect(result.notice).toBe(
       "選択した槓候補は利用できません。"
+    );
+  });
+});
+
+describe("プレイヤーの槓成立", () => {
+  it("暗槓成立後に槓ドラを増やして嶺上牌をツモる", () => {
+    const { state, kanTiles } =
+      createClosedKanState();
+
+    for (const player of state.round.players) {
+      player.ippatsu = true;
+    }
+
+    const rinshanTile =
+      state.round.deadWall[0];
+    const replacementTile =
+      state.round.liveWall[
+        state.round.liveWall.length - 1
+      ];
+    const liveWallLength =
+      state.round.liveWall.length;
+    const kanCount = state.round.kanCount;
+    const doraIndicatorCount =
+      state.round.doraIndicatorCount;
+    const rinshanDrawCount =
+      state.round.rinshanDrawCount;
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (
+      !rinshanTile ||
+      !replacementTile ||
+      !option
+    ) {
+      throw new Error(
+        "暗槓成立テストの準備に失敗しました。"
+      );
+    }
+
+    const declared = declarePlayerSelfKan(
+      state,
+      option.id
+    );
+    const result = completePlayerSelfKan(
+      declared
+    );
+    const player = result.round.players[0];
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.pendingKan).toBeNull();
+    expect(player.hand).toHaveLength(11);
+    expect(
+      player.hand.some(
+        (tile) =>
+          kanTiles.some(
+            (kanTile) =>
+              kanTile.id === tile.id
+          )
+      )
+    ).toBe(false);
+    expect(player.melds).toHaveLength(1);
+    expect(player.melds[0]).toMatchObject({
+      kind: "closedKan"
+    });
+    expect(player.melds[0].tiles).toHaveLength(4);
+    expect(player.drawnTileId).toBe(
+      rinshanTile.id
+    );
+    expect(player.drawnTileSource).toBe(
+      "rinshan"
+    );
+    expect(
+      player.hand.some(
+        (tile) => tile.id === rinshanTile.id
+      )
+    ).toBe(true);
+    expect(result.round.liveWall).toHaveLength(
+      liveWallLength - 1
+    );
+    expect(result.round.deadWall[0].id).toBe(
+      replacementTile.id
+    );
+    expect(result.round.kanCount).toBe(
+      kanCount + 1
+    );
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(doraIndicatorCount + 1);
+    expect(result.round.rinshanDrawCount).toBe(
+      rinshanDrawCount + 1
+    );
+    expect(
+      result.round.players.map(
+        (roundPlayer) =>
+          roundPlayer.ippatsu
+      )
+    ).toEqual([false, false, false, false]);
+    expect(result.notice).toContain(
+      "暗槓が成立し、"
+    );
+    expect(result.notice).toContain(
+      "嶺上牌としてツモりました。"
+    );
+  });
+
+  it("加槓成立後にポンを加槓へ変更する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const ponTiles = createTiles(
+      "honor",
+      [6, 6, 6]
+    );
+    const addedTile = createTile(
+      "honor",
+      6
+    );
+    const otherTiles = createTiles(
+      "sou",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+    );
+    const pon: Meld = {
+      kind: "pon",
+      tiles: ponTiles,
+      calledFrom: 3,
+      calledTileId: ponTiles[0].id
+    };
+
+    setPlayerHand(
+      state,
+      [addedTile, ...otherTiles],
+      otherTiles[otherTiles.length - 1].id,
+      [pon]
+    );
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "加槓候補が見つかりません。"
+      );
+    }
+
+    const declared = declarePlayerSelfKan(
+      state,
+      option.id
+    );
+    const result = completePlayerSelfKan(
+      declared
+    );
+    const player = result.round.players[0];
+    const addedMeld = player.melds[0];
+
+    expect(player.melds).toHaveLength(1);
+    expect(addedMeld).toMatchObject({
+      kind: "addedKan",
+      calledFrom: 3,
+      calledTileId: ponTiles[0].id
+    });
+    expect(addedMeld.tiles).toHaveLength(4);
+    expect(
+      addedMeld.tiles.map(
+        (tile) => tile.id
+      )
+    ).toEqual(
+      expect.arrayContaining([
+        ...ponTiles.map(
+          (tile) => tile.id
+        ),
+        addedTile.id
+      ])
+    );
+    expect(
+      player.hand.some(
+        (tile) => tile.id === addedTile.id
+      )
+    ).toBe(false);
+    expect(player.drawnTileSource).toBe(
+      "rinshan"
+    );
+    expect(result.round.pendingKan).toBeNull();
+    expect(result.notice).toContain(
+      "加槓が成立し、"
+    );
+  });
+
+  it("保留中の槓がなければ局面を変更しない", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    const result = completePlayerSelfKan(
+      state
+    );
+
+    expect(result.round).toBe(state.round);
+    expect(result.notice).toBe(
+      "成立待ちの槓はありません。"
     );
   });
 });
