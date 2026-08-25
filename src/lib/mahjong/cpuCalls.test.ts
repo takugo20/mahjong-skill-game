@@ -7,8 +7,12 @@ import {
   getMeldCallOptions
 } from "./calls";
 import {
-  chooseCpuMeldCall
+  chooseCpuMeldCall,
+  chooseCpuOpenKanCall
 } from "./cpuCalls";
+import {
+  getOpenKanCallOptions
+} from "./kan";
 import type {
   Meld,
   PlayerState,
@@ -335,6 +339,142 @@ describe("CPUの副露判断", () => {
         prevailingWind: "east",
         calledTile,
         options: []
+      })
+    ).toBeNull();
+  });
+});
+
+describe("CPUの大明槓判断", () => {
+  function createOpenKanDecisionInput() {
+    const calledTile =
+      createTile("honor", 5);
+    const matchingTiles = createTiles(
+      "honor",
+      [5, 5, 5]
+    );
+    const discardTile =
+      createTile("man", 9);
+    const player = createCpuPlayer([
+      ...matchingTiles,
+      ...createTiles("man", [2, 2]),
+      discardTile,
+      ...createTiles(
+        "pin",
+        [1, 2, 3, 4, 5, 6]
+      ),
+      createTile("sou", 7)
+    ]);
+    const options =
+      getOpenKanCallOptions({
+        callerSeat: player.seat,
+        discarderSeat: 0,
+        calledTile,
+        concealedTiles: player.hand,
+        callerRiichi: player.riichi,
+        kanCount: 0,
+        rinshanDrawCount: 0,
+        liveWallTileCount: 40
+      });
+
+    return {
+      player,
+      calledTile,
+      matchingTiles,
+      options
+    };
+  }
+
+  it("役牌の大明槓で向聴数が悪化しなければ選ぶ", () => {
+    const input =
+      createOpenKanDecisionInput();
+
+    const result = chooseCpuOpenKanCall({
+      player: input.player,
+      prevailingWind: "east",
+      calledTile: input.calledTile,
+      options: input.options
+    });
+
+    expect(result?.option.kind).toBe(
+      "openKan"
+    );
+    expect(
+      result?.option.handTileIds
+    ).toEqual(
+      input.matchingTiles.map(
+        (tile) => tile.id
+      )
+    );
+    expect(result?.shantenAfter).toBeLessThanOrEqual(
+      result?.shantenBefore ?? -1
+    );
+  });
+
+  it("確実な役を維持できなければ大明槓しない", () => {
+    const calledTile =
+      createTile("honor", 4);
+    const matchingTiles = createTiles(
+      "honor",
+      [4, 4, 4]
+    );
+    const player = createCpuPlayer([
+      ...matchingTiles,
+      ...createTiles("man", [2, 2]),
+      createTile("man", 9),
+      ...createTiles(
+        "pin",
+        [1, 2, 3, 4, 5, 6]
+      ),
+      createTile("sou", 7)
+    ]);
+    const options =
+      getOpenKanCallOptions({
+        callerSeat: player.seat,
+        discarderSeat: 0,
+        calledTile,
+        concealedTiles: player.hand,
+        callerRiichi: false,
+        kanCount: 0,
+        rinshanDrawCount: 0,
+        liveWallTileCount: 40
+      });
+
+    const result = chooseCpuOpenKanCall({
+      player,
+      prevailingWind: "east",
+      calledTile,
+      options
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("立直中または候補が一致しなければ大明槓しない", () => {
+    const input =
+      createOpenKanDecisionInput();
+    const mismatchedOptions =
+      input.options.map((option) => ({
+        ...option,
+        callerSeat: 2 as const
+      }));
+
+    expect(
+      chooseCpuOpenKanCall({
+        player: {
+          ...input.player,
+          riichi: true
+        },
+        prevailingWind: "east",
+        calledTile: input.calledTile,
+        options: input.options
+      })
+    ).toBeNull();
+    expect(
+      chooseCpuOpenKanCall({
+        player: input.player,
+        prevailingWind: "east",
+        calledTile: input.calledTile,
+        options: mismatchedOptions
       })
     ).toBeNull();
   });
