@@ -2197,6 +2197,67 @@ body {
   text-shadow: 0 2px 4px #000;
 }
 
+.win-result-header
+  > .win-result-dora-indicators {
+  display: grid;
+  align-items: stretch;
+  gap: 3px;
+}
+
+.win-result-dora-indicators {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.win-result-dora-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.win-result-header
+  .win-result-dora-label {
+  min-width: 62px;
+  color: #d7e6dc;
+  font-size: clamp(
+    0.46rem,
+    1.2vmin,
+    0.62rem
+  );
+  font-weight: 800;
+  letter-spacing: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.win-result-dora-tiles {
+  display: flex;
+  min-width: 0;
+  gap: 1px;
+}
+
+.win-result-dora-tiles
+  .mahjong-tile--compact {
+  width: clamp(
+    18px,
+    3.8vmin,
+    25px
+  );
+  height: auto;
+  aspect-ratio: 5 / 7;
+}
+
+.win-result-header
+  > .double-ron-header-summary {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .win-result-yaku {
   display: flex;
   flex-wrap: wrap;
