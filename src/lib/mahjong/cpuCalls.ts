@@ -2,6 +2,9 @@ import {
   calculateShanten
 } from "./hand";
 import type {
+  OpenKanCallOption
+} from "./kan";
+import type {
   Meld,
   MeldCallOption,
   PlayerState,
@@ -19,6 +22,19 @@ export interface CpuMeldCallDecisionInput {
 export interface CpuMeldCallDecision {
   option: MeldCallOption;
   discardTileId: string;
+  shantenBefore: number;
+  shantenAfter: number;
+}
+
+export interface CpuOpenKanCallDecisionInput {
+  player: PlayerState;
+  prevailingWind: Wind;
+  calledTile: Tile;
+  options: readonly OpenKanCallOption[];
+}
+
+export interface CpuOpenKanCallDecision {
+  option: OpenKanCallOption;
   shantenBefore: number;
   shantenAfter: number;
 }
@@ -440,4 +456,116 @@ export function chooseCpuMeldCall(
     });
 
   return candidates[0]?.decision ?? null;
+}
+
+export function chooseCpuOpenKanCall(
+  input: CpuOpenKanCallDecisionInput
+): CpuOpenKanCallDecision | null {
+  if (
+    input.player.seat === 0 ||
+    input.player.riichi ||
+    input.options.length === 0
+  ) {
+    return null;
+  }
+
+  const shantenBefore = calculateShanten(
+    input.player.hand,
+    input.player.melds
+  ).minimum;
+
+  if (!Number.isFinite(shantenBefore)) {
+    return null;
+  }
+
+  for (const option of input.options) {
+    if (
+      option.callerSeat !==
+        input.player.seat ||
+      option.discarderSeat ===
+        input.player.seat ||
+      option.calledTileId !==
+        input.calledTile.id ||
+      new Set(option.handTileIds).size !== 3
+    ) {
+      continue;
+    }
+
+    const handTiles =
+      option.handTileIds
+        .map((tileId) =>
+          input.player.hand.find(
+            (tile) => tile.id === tileId
+          )
+        )
+        .filter(
+          (tile): tile is Tile =>
+            tile !== undefined
+        );
+
+    if (
+      handTiles.length !== 3 ||
+      handTiles.some(
+        (tile) =>
+          !isSameTileType(
+            tile,
+            input.calledTile
+          )
+      )
+    ) {
+      continue;
+    }
+
+    const usedTileIds = new Set(
+      option.handTileIds
+    );
+    const remainingTiles =
+      input.player.hand.filter(
+        (tile) =>
+          !usedTileIds.has(tile.id)
+      );
+    const calledMeld: Meld = {
+      kind: "openKan",
+      tiles: [
+        ...handTiles,
+        input.calledTile
+      ],
+      calledFrom: option.discarderSeat,
+      calledTileId: input.calledTile.id
+    };
+    const nextMelds = [
+      ...input.player.melds,
+      calledMeld
+    ];
+    const hasReliableYaku =
+      hasValueHonorMeld(
+        nextMelds,
+        input.player.seatWind,
+        input.prevailingWind
+      ) ||
+      isAllSimplesHand(
+        remainingTiles,
+        nextMelds
+      );
+    const shantenAfter = calculateShanten(
+      remainingTiles,
+      nextMelds
+    ).minimum;
+
+    if (
+      !hasReliableYaku ||
+      !Number.isFinite(shantenAfter) ||
+      shantenAfter > shantenBefore
+    ) {
+      continue;
+    }
+
+    return {
+      option,
+      shantenBefore,
+      shantenAfter
+    };
+  }
+
+  return null;
 }
