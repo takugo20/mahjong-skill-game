@@ -10,6 +10,7 @@ import {
 } from "./engine";
 import type {
   GameState,
+  Meld,
   Tile,
   TileSuit
 } from "./types";
@@ -70,7 +71,7 @@ function createChiHand(
 
 function setEmptyCpuHand(
   state: GameState,
-  seat: 2 | 3
+  seat: 1 | 2 | 3
 ): void {
   state.round.players[seat] = {
     ...state.round.players[seat],
@@ -361,5 +362,163 @@ describe("CPU副露のゲーム進行", () => {
       "roundEnd"
     );
     expect(result.round.drawResult).not.toBeNull();
+  });
+
+    it("CPUのポンとプレイヤーのチーが競合するとCPUのポンを優先する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const initialDiscard =
+      createTile("sou", 1);
+    const calledTile =
+      createTile("man", 4);
+    const firstFour =
+      createTile("man", 4);
+    const secondFour =
+      createTile("man", 4);
+    const valueHonorTiles =
+      createTiles("honor", [5, 5, 5]);
+    const valueHonorMeld: Meld = {
+      kind: "pon",
+      tiles: valueHonorTiles,
+      calledFrom: 0,
+      calledTileId:
+        valueHonorTiles[0].id
+    };
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        initialDiscard,
+        createTile("man", 5),
+        createTile("man", 6),
+        createTile("pin", 1)
+      ],
+      melds: [],
+      drawnTileId: initialDiscard.id
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        firstFour,
+        secondFour,
+        ...createTiles(
+          "pin",
+          [2, 2, 2, 3, 4]
+        ),
+        ...createTiles("sou", [7, 8]),
+        createTile("honor", 6)
+      ],
+      melds: [valueHonorMeld],
+      drawnTileId: null
+    };
+    setEmptyCpuHand(state, 2);
+    setEmptyCpuHand(state, 3);
+    state.round.liveWall = [
+      createTile("honor", 7),
+      createTile("honor", 1),
+      calledTile,
+      createTile("honor", 2),
+      createTile("honor", 3),
+      createTile("honor", 4)
+    ];
+
+    const result = playPlayerDiscard(
+      state,
+      initialDiscard.id,
+      () => 0.5
+    );
+
+    const cpuPon =
+      result.round.players[1]
+        .melds.find(
+          (meld) =>
+            meld.calledTileId ===
+            calledTile.id
+        );
+
+    expect(cpuPon?.kind).toBe("pon");
+    expect(
+      result.round.players[0].melds
+    ).toHaveLength(0);
+    expect(
+      result.round.players[3]
+        .discards.find(
+          (discard) =>
+            discard.tile.id ===
+            calledTile.id
+        )?.called
+    ).toBe(true);
+    expect(result.round.currentSeat).toBe(0);
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+  });
+
+  it("プレイヤーのポンとCPUのチーが競合するとプレイヤーのポンを優先する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const initialDiscard =
+      createTile("honor", 7);
+    const calledTile =
+      createTile("man", 4);
+    const firstFour =
+      createTile("man", 4);
+    const secondFour =
+      createTile("man", 4);
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        initialDiscard,
+        firstFour,
+        secondFour,
+        createTile("pin", 1)
+      ],
+      melds: [],
+      drawnTileId: initialDiscard.id
+    };
+    setEmptyCpuHand(state, 1);
+    setEmptyCpuHand(state, 2);
+    state.round.players[3] = {
+      ...state.round.players[3],
+      hand: createChiHand(
+        createTile("honor", 6)
+      ),
+      melds: [],
+      drawnTileId: null
+    };
+    state.round.liveWall = [
+      createTile("honor", 1),
+      calledTile,
+      createTile("honor", 2),
+      createTile("honor", 3)
+    ];
+
+    const result = playPlayerDiscard(
+      state,
+      initialDiscard.id,
+      () => 0.5
+    );
+
+    expect(result.round.phase).toBe(
+      "reaction"
+    );
+    expect(
+      result.round.lastDiscard?.seat
+    ).toBe(2);
+    expect(
+      result.round.lastDiscard
+        ?.discard.tile.id
+    ).toBe(calledTile.id);
+    expect(
+      getPlayerMeldCallOptions(result).map(
+        (option) => option.kind
+      )
+    ).toEqual(["pon"]);
+    expect(
+      result.round.players[3].melds
+    ).toHaveLength(0);
   });
 });
