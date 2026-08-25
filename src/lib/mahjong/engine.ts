@@ -503,27 +503,10 @@ export function canPlayerTsumo(
 export function canPlayerRon(
   state: GameState
 ): boolean {
-  if (
-    state.round.lastDiscard?.seat === 0
-  ) {
-    return false;
-  }
-
-  try {
-    if (isPlayerFuriten(state, 0)) {
-      return false;
-    }
-
-    return evaluateRoundWin(
-      createWinInput(
-        state,
-        0,
-        "ron"
-      )
-    ).valid;
-  } catch {
-    return false;
-  }
+  return getRonCandidates(state).some(
+    (candidate) =>
+      candidate.winnerSeat === 0
+  );
 }
 
 function createRoundWinResult(
@@ -735,28 +718,24 @@ export function declarePlayerTsumo(
 export function declarePlayerRon(
   state: GameState
 ): GameState {
-  if (
-    state.round.phase !== "reaction" ||
-    !canPlayerRon(state)
-  ) {
+  if (state.round.phase !== "reaction") {
     return {
       ...state,
       notice: "現在はロン和了できません。"
     };
   }
 
-  const resolution = resolveRoundWin(
-    createWinInput(
-      state,
-      0,
-      "ron"
-    )
+  const resolution = getRonCandidates(
+    state
+  ).find(
+    (candidate) =>
+      candidate.winnerSeat === 0
   );
 
-  if (!resolution.valid) {
+  if (!resolution) {
     return {
       ...state,
-      notice: "ロン和了の精算に失敗しました。"
+      notice: "現在はロン和了できません。"
     };
   }
 
@@ -798,15 +777,18 @@ function getValidWinResolution(
   }
 }
 
-function finishCpuRonIfAvailable(
+export function getRonCandidates(
   state: GameState
-): GameState | null {
+): ValidRoundWinResolution[] {
   const discarderSeat =
     state.round.lastDiscard?.seat;
 
   if (discarderSeat === undefined) {
-    return null;
+    return [];
   }
+
+  const candidates:
+    ValidRoundWinResolution[] = [];
 
   let candidateSeat =
     nextSeat(discarderSeat);
@@ -816,27 +798,40 @@ function finishCpuRonIfAvailable(
     checkedCount < 3;
     checkedCount += 1
   ) {
-    if (candidateSeat !== 0) {
-      const resolution =
-        getValidWinResolution(
-          state,
-          candidateSeat,
-          "ron"
-        );
+    const resolution =
+      getValidWinResolution(
+        state,
+        candidateSeat,
+        "ron"
+      );
 
-      if (resolution) {
-        return finishRoundWithWin(
-          state,
-          resolution
-        );
-      }
+    if (resolution) {
+      candidates.push(resolution);
     }
 
     candidateSeat =
       nextSeat(candidateSeat);
   }
 
-  return null;
+  return candidates;
+}
+
+function finishCpuRonIfAvailable(
+  state: GameState
+): GameState | null {
+  const resolution = getRonCandidates(
+    state
+  ).find(
+    (candidate) =>
+      candidate.winnerSeat !== 0
+  );
+
+  return resolution
+    ? finishRoundWithWin(
+        state,
+        resolution
+      )
+    : null;
 }
 
 function finishCpuTsumoIfAvailable(
@@ -999,6 +994,15 @@ export function skipPlayerRon(
   if (
     skippedState.round.liveWall.length === 0
   ) {
+    const cpuRonState =
+      finishCpuRonIfAvailable(
+        skippedState
+      );
+
+    if (cpuRonState) {
+      return cpuRonState;
+    }
+
     return finishRoundWithExhaustiveDraw(
       skippedState,
       "ロンを見送りました。通常山が尽きたため、荒牌平局です。"
