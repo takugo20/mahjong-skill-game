@@ -170,6 +170,63 @@ function createMeldCallReactionState() {
   return state;
 }
 
+function createDisplayMeld(
+  kind: "chi" | "pon",
+  suit: TileSuit,
+  ranks: readonly number[],
+  calledFrom: SeatIndex
+) {
+  const tiles = createTiles(suit, ranks);
+
+  return {
+    kind,
+    tiles,
+    calledFrom,
+    calledTileId: tiles[0].id
+  };
+}
+
+function createMeldDisplayState() {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+
+  state.round.players[0].melds = [
+    createDisplayMeld(
+      "chi",
+      "man",
+      [1, 2, 3],
+      3
+    )
+  ];
+  state.round.players[1].melds = [
+    createDisplayMeld(
+      "pon",
+      "honor",
+      [5, 5, 5],
+      0
+    )
+  ];
+  state.round.players[2].melds = [
+    createDisplayMeld(
+      "pon",
+      "pin",
+      [7, 7, 7],
+      1
+    )
+  ];
+  state.round.players[3].melds = [
+    createDisplayMeld(
+      "chi",
+      "sou",
+      [4, 5, 6],
+      2
+    )
+  ];
+
+  return state;
+}
+
 function createRonResult(
   winnerSeat: SeatIndex,
   loserSeat: SeatIndex,
@@ -206,6 +263,60 @@ describe("対局画面", () => {
 
     expect(html).toContain("半荘戦");
     expect(html).not.toContain("配り直し");
+  });
+
+  
+  it("プレイヤーと全CPUの副露面子を表示する", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={
+          createMeldDisplayState()
+        }
+      />
+    );
+
+    for (
+      const label of [
+        "あなたの面子",
+        "CPU・右の面子",
+        "能力者CPUの面子",
+        "CPU・左の面子"
+      ]
+    ) {
+      expect(html).toContain(
+        `aria-label="${label}"`
+      );
+    }
+
+    for (
+      const position of [
+        "bottom",
+        "top",
+        "left",
+        "right"
+      ]
+    ) {
+      expect(html).toContain(
+        `meld-area--${position}`
+      );
+    }
+
+    expect(
+      html.match(/data-meld-kind="chi"/g)
+    ).toHaveLength(2);
+    expect(
+      html.match(/data-meld-kind="pon"/g)
+    ).toHaveLength(2);
+    expect(
+      html.match(
+        /data-called-tile="true"/g
+      )
+    ).toHaveLength(4);
+    expect(
+      html.match(
+        /meld-tile meld-tile--called/g
+      )
+    ).toHaveLength(4);
   });
 
   it("ポンと複数のチー候補を区別して表示する", () => {
