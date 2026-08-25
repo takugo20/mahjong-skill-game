@@ -77,6 +77,7 @@ function createPlayer(
     discards: [],
     isDealer: seat === 0,
     riichi: false,
+    doubleRiichi: false,
     ippatsu: false,
     temporaryFuriten: false,
     riichiFuriten: false,
@@ -1192,8 +1193,24 @@ export function canPlayerRiichi(
   );
 }
 
-function establishPlayerRiichi(
+function isDoubleRiichiDeclaration(
   state: GameState
+): boolean {
+  const player = state.round.players[0];
+
+  return (
+    player.discards.length === 0 &&
+    state.round.kanCount === 0 &&
+    state.round.players.every(
+      (roundPlayer) =>
+        roundPlayer.melds.length === 0
+    )
+  );
+}
+
+function establishPlayerRiichi(
+  state: GameState,
+  doubleRiichi: boolean
 ): GameState {
   const player = state.round.players[0];
 
@@ -1201,6 +1218,7 @@ function establishPlayerRiichi(
     ...player,
     score: player.score - RIICHI_DEPOSIT,
     riichi: true,
+    doubleRiichi,
     ippatsu: true
   };
 
@@ -1216,7 +1234,9 @@ function establishPlayerRiichi(
         state.round.riichiPool +
         RIICHI_DEPOSIT
     },
-    notice: "立直が成立しました。"
+    notice: doubleRiichi
+      ? "ダブル立直が成立しました。"
+      : "立直が成立しました。"
   };
 }
 
@@ -1235,6 +1255,9 @@ export function declarePlayerRiichi(
         "選択した牌では立直を宣言できません。"
     };
   }
+
+  const doubleRiichi =
+    isDoubleRiichiDeclaration(state);
 
   const discardedState = discardTile(
     state,
@@ -1260,7 +1283,8 @@ export function declarePlayerRiichi(
 
   const establishedState =
     establishPlayerRiichi(
-      discardedState
+      discardedState,
+      doubleRiichi
     );
 
   const progressedState =
@@ -1277,7 +1301,11 @@ export function declarePlayerRiichi(
     return {
       ...progressedState,
       notice:
-        "立直が成立しました。" +
+        (
+          doubleRiichi
+            ? "ダブル立直が成立しました。"
+            : "立直が成立しました。"
+        ) +
         progressedState.notice
     };
   }
@@ -1374,7 +1402,9 @@ function preparePlayersForNextRound(
     melds: [],
     discards: [],
     isDealer:
-      player.seat === dealerSeat,    riichi: false,
+      player.seat === dealerSeat,
+    riichi: false,
+    doubleRiichi: false,
     ippatsu: false,
     temporaryFuriten: false,
     riichiFuriten: false,
