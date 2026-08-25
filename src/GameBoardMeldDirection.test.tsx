@@ -175,4 +175,89 @@ describe("副露牌の表示方向", () => {
       calledTile
     ]);
   });
+
+    it("CPUも鳴いた相手を本人視点の位置で保持する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+
+    state.round.players[1].melds = [
+      createMeld(
+        "chi",
+        "man",
+        [4, 5, 6],
+        0,
+        2
+      )
+    ];
+    state.round.players[2].melds = [
+      createMeld(
+        "pon",
+        "pin",
+        [4, 4, 4],
+        1,
+        2
+      )
+    ];
+    state.round.players[3].melds = [
+      createMeld(
+        "pon",
+        "sou",
+        [5, 5, 5],
+        0,
+        0
+      )
+    ];
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+    const normalTile = "meld-tile";
+    const calledTile =
+      "meld-tile meld-tile--called";
+
+    expect(html).toContain(
+      'class="meld-area meld-area--right"'
+    );
+    expect(html).toContain(
+      'class="meld-area meld-area--top"'
+    );
+    expect(html).toContain(
+      'class="meld-area meld-area--left"'
+    );
+    expect(
+      getMeldTileClassNames(
+        html,
+        "chi",
+        0
+      )
+    ).toEqual([
+      calledTile,
+      normalTile,
+      normalTile
+    ]);
+    expect(
+      getMeldTileClassNames(
+        html,
+        "pon",
+        1
+      )
+    ).toEqual([
+      calledTile,
+      normalTile,
+      normalTile
+    ]);
+    expect(
+      getMeldTileClassNames(
+        html,
+        "pon",
+        0
+      )
+    ).toEqual([
+      normalTile,
+      normalTile,
+      calledTile
+    ]);
+  });
+  
 });
