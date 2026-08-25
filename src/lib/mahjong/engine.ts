@@ -206,7 +206,6 @@ export function createInitialGameState(
       lastDiscard: null,
       meldCallOptions: [],
       turnNumber: 0,
-      turnNumber: 0,
       kanCount: 0,
       doraIndicatorCount: 1,
       rinshanDrawCount: 0,
@@ -1263,21 +1262,6 @@ export function skipPlayerRon(
       phase: "drawing"
     },
     notice: skippedNotice
-  };
-
-  return completeCpuTurns(
-    resumedState,
-    random
-  );
-}
-
-  const resumedState: GameState = {
-    ...skippedState,
-    round: {
-      ...skippedState.round,
-      phase: "drawing"
-    },
-    notice: "ロンを見送りました。"
   };
 
   return completeCpuTurns(
