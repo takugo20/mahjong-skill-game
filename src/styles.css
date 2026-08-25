@@ -1785,15 +1785,15 @@ body {
   left: 50%;
   display: block;
   width: clamp(
-    130px,
-    min(20vw, 30vh),
-    235px
+    90px,
+    min(11vw, 17vh),
+    130px
   );
-  padding: clamp(5px, 1vmin, 12px);
+  padding: clamp(3px, 0.45vmin, 6px);
   transform: translate(-50%, -50%);
   border: clamp(1px, 0.25vmin, 2px)
     solid #d3ad56;
-  border-radius: clamp(5px, 1vmin, 11px);
+  border-radius: clamp(4px, 0.6vmin, 7px);
   background:
     linear-gradient(
       145deg,
@@ -1801,16 +1801,16 @@ body {
       rgb(1 17 9 / 94%)
     );
   box-shadow:
-    0 8px 20px rgb(0 0 0 / 40%),
-    inset 0 0 0 2px rgb(255 255 255 / 4%);
+    0 4px 10px rgb(0 0 0 / 40%),
+    inset 0 0 0 1px rgb(255 255 255 / 4%);
 }
 
 .center-remaining {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: clamp(3px, 0.7vmin, 8px);
-  padding-bottom: clamp(3px, 0.6vmin, 7px);
+  gap: clamp(1px, 0.3vmin, 3px);
+  padding-bottom: clamp(1px, 0.25vmin, 3px);
   border-bottom: 1px solid
     rgb(255 255 255 / 14%);
 }
@@ -1818,9 +1818,9 @@ body {
 .center-remaining span {
   color: #eaf5ec;
   font-size: clamp(
-    0.58rem,
-    min(1.3vw, 2vh),
-    0.86rem
+    0.44rem,
+    min(0.85vw, 1.3vh),
+    0.6rem
   );
   font-weight: 800;
 }
@@ -1828,9 +1828,9 @@ body {
 .center-remaining strong {
   color: #ffe36e;
   font-size: clamp(
-    1.35rem,
-    min(4vw, 6vh),
-    2.8rem
+    0.95rem,
+    min(2.5vw, 3.5vh),
+    1.65rem
   );
   line-height: 1;
   text-shadow:
@@ -1841,31 +1841,56 @@ body {
 .table-center .center-stat-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 4px;
-  margin: clamp(4px, 0.8vmin, 9px) 0;
+  gap: 2px;
+  margin: clamp(2px, 0.4vmin, 4px) 0;
 }
 
 .table-center .center-stat-grid > div {
-  padding: 3px;
+  gap: 1px;
+  padding: 1px;
+  border-radius: 4px;
+}
+
+.table-center .center-stat-grid span {
+  font-size: clamp(
+    0.4rem,
+    min(0.75vw, 1.1vh),
+    0.54rem
+  );
+}
+
+.table-center .center-stat-grid strong {
+  font-size: clamp(
+    0.68rem,
+    min(1.25vw, 1.9vh),
+    0.86rem
+  );
 }
 
 .table-center .dora-panel {
-  gap: 5px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
 }
 
 .table-center .dora-panel > span {
   font-size: clamp(
-    0.48rem,
-    min(1vw, 1.5vh),
-    0.66rem
+    0.4rem,
+    min(0.72vw, 1.05vh),
+    0.52rem
   );
+}
+
+.table-center .dora-tiles {
+  justify-content: center;
+  gap: 1px;
 }
 
 .table-center .mahjong-tile--compact {
   width: clamp(
-    17px,
-    min(2.8vw, 4.2vh),
-    29px
+    10px,
+    min(1.5vw, 2.2vh),
+    16px
   );
   height: auto;
   aspect-ratio: 25 / 35;
