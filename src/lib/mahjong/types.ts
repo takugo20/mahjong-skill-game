@@ -99,6 +99,9 @@ export interface RoundWinResult {
   loserSeat: SeatIndex | null;
   winningTile: Tile;
   yakuNames: string[];
+  doraCount?: number;
+  doraIndicatorTiles?: Tile[];
+  uraDoraIndicatorTiles?: Tile[];
   han: number;
   fu: number | null;
   yakumanMultiplier: number;
