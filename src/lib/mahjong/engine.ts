@@ -28,6 +28,12 @@ import {
   getFuritenStatus
 } from "./furiten";
 import {
+  getSelfKanOptions
+} from "./kan";
+import type {
+  SelfKanOption
+} from "./kan";
+import {
   resolveMatchSettlement
 } from "./matchSettlement";
 import {
@@ -1893,6 +1899,35 @@ export function getPlayerRiichiDiscardTileIds(
     liveWallTileCount:
       state.round.liveWall.length,
     alreadyRiichi: player.riichi
+  });
+}
+
+export function getPlayerSelfKanOptions(
+  state: GameState
+): SelfKanOption[] {
+  if (
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return [];
+  }
+
+  const player = state.round.players[0];
+
+  if (player.drawnTileId === null) {
+    return [];
+  }
+
+  return getSelfKanOptions({
+    concealedTiles: player.hand,
+    melds: player.melds,
+    riichi: player.riichi,
+    drawnTileId: player.drawnTileId,
+    kanCount: state.round.kanCount,
+    rinshanDrawCount:
+      state.round.rinshanDrawCount,
+    liveWallTileCount:
+      state.round.liveWall.length
   });
 }
 
