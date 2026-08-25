@@ -13,6 +13,7 @@ import {
   getPlayerRiichiDiscardTileIds
 } from "./engine";
 import type {
+  Discard,
   GameState,
   SeatIndex,
   Tile,
@@ -67,6 +68,16 @@ function createNonWinningHand(): Tile[] {
     ),
     createTile("honor", 7)
   ];
+}
+
+function createNormalDiscard(): Discard {
+  return {
+    tile: createTile("honor", 1),
+    tsumogiri: false,
+    riichiDeclaration: false,
+    faceDown: false,
+    called: false
+  };
 }
 
 function setPlayerHand(
@@ -172,6 +183,101 @@ describe("ゲーム本体の立直", () => {
     expect(canPlayerRiichi(state)).toBe(
       false
     );
+  });
+
+    it("第1打まで副露と槓がなければダブル立直を成立させる", () => {
+    const state = createRiichiState();
+    const declarationTile =
+      getDeclarationTile(state);
+
+    const result = declarePlayerRiichi(
+      state,
+      declarationTile.id,
+      () => 0.5
+    );
+
+    const player = result.round.players[0];
+
+    expect(player.riichi).toBe(true);
+    expect(player.doubleRiichi).toBe(
+      true
+    );
+    expect(result.notice).toContain(
+      "ダブル立直が成立しました。"
+    );
+  });
+
+  it("他家の通常の第1打はダブル立直を妨げない", () => {
+    const state = createRiichiState();
+    const declarationTile =
+      getDeclarationTile(state);
+
+    for (const seat of [1, 2, 3] as const) {
+      state.round.players[seat].discards = [
+        createNormalDiscard()
+      ];
+    }
+
+    state.round.turnNumber = 3;
+
+    const result = declarePlayerRiichi(
+      state,
+      declarationTile.id,
+      () => 0.5
+    );
+
+    expect(
+      result.round.players[0].doubleRiichi
+    ).toBe(true);
+  });
+
+  it("既打牌、副露、槓がある場合は通常立直にする", () => {
+    const blockers: Array<
+      (state: GameState) => void
+    > = [
+      (state) => {
+        state.round.players[0].discards = [
+          createNormalDiscard()
+        ];
+      },
+      (state) => {
+        state.round.players[1].melds = [
+          {
+            kind: "pon",
+            tiles: createTiles(
+              "honor",
+              [2, 2, 2]
+            ),
+            calledFrom: 2
+          }
+        ];
+      },
+      (state) => {
+        state.round.kanCount = 1;
+      }
+    ];
+
+    for (const applyBlocker of blockers) {
+      const state = createRiichiState();
+      const declarationTile =
+        getDeclarationTile(state);
+
+      applyBlocker(state);
+
+      const result = declarePlayerRiichi(
+        state,
+        declarationTile.id,
+        () => 0.5
+      );
+
+      expect(
+        result.round.players[0]
+          .doubleRiichi
+      ).toBe(false);
+      expect(result.notice).not.toContain(
+        "ダブル立直"
+      );
+    }
   });
 
   it("宣言牌がロンされなければ供託して立直を成立させる", () => {
@@ -355,6 +461,11 @@ describe("ゲーム本体の立直", () => {
 
   it("一発期間のツモ和了に立直と一発を付ける", () => {
     const state = createRiichiState();
+
+    state.round.players[0].discards = [
+      createNormalDiscard()
+    ];
+
     const declarationTile =
       getDeclarationTile(state);
 
