@@ -27,6 +27,7 @@ import type {
   Meld,
   MeldCallOption,
   PlayerState,
+  SeatIndex,
   Tile
 } from "./lib/mahjong/types";
 
@@ -227,6 +228,90 @@ function getMeldKindLabel(
   }
 }
 
+function getCalledTileDisplayIndex(
+  meld: Meld,
+  callerSeat: SeatIndex
+): number | null {
+  if (
+    !meld.calledTileId ||
+    meld.calledFrom === undefined
+  ) {
+    return null;
+  }
+
+  if (meld.kind === "chi") {
+    return 0;
+  }
+
+  const sourceDistance =
+    (meld.calledFrom - callerSeat + 4) % 4;
+
+  if (meld.kind === "pon") {
+    if (sourceDistance === 3) {
+      return 0;
+    }
+
+    if (sourceDistance === 2) {
+      return 1;
+    }
+
+    if (sourceDistance === 1) {
+      return 2;
+    }
+  }
+
+  if (meld.kind === "openKan") {
+    if (sourceDistance === 3) {
+      return 0;
+    }
+
+    if (sourceDistance === 2) {
+      return 1;
+    }
+
+    if (sourceDistance === 1) {
+      return 3;
+    }
+  }
+
+  return null;
+}
+
+function getMeldDisplayTiles(
+  meld: Meld,
+  callerSeat: SeatIndex
+): Tile[] {
+  const calledTile = meld.tiles.find(
+    (tile) => tile.id === meld.calledTileId
+  );
+  const calledTileIndex =
+    getCalledTileDisplayIndex(
+      meld,
+      callerSeat
+    );
+
+  if (
+    !calledTile ||
+    calledTileIndex === null
+  ) {
+    return meld.tiles;
+  }
+
+  const handTiles = meld.tiles.filter(
+    (tile) => tile.id !== calledTile.id
+  );
+  const insertionIndex = Math.min(
+    calledTileIndex,
+    handTiles.length
+  );
+
+  return [
+    ...handTiles.slice(0, insertionIndex),
+    calledTile,
+    ...handTiles.slice(insertionIndex)
+  ];
+}
+
 function MeldArea({
   player,
   position,
@@ -249,7 +334,10 @@ function MeldArea({
           data-meld-kind={meld.kind}
           data-called-from={meld.calledFrom}
         >
-          {meld.tiles.map((tile) => {
+          {getMeldDisplayTiles(
+            meld,
+            player.seat
+          ).map((tile) => {
             const isCalledTile =
               tile.id === meld.calledTileId;
 
