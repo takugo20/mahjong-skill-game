@@ -77,6 +77,13 @@ export interface MeldCallOption {
   handTileIds: [string, string];
 }
 
+export interface MeldCallDiscardRestriction {
+  callerSeat: SeatIndex;
+  forbiddenTileTypes: Array<
+    Pick<Tile, "suit" | "rank">
+  >;
+}
+
 export interface RoundPointResult {
   playerId: string;
   seat: SeatIndex;
@@ -157,6 +164,8 @@ export interface RoundState {
   phase: GamePhase;
   lastDiscard: LastDiscard | null;
   meldCallOptions?: MeldCallOption[];
+  meldCallDiscardRestriction?:
+    MeldCallDiscardRestriction | null;
   turnNumber: number;
   kanCount: number;
   doraIndicatorCount: number;
