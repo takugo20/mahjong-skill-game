@@ -93,7 +93,8 @@ function createPlayer(
     ippatsu: false,
     temporaryFuriten: false,
     riichiFuriten: false,
-    drawnTileId: null
+    drawnTileId: null,
+    drawnTileSource: null
   };
 }
 
@@ -195,6 +196,7 @@ export function createInitialGameState(
 
   players[0].hand.push(dealerDraw);
   players[0].drawnTileId = dealerDraw.id;
+  players[0].drawnTileSource = "liveWall";
 
   for (const player of players) {
     player.hand = sortTiles(player.hand);
@@ -261,7 +263,8 @@ export function drawTile(
       drawnTile
     ]),
     temporaryFuriten: false,
-    drawnTileId: drawnTile.id
+    drawnTileId: drawnTile.id,
+    drawnTileSource: "liveWall"
   };
   
   const updatedMp =
@@ -372,7 +375,8 @@ export function discardTile(
     ippatsu: currentPlayer.riichi
       ? false
       : currentPlayer.ippatsu,
-    drawnTileId: null
+    drawnTileId: null,
+    drawnTileSource: null
   };
 
   const wallIsEmpty = round.liveWall.length === 0;
@@ -520,6 +524,10 @@ function createWinInput(
     winMethod,
     doubleRiichi:
       player.doubleRiichi === true,
+    rinshan:
+      winMethod === "tsumo" &&
+      player.drawnTileSource ===
+        "rinshan",
     doraIndicators:
       getDoraIndicators(state.round),
     uraDoraIndicators:
@@ -1368,7 +1376,8 @@ function applyCpuMeldCall(
               ...caller.melds,
               calledMeld
             ],
-            drawnTileId: null
+            drawnTileId: null,
+            drawnTileSource: null
           };
         }
 
@@ -1591,7 +1600,8 @@ export function declarePlayerMeldCall(
               ...callPlayer.melds,
               calledMeld
             ],
-            drawnTileId: null
+            drawnTileId: null,
+            drawnTileSource: null
           };
         }
 
@@ -2110,7 +2120,8 @@ function preparePlayersForNextRound(
     ippatsu: false,
     temporaryFuriten: false,
     riichiFuriten: false,
-    drawnTileId: null
+    drawnTileId: null,
+    drawnTileSource: null
   }));
 }
 
