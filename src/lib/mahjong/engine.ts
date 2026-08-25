@@ -17,10 +17,12 @@ import {
   getMeldCallOptions
 } from "./calls";
 import {
-  chooseCpuMeldCall
+  chooseCpuMeldCall,
+  chooseCpuOpenKanCall
 } from "./cpuCalls";
 import type {
-  CpuMeldCallDecision
+  CpuMeldCallDecision,
+  CpuOpenKanCallDecision
 } from "./cpuCalls";
 import {
   resolveExhaustiveDrawSettlement
@@ -1228,16 +1230,42 @@ function getMeldCallSeatDistance(
   ) % 4;
 }
 
-function compareMeldCallPriority(
-  left: MeldCallOption,
-  right: MeldCallOption,
+type CallPriorityOption =
+  | MeldCallOption
+  | OpenKanCallOption;
+
+type CpuCallDecision =
+  | {
+      kind: "meld";
+      option: MeldCallOption;
+      decision: CpuMeldCallDecision;
+    }
+  | {
+      kind: "openKan";
+      option: OpenKanCallOption;
+      decision: CpuOpenKanCallDecision;
+    };
+
+function getCallPriorityRank(
+  option: CallPriorityOption
+): number {
+  return option.kind === "chi" ? 1 : 0;
+}
+
+function compareCallPriority(
+  left: CallPriorityOption,
+  right: CallPriorityOption,
   discarderSeat: SeatIndex
 ): number {
-  if (left.kind !== right.kind) {
-    return left.kind === "pon" ? -1 : 1;
+  const priorityDifference =
+    getCallPriorityRank(left) -
+    getCallPriorityRank(right);
+
+  if (priorityDifference !== 0) {
+    return priorityDifference;
   }
 
-  return (
+  const seatDistanceDifference =
     getMeldCallSeatDistance(
       discarderSeat,
       left.callerSeat
@@ -1245,13 +1273,22 @@ function compareMeldCallPriority(
     getMeldCallSeatDistance(
       discarderSeat,
       right.callerSeat
-    )
-  );
+    );
+
+  if (seatDistanceDifference !== 0) {
+    return seatDistanceDifference;
+  }
+
+  if (left.kind === right.kind) {
+    return 0;
+  }
+
+  return left.kind === "openKan" ? -1 : 1;
 }
 
-function getCpuMeldCallDecisions(
+function getCpuCallDecisions(
   state: GameState
-): CpuMeldCallDecision[] {
+): CpuCallDecision[] {
   const lastDiscard =
     state.round.lastDiscard;
 
@@ -1265,35 +1302,74 @@ function getCpuMeldCallDecisions(
         player.seat !== 0 &&
         player.seat !== lastDiscard.seat
     )
-    .map((player) => {
-      const options = getMeldCallOptions({
-        callerSeat: player.seat,
-        discarderSeat: lastDiscard.seat,
-        calledTile:
-          lastDiscard.discard.tile,
-        concealedTiles: player.hand,
-        callerRiichi: player.riichi,
-        liveWallTileCount:
-          state.round.liveWall.length
-      });
+    .flatMap((player) => {
+      const meldCallOptions =
+        getMeldCallOptions({
+          callerSeat: player.seat,
+          discarderSeat: lastDiscard.seat,
+          calledTile:
+            lastDiscard.discard.tile,
+          concealedTiles: player.hand,
+          callerRiichi: player.riichi,
+          liveWallTileCount:
+            state.round.liveWall.length
+        });
+      const meldCallDecision =
+        chooseCpuMeldCall({
+          player,
+          prevailingWind:
+            state.round.prevailingWind,
+          calledTile:
+            lastDiscard.discard.tile,
+          options: meldCallOptions
+        });
+      const openKanCallOptions =
+        getOpenKanCallOptions({
+          callerSeat: player.seat,
+          discarderSeat: lastDiscard.seat,
+          calledTile:
+            lastDiscard.discard.tile,
+          concealedTiles: player.hand,
+          callerRiichi: player.riichi,
+          kanCount: state.round.kanCount,
+          rinshanDrawCount:
+            state.round.rinshanDrawCount,
+          liveWallTileCount:
+            state.round.liveWall.length
+        });
+      const openKanCallDecision =
+        chooseCpuOpenKanCall({
+          player,
+          prevailingWind:
+            state.round.prevailingWind,
+          calledTile:
+            lastDiscard.discard.tile,
+          options: openKanCallOptions
+        });
+      const decisions: CpuCallDecision[] = [];
 
-      return chooseCpuMeldCall({
-        player,
-        prevailingWind:
-          state.round.prevailingWind,
-        calledTile:
-          lastDiscard.discard.tile,
-        options
-      });
+      if (openKanCallDecision) {
+        decisions.push({
+          kind: "openKan",
+          option:
+            openKanCallDecision.option,
+          decision:
+            openKanCallDecision
+        });
+      }
+
+      if (meldCallDecision) {
+        decisions.push({
+          kind: "meld",
+          option: meldCallDecision.option,
+          decision: meldCallDecision
+        });
+      }
+
+      return decisions;
     })
-    .filter(
-      (
-        decision
-      ): decision is CpuMeldCallDecision =>
-        decision !== null
-    )
     .sort((left, right) =>
-      compareMeldCallPriority(
+      compareCallPriority(
         left.option,
         right.option,
         lastDiscard.seat
@@ -1304,7 +1380,7 @@ function getCpuMeldCallDecisions(
 function getAvailablePlayerMeldCallOptions(
   state: GameState,
   cpuDecision:
-    CpuMeldCallDecision | null
+    CpuCallDecision | null
 ): MeldCallOption[] {
   const options =
     createPlayerMeldCallOptions(state);
@@ -1317,7 +1393,7 @@ function getAvailablePlayerMeldCallOptions(
 
   return options.filter(
     (option) =>
-      compareMeldCallPriority(
+      compareCallPriority(
         option,
         cpuDecision.option,
         lastDiscard.seat
@@ -1575,6 +1651,96 @@ function applyCpuMeldCall(
     ...discardedState,
     notice:
       `${caller.name}が${actionLabel}し、` +
+      `${
+        discardedTile
+          ? getTileLabel(discardedTile)
+          : "牌"
+      }を捨てました。`
+  };
+}
+
+function applyCpuOpenKanCall(
+  state: GameState,
+  decision: CpuOpenKanCallDecision,
+  random: () => number
+): GameState {
+  const option = decision.option;
+  const lastDiscard =
+    state.round.lastDiscard;
+  const caller =
+    state.round.players[option.callerSeat];
+
+  if (
+    !lastDiscard ||
+    !caller ||
+    lastDiscard.seat !==
+      option.discarderSeat ||
+    lastDiscard.discard.tile.id !==
+      option.calledTileId
+  ) {
+    return state;
+  }
+
+  const execution = executeKan({
+    round: {
+      ...state.round,
+      phase: "reaction"
+    },
+    option
+  });
+  const kanState: GameState = {
+    ...state,
+    round: execution.round,
+    notice:
+      `${caller.name}が大明槓し、` +
+      `${getTileLabel(
+        execution.rinshanTile
+      )}を嶺上牌としてツモりました。`
+  };
+  const cpuTsumoState =
+    finishCpuTsumoIfAvailable(
+      kanState,
+      option.callerSeat
+    );
+
+  if (cpuTsumoState) {
+    return cpuTsumoState;
+  }
+
+  const updatedCaller =
+    kanState.round.players[
+      option.callerSeat
+    ];
+  const selectedTile = chooseCpuDiscard(
+    updatedCaller,
+    kanState.round,
+    random
+  );
+  const discardedState = discardTile(
+    kanState,
+    selectedTile.id
+  );
+
+  if (
+    discardedState.round.turnNumber ===
+    kanState.round.turnNumber
+  ) {
+    throw new Error(
+      "CPUの大明槓後に打牌できませんでした。"
+    );
+  }
+
+  const discardedTile =
+    discardedState.round.lastDiscard
+      ?.discard.tile;
+
+  return {
+    ...discardedState,
+    notice:
+      `${caller.name}が大明槓し、` +
+      `${getTileLabel(
+        execution.rinshanTile
+      )}を嶺上牌としてツモり、` +
       `${
         discardedTile
           ? getTileLabel(discardedTile)
@@ -1862,7 +2028,7 @@ function completeCpuTurns(
 
   while (processedActionCount < 24) {
     const cpuDecisions =
-      getCpuMeldCallDecisions(nextState);
+      getCpuCallDecisions(nextState);
     const cpuDecision =
       cpuDecisions[0] ?? null;
     const playerMeldCallOptions =
@@ -1921,10 +2087,29 @@ function completeCpuTurns(
     }
 
     if (cpuDecision) {
-      nextState = applyCpuMeldCall(
-        nextState,
-        cpuDecision
-      );
+      nextState =
+        cpuDecision.kind === "openKan"
+          ? applyCpuOpenKanCall(
+              nextState,
+              cpuDecision.decision,
+              random
+            )
+          : applyCpuMeldCall(
+              nextState,
+              cpuDecision.decision
+            );
+
+      if (
+        nextState.round.phase ===
+        "roundEnd" &&
+        (
+          nextState.round.winResult ||
+          nextState.round.doubleRonResult
+        )
+      ) {
+        return nextState;
+      }
+
       processedActionCount += 1;
       skipPlayerMeldCallReaction = false;
       continue;
