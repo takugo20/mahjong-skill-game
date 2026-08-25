@@ -56,6 +56,14 @@ function formatScore(score: number): string {
   return score.toLocaleString("ja-JP");
 }
 
+function getRiichiStatusLabel(
+  player: PlayerState
+): string {
+  return player.doubleRiichi === true
+    ? "ダブル立直"
+    : "立直";
+}
+
 function formatPointChange(
   change: number
 ): string {
@@ -147,9 +155,9 @@ function OpponentArea({
 
             <span>{player.name}</span>
             {player.riichi && (
-              <span className="riichi-status-badge">
-                立直
-              </span>
+            <span className="riichi-status-badge">
+              {getRiichiStatusLabel(player)}
+            </span>
             )}
           </div>
 
@@ -496,7 +504,7 @@ export function GameBoard({
                 <span>{player.name}</span>
                 {player.riichi && (
                   <span className="riichi-status-badge">
-                    立直
+                    {getRiichiStatusLabel(player)}
                   </span>
                 )}
               </div>
@@ -561,7 +569,9 @@ export function GameBoard({
                 : canTsumo
                   ? "ツモ和了可能"
                   : player.riichi
-                    ? "立直中・ツモ切り"
+                    ? `${getRiichiStatusLabel(
+                        player
+                      )}中・ツモ切り`
                     : selectedTileCanDeclareRiichi &&
                         selectedTile
                       ? `${getTileLabel(
