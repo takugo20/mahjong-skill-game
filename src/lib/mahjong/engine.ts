@@ -1006,8 +1006,7 @@ function getPendingKanChankanSource(
 
   if (
     state.round.phase !== "reaction" ||
-    !pendingKan ||
-    pendingKan.kind !== "addedKan"
+    !pendingKan
   ) {
     return null;
   }
@@ -1072,7 +1071,16 @@ export function getRonCandidates(
         chankanSource ?? undefined
       );
 
-    if (resolution) {
+    const closedKanChankanAllowed =
+      pendingKan?.kind !== "closedKan" ||
+      resolution?.evaluation.best
+        .decomposition.kind ===
+        "thirteenOrphans";
+
+    if (
+      resolution &&
+      closedKanChankanAllowed
+    ) {
       candidates.push(resolution);
     }
 
