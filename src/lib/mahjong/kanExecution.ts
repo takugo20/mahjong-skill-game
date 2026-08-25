@@ -452,6 +452,7 @@ export function executeKan(
       lastDiscard,
       meldCallOptions: [],
       meldCallDiscardRestriction: null,
+      pendingKan: null,
       kanCount: rinshanDraw.kanCount,
       doraIndicatorCount:
         rinshanDraw.doraIndicatorCount,
