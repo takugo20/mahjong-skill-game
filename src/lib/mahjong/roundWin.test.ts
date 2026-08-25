@@ -264,6 +264,88 @@ describe("局内ロン和了", () => {
     expect(getChange(result, 3)).toBe(0);
   });
 
+  it("槓宣言牌を和了牌として槓宣言者から槍槓する", () => {
+    const round = createRound();
+    const completedHand =
+      createPinfuHand();
+    const winningTile =
+      completedHand[0];
+    const unrelatedDiscard =
+      createTile("honor", 7);
+
+    round.phase = "reaction";
+    round.players[1] = {
+      ...round.players[1],
+      hand: completedHand.slice(1)
+    };
+    round.lastDiscard = {
+      seat: 3,
+      discard:
+        createDiscard(unrelatedDiscard)
+    };
+
+    const result = resolveRoundWin({
+      round,
+      winnerSeat: 1,
+      winMethod: "ron",
+      doraIndicators: [],
+      chankanSource: {
+        declarerSeat: 2,
+        winningTile
+      }
+    });
+
+    expect(result.valid).toBe(true);
+
+    if (!result.valid) {
+      throw new Error(
+        "槍槓が成立しませんでした"
+      );
+    }
+
+    expect(result.winningTile).toBe(
+      winningTile
+    );
+    expect(result.loserSeat).toBe(2);
+    expect(
+      result.evaluation.best.normalYaku
+        .map((yaku) => yaku.name)
+    ).toContain("槍槓");
+    expect(getChange(result, 1)).toBe(2000);
+    expect(getChange(result, 2)).toBe(-2000);
+    expect(getChange(result, 3)).toBe(0);
+  });
+
+  it("槍槓対象牌なしでは最後の捨て牌を代用しない", () => {
+    const round = createRound();
+    const completedHand =
+      createPinfuHand();
+    const winningTile =
+      completedHand[0];
+
+    round.phase = "reaction";
+    round.players[1] = {
+      ...round.players[1],
+      hand: completedHand.slice(1)
+    };
+    round.lastDiscard = {
+      seat: 2,
+      discard: createDiscard(winningTile)
+    };
+
+    expect(() =>
+      evaluateRoundWin({
+        round,
+        winnerSeat: 1,
+        winMethod: "ron",
+        doraIndicators: [],
+        chankan: true
+      })
+    ).toThrow(
+      "槍槓ロンの対象牌がありません"
+    );
+  });
+
   it("役なしなら精算しない", () => {
     const round = createRound();
     const winningTile =
