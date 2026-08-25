@@ -22,6 +22,10 @@ import {
   resolveRonDeclarations
 } from "./multipleRon";
 import {
+  getRiichiDiscardTileIds,
+  RIICHI_DEPOSIT
+} from "./riichi";
+import {
   evaluateRoundWin,
   resolveRoundWin
 } from "./roundWin";
@@ -275,7 +279,8 @@ export function drawTile(
 
 export function discardTile(
   state: GameState,
-  tileId: string
+  tileId: string,
+  riichiDeclaration = false
 ): GameState {
   const round = state.round;
 
@@ -285,6 +290,17 @@ export function discardTile(
 
   const seat = round.currentSeat;
   const currentPlayer = round.players[seat];
+
+  if (
+    currentPlayer.riichi &&
+    currentPlayer.drawnTileId !== tileId
+  ) {
+    return {
+      ...state,
+      notice:
+        "立直後はツモ切り以外の牌を捨てられません。"
+    };
+  }
 
   const tileIndex = currentPlayer.hand.findIndex(
     (tile) => tile.id === tileId
@@ -305,7 +321,7 @@ export function discardTile(
     tile: discardedTile,
     tsumogiri:
       currentPlayer.drawnTileId === discardedTile.id,
-    riichiDeclaration: false,
+    riichiDeclaration,
     faceDown: false,
     called: false
   };
@@ -317,6 +333,9 @@ export function discardTile(
       ...currentPlayer.discards,
       discard
     ],
+    ippatsu: currentPlayer.riichi
+      ? false
+      : currentPlayer.ippatsu,
     drawnTileId: null
   };
 
@@ -1142,6 +1161,130 @@ export function skipPlayerRon(
   );
 }
 
+export function getPlayerRiichiDiscardTileIds(
+  state: GameState
+): string[] {
+  if (
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return [];
+  }
+
+  const player = state.round.players[0];
+
+  return getRiichiDiscardTileIds({
+    concealedTiles: player.hand,
+    melds: player.melds,
+    score: player.score,
+    liveWallTileCount:
+      state.round.liveWall.length,
+    alreadyRiichi: player.riichi
+  });
+}
+
+export function canPlayerRiichi(
+  state: GameState
+): boolean {
+  return (
+    getPlayerRiichiDiscardTileIds(state)
+      .length > 0
+  );
+}
+
+function establishPlayerRiichi(
+  state: GameState
+): GameState {
+  const player = state.round.players[0];
+
+  const riichiPlayer: PlayerState = {
+    ...player,
+    score: player.score - RIICHI_DEPOSIT,
+    riichi: true,
+    ippatsu: true
+  };
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: replacePlayer(
+        state.round.players,
+        riichiPlayer
+      ),
+      riichiPool:
+        state.round.riichiPool +
+        RIICHI_DEPOSIT
+    },
+    notice: "立直が成立しました。"
+  };
+}
+
+export function declarePlayerRiichi(
+  state: GameState,
+  tileId: string,
+  random: () => number = Math.random
+): GameState {
+  const candidateTileIds =
+    getPlayerRiichiDiscardTileIds(state);
+
+  if (!candidateTileIds.includes(tileId)) {
+    return {
+      ...state,
+      notice:
+        "選択した牌では立直を宣言できません。"
+    };
+  }
+
+  const discardedState = discardTile(
+    state,
+    tileId,
+    true
+  );
+
+  if (
+    discardedState.round.turnNumber ===
+    state.round.turnNumber
+  ) {
+    return discardedState;
+  }
+
+  const cpuRonState =
+    finishCpuRonIfAvailable(
+      discardedState
+    );
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
+
+  const establishedState =
+    establishPlayerRiichi(
+      discardedState
+    );
+
+  const progressedState =
+    completeCpuTurns(
+      establishedState,
+      random
+    );
+
+  if (
+    progressedState.round.phase ===
+      "discarding" &&
+    progressedState.round.currentSeat === 0
+  ) {
+    return {
+      ...progressedState,
+      notice:
+        "立直が成立しました。" +
+        progressedState.notice
+    };
+  }
+
+  return progressedState;
+}
+
 export function playPlayerDiscard(
   state: GameState,
   tileId: string,
@@ -1161,6 +1304,13 @@ export function playPlayerDiscard(
     state,
     tileId
   );
+
+  if (
+    discardedState.round.turnNumber ===
+    state.round.turnNumber
+  ) {
+    return discardedState;
+  }
 
   const cpuRonState =
     finishCpuRonIfAvailable(
