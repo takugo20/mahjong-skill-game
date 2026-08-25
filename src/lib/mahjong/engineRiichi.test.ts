@@ -493,4 +493,65 @@ describe("ゲーム本体の立直", () => {
     );
     expect(result.round.riichiPool).toBe(0);
   });
+
+    it("ダブル立直を通常立直と重複させず2翻として計算する", () => {
+    const doubleState =
+      createRiichiState();
+    const doubleDeclarationTile =
+      getDeclarationTile(doubleState);
+
+    const declaredDoubleState =
+      declarePlayerRiichi(
+        doubleState,
+        doubleDeclarationTile.id,
+        () => 0.5
+      );
+
+    const doubleResult =
+      declarePlayerTsumo(
+        declaredDoubleState
+      ).round.winResult;
+
+    const regularState =
+      createRiichiState();
+
+    regularState.round.players[0].discards = [
+      createNormalDiscard()
+    ];
+
+    const regularDeclarationTile =
+      getDeclarationTile(regularState);
+
+    const declaredRegularState =
+      declarePlayerRiichi(
+        regularState,
+        regularDeclarationTile.id,
+        () => 0.5
+      );
+
+    const regularResult =
+      declarePlayerTsumo(
+        declaredRegularState
+      ).round.winResult;
+
+    if (!doubleResult || !regularResult) {
+      throw new Error(
+        "立直後の和了結果が見つかりません。"
+      );
+    }
+
+    expect(doubleResult.yakuNames).toContain(
+      "ダブル立直"
+    );
+    expect(doubleResult.yakuNames).not.toContain(
+      "立直"
+    );
+    expect(regularResult.yakuNames).toContain(
+      "立直"
+    );
+    expect(doubleResult.han).toBe(
+      regularResult.han + 1
+    );
+  });
+  
 });
