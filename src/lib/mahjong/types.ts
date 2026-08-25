@@ -91,6 +91,32 @@ export interface MeldCallDiscardRestriction {
   >;
 }
 
+export interface PendingClosedKan {
+  id: string;
+  kind: "closedKan";
+  declarerSeat: SeatIndex;
+  tileIds: [
+    string,
+    string,
+    string,
+    string
+  ];
+  chankanTileId: string;
+}
+
+export interface PendingAddedKan {
+  id: string;
+  kind: "addedKan";
+  declarerSeat: SeatIndex;
+  meldIndex: number;
+  tileId: string;
+  chankanTileId: string;
+}
+
+export type PendingKan =
+  | PendingClosedKan
+  | PendingAddedKan;
+
 export interface RoundPointResult {
   playerId: string;
   seat: SeatIndex;
@@ -176,6 +202,7 @@ export interface RoundState {
   meldCallOptions?: MeldCallOption[];
   meldCallDiscardRestriction?:
     MeldCallDiscardRestriction | null;
+  pendingKan?: PendingKan | null;
   turnNumber: number;
   kanCount: number;
   doraIndicatorCount: number;
