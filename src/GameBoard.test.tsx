@@ -73,6 +73,103 @@ function createRiichiReadyState() {
   return state;
 }
 
+function createMeldCallReactionState() {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const calledTile =
+    createTile("man", 4);
+  const firstFour =
+    createTile("man", 4);
+  const secondFour =
+    createTile("man", 4);
+  const redFive = {
+    ...createTile("man", 5),
+    red: true
+  };
+  const firstNormalFive =
+    createTile("man", 5);
+  const secondNormalFive =
+    createTile("man", 5);
+  const six = createTile("man", 6);
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      firstFour,
+      secondFour,
+      redFive,
+      firstNormalFive,
+      secondNormalFive,
+      six
+    ],
+    melds: [],
+    discards: [],
+    riichi: false,
+    ippatsu: false,
+    drawnTileId: null
+  };
+  state.round.phase = "reaction";
+  state.round.lastDiscard = {
+    seat: 3,
+    discard: {
+      tile: calledTile,
+      tsumogiri: false,
+      riichiDeclaration: false,
+      faceDown: false,
+      called: false
+    }
+  };
+  state.round.meldCallOptions = [
+    {
+      id: "ui-pon",
+      kind: "pon",
+      callerSeat: 0,
+      discarderSeat: 3,
+      calledTileId: calledTile.id,
+      handTileIds: [
+        firstFour.id,
+        secondFour.id
+      ]
+    },
+    {
+      id: "ui-chi-red",
+      kind: "chi",
+      callerSeat: 0,
+      discarderSeat: 3,
+      calledTileId: calledTile.id,
+      handTileIds: [
+        redFive.id,
+        six.id
+      ]
+    },
+    {
+      id: "ui-chi-normal-first",
+      kind: "chi",
+      callerSeat: 0,
+      discarderSeat: 3,
+      calledTileId: calledTile.id,
+      handTileIds: [
+        firstNormalFive.id,
+        six.id
+      ]
+    },
+    {
+      id: "ui-chi-normal-second",
+      kind: "chi",
+      callerSeat: 0,
+      discarderSeat: 3,
+      calledTileId: calledTile.id,
+      handTileIds: [
+        secondNormalFive.id,
+        six.id
+      ]
+    }
+  ];
+
+  return state;
+}
+
 function createRonResult(
   winnerSeat: SeatIndex,
   loserSeat: SeatIndex,
@@ -111,6 +208,117 @@ describe("対局画面", () => {
     expect(html).not.toContain("配り直し");
   });
 
+  it("ポンと複数のチー候補を区別して表示する", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={
+          createMeldCallReactionState()
+        }
+      />
+    );
+
+    expect(html).toContain(
+      "ポン・チー可能"
+    );
+    expect(html).toContain(
+      ">ポン</button>"
+    );
+    expect(html).toContain(
+      ">チー 赤5+6</button>"
+    );
+    expect(html).toContain(
+      ">チー 5+6</button>"
+    );
+    expect(
+      html.match(/>チー 5\+6<\/button>/g)
+    ).toHaveLength(1);
+    expect(html).toContain(
+      ">見逃す</button>"
+    );
+    expect(html).not.toContain(
+      ">ロン</button>"
+    );
+  });
+
+  it("ロンとポンが可能な場合はロンを先に表示する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const calledTile =
+      createTile("honor", 1);
+    const firstEast =
+      createTile("honor", 1);
+    const secondEast =
+      createTile("honor", 1);
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        firstEast,
+        secondEast,
+        ...createTiles(
+          "man",
+          [1, 2, 3]
+        ),
+        ...createTiles(
+          "pin",
+          [1, 2, 3]
+        ),
+        ...createTiles(
+          "sou",
+          [1, 2, 3]
+        ),
+        ...createTiles(
+          "honor",
+          [5, 5]
+        )
+      ],
+      melds: [],
+      discards: [],
+      riichi: false,
+      ippatsu: false,
+      drawnTileId: null
+    };
+    state.round.phase = "reaction";
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: {
+        tile: calledTile,
+        tsumogiri: false,
+        riichiDeclaration: false,
+        faceDown: false,
+        called: false
+      }
+    };
+    state.round.meldCallOptions = [
+      {
+        id: "ui-ron-and-pon",
+        kind: "pon",
+        callerSeat: 0,
+        discarderSeat: 1,
+        calledTileId: calledTile.id,
+        handTileIds: [
+          firstEast.id,
+          secondEast.id
+        ]
+      }
+    ];
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+    const ronButtonIndex =
+      html.indexOf(">ロン</button>");
+    const ponButtonIndex =
+      html.indexOf(">ポン</button>");
+
+    expect(html).toContain("ロン可能");
+    expect(ronButtonIndex).toBeGreaterThan(-1);
+    expect(ponButtonIndex).toBeGreaterThan(
+      ronButtonIndex
+    );
+  });
+  
     it("立直可能牌と立直ボタンを表示する", () => {
     const html = renderToStaticMarkup(
       <GameBoard
