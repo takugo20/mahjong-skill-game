@@ -73,6 +73,81 @@ function createRiichiReadyState() {
   return state;
 }
 
+function createClosedKanDisplayState() {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const kanTiles = createTiles(
+    "man",
+    [5, 5, 5, 5]
+  );
+  const otherTiles = createTiles(
+    "pin",
+    [1, 2, 3, 4, 6, 7, 8, 9, 1, 2]
+  );
+  const hand = [
+    ...kanTiles,
+    ...otherTiles
+  ];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand,
+    melds: [],
+    discards: [],
+    riichi: false,
+    ippatsu: false,
+    drawnTileId:
+      otherTiles[otherTiles.length - 1].id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
+function createAddedKanDisplayState() {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const ponTiles = createTiles(
+    "honor",
+    [6, 6, 6]
+  );
+  const addedTile = createTile(
+    "honor",
+    6
+  );
+  const otherTiles = createTiles(
+    "sou",
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+  );
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [addedTile, ...otherTiles],
+    melds: [{
+      kind: "pon",
+      tiles: ponTiles,
+      calledFrom: 3,
+      calledTileId: ponTiles[0].id
+    }],
+    discards: [],
+    riichi: false,
+    ippatsu: false,
+    drawnTileId:
+      otherTiles[otherTiles.length - 1].id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
 function createMeldCallReactionState() {
   const state = createInitialGameState(
     () => 0.5
@@ -265,6 +340,57 @@ describe("対局画面", () => {
     expect(html).not.toContain("配り直し");
   });
 
+    it("暗槓候補を牌名付きのボタンで表示する", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={
+          createClosedKanDisplayState()
+        }
+      />
+    );
+
+    expect(html).toContain("暗槓可能");
+    expect(html).toContain(
+      'class="secondary-button kan-button"'
+    );
+    expect(html).toContain(
+      ">暗槓 五萬</button>"
+    );
+  });
+
+  it("加槓候補を牌名付きのボタンで表示する", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={
+          createAddedKanDisplayState()
+        }
+      />
+    );
+
+    expect(html).toContain("加槓可能");
+    expect(html).toContain(
+      'class="secondary-button kan-button"'
+    );
+    expect(html).toContain(
+      ">加槓 發</button>"
+    );
+  });
+
+  it("槓候補がなければ槓ボタンを表示しない", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={
+          createRiichiReadyState()
+        }
+      />
+    );
+
+    expect(html).not.toContain(
+      "kan-button"
+    );
+    expect(html).not.toContain("暗槓可能");
+    expect(html).not.toContain("加槓可能");
+  });
   
   it("プレイヤーと全CPUの副露面子を表示する", () => {
     const html = renderToStaticMarkup(
