@@ -359,6 +359,9 @@ describe("プレイヤーの副露成立", () => {
     );
     expect(meld?.kind).toBe("pon");
     expect(meld?.calledFrom).toBe(1);
+    expect(meld?.calledTileId).toBe(
+      option.calledTileId
+    );
     expect(meld?.tiles).toHaveLength(3);
     expect(
       meld?.tiles.every(
@@ -419,6 +422,9 @@ describe("プレイヤーの副露成立", () => {
 
     expect(meld?.kind).toBe("chi");
     expect(meld?.calledFrom).toBe(3);
+    expect(meld?.calledTileId).toBe(
+      option.calledTileId
+    );
     expect(
       meld?.tiles.map((tile) => tile.rank)
     ).toEqual([1, 2, 3]);
