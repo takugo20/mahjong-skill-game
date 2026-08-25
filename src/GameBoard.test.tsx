@@ -176,6 +176,40 @@ describe("対局画面", () => {
     ).toHaveLength(2);
   });
 
+    it("通常立直とダブル立直の表示を切り替える", () => {
+    const state = createRiichiReadyState();
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      riichi: true,
+      doubleRiichi: true,
+      ippatsu: true
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      riichi: true,
+      doubleRiichi: false,
+      ippatsu: false
+    };
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+
+    expect(html).toContain(
+      '<span class="riichi-status-badge">ダブル立直</span>'
+    );
+    expect(html).toContain(
+      '<span class="riichi-status-badge">立直</span>'
+    );
+    expect(html).toContain(
+      "ダブル立直中・ツモ切り"
+    );
+    expect(
+      html.match(/riichi-status-badge/g)
+    ).toHaveLength(2);
+  });
+
   it("ダブロン結果に2人分の和了内容と合算した点数移動を表示する", () => {
     const state = createInitialGameState(
       () => 0.5
