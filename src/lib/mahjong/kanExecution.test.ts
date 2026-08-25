@@ -138,6 +138,10 @@ describe("槓成立処理", () => {
       )
     ).toBe(true);
     expect(
+      result.round.players[0]
+        .drawnTileSource
+    ).toBe("rinshan");
+    expect(
       result.round.players.every(
         (player) => !player.ippatsu
       )
