@@ -6,7 +6,9 @@ import {
 import {
   completePlayerSelfKan,
   createInitialGameState,
+  declarePlayerOpenKan,
   declarePlayerSelfKan,
+  getPlayerOpenKanCallOptions,
   getPlayerSelfKanOptions,
   playPlayerSelfKan
 } from "./engine";
@@ -90,6 +92,72 @@ function createClosedKanState(): {
   return {
     state,
     kanTiles
+  };
+}
+
+function createOpenKanReactionState(): {
+  state: GameState;
+  calledTile: Tile;
+  handTiles: Tile[];
+} {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const calledTile = createTile(
+    "man",
+    2
+  );
+  const handTiles = createTiles(
+    "man",
+    [2, 2, 2]
+  );
+  const otherTiles = [
+    ...createTiles(
+      "sou",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ),
+    createTile("pin", 1)
+  ];
+  const discard = {
+    tile: calledTile,
+    tsumogiri: false,
+    riichiDeclaration: false,
+    faceDown: false,
+    called: false
+  };
+
+  setPlayerHand(
+    state,
+    [...handTiles, ...otherTiles],
+    null
+  );
+
+  state.round.players[1] = {
+    ...state.round.players[1],
+    discards: [discard]
+  };
+  state.round.phase = "reaction";
+  state.round.currentSeat = 2;
+  state.round.lastDiscard = {
+    seat: 1,
+    discard
+  };
+  state.round.meldCallOptions = [{
+    id: "open-kan-pon-priority",
+    kind: "pon",
+    callerSeat: 0,
+    discarderSeat: 1,
+    calledTileId: calledTile.id,
+    handTileIds: [
+      handTiles[0].id,
+      handTiles[1].id
+    ]
+  }];
+
+  return {
+    state,
+    calledTile,
+    handTiles
   };
 }
 
@@ -556,6 +624,197 @@ describe("プレイヤーの槓成立", () => {
     expect(result.notice).toBe(
       "成立待ちの槓はありません。"
     );
+  });
+});
+
+describe("プレイヤーの大明槓", () => {
+  it("ポンの優先順位を通過した場合だけ大明槓候補を返す", () => {
+    const {
+      state,
+      calledTile,
+      handTiles
+    } = createOpenKanReactionState();
+
+    const options =
+      getPlayerOpenKanCallOptions(state);
+
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({
+      kind: "openKan",
+      callerSeat: 0,
+      discarderSeat: 1,
+      calledTileId: calledTile.id,
+      handTileIds: handTiles.map(
+        (tile) => tile.id
+      )
+    });
+
+    state.round.meldCallOptions = [];
+
+    expect(
+      getPlayerOpenKanCallOptions(state)
+    ).toEqual([]);
+  });
+
+  it("大明槓成立後に槓ドラを増やして嶺上牌をツモる", () => {
+    const {
+      state,
+      calledTile,
+      handTiles
+    } = createOpenKanReactionState();
+
+    for (const player of state.round.players) {
+      player.ippatsu = true;
+    }
+
+    const rinshanTile =
+      state.round.deadWall[0];
+    const replacementTile =
+      state.round.liveWall[
+        state.round.liveWall.length - 1
+      ];
+    const liveWallLength =
+      state.round.liveWall.length;
+    const option =
+      getPlayerOpenKanCallOptions(state)[0];
+
+    if (
+      !rinshanTile ||
+      !replacementTile ||
+      !option
+    ) {
+      throw new Error(
+        "大明槓成立テストの準備に失敗しました。"
+      );
+    }
+
+    const result = declarePlayerOpenKan(
+      state,
+      option.id
+    );
+    const player = result.round.players[0];
+    const meld = player.melds[0];
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.currentSeat).toBe(0);
+    expect(result.round.kanCount).toBe(1);
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(2);
+    expect(result.round.rinshanDrawCount).toBe(1);
+    expect(result.round.liveWall).toHaveLength(
+      liveWallLength - 1
+    );
+    expect(result.round.deadWall[0].id).toBe(
+      replacementTile.id
+    );
+    expect(player.hand).toHaveLength(11);
+    expect(
+      player.hand.some(
+        (tile) =>
+          handTiles.some(
+            (handTile) =>
+              handTile.id === tile.id
+          )
+      )
+    ).toBe(false);
+    expect(meld).toMatchObject({
+      kind: "openKan",
+      calledFrom: 1,
+      calledTileId: calledTile.id
+    });
+    expect(meld.tiles).toHaveLength(4);
+    expect(player.drawnTileId).toBe(
+      rinshanTile.id
+    );
+    expect(player.drawnTileSource).toBe(
+      "rinshan"
+    );
+    expect(
+      result.round.players[1]
+        .discards[0].called
+    ).toBe(true);
+    expect(
+      result.round.lastDiscard
+        ?.discard.called
+    ).toBe(true);
+    expect(result.round.meldCallOptions).toEqual([]);
+    expect(
+      result.round.players.map(
+        (roundPlayer) =>
+          roundPlayer.ippatsu
+      )
+    ).toEqual([false, false, false, false]);
+    expect(result.notice).toContain(
+      "大明槓が成立し、"
+    );
+  });
+
+  it("他家のロンを大明槓より優先する", () => {
+    const {
+      state,
+      calledTile
+    } = createOpenKanReactionState();
+
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: [
+        ...createTiles(
+          "man",
+          [3, 4, 5, 6, 7]
+        ),
+        ...createTiles(
+          "pin",
+          [2, 3, 4]
+        ),
+        ...createTiles(
+          "sou",
+          [6, 7, 8]
+        ),
+        ...createTiles(
+          "honor",
+          [2, 2]
+        )
+      ]
+    };
+    state.round.players[3].hand = [];
+
+    const option =
+      getPlayerOpenKanCallOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "大明槓候補が見つかりません。"
+      );
+    }
+
+    const result = declarePlayerOpenKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.kanCount).toBe(0);
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(1);
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "ron",
+      winnerSeat: 2,
+      loserSeat: 1,
+      winningTile: calledTile
+    });
+    expect(
+      result.round.players[0].melds
+    ).toEqual([]);
+    expect(
+      result.round.players[1]
+        .discards[0].called
+    ).toBe(false);
   });
 });
 
