@@ -5,6 +5,7 @@ import {
 } from "vitest";
 import {
   createInitialGameState,
+  declarePlayerSelfKan,
   getPlayerSelfKanOptions
 } from "./engine";
 import type {
@@ -205,5 +206,152 @@ describe("プレイヤーの槓候補", () => {
     expect(
       getPlayerSelfKanOptions(state)
     ).toEqual([]);
+  });
+});
+
+describe("プレイヤーの槓宣言", () => {
+  it("暗槓を成立前の保留状態にする", () => {
+    const { state, kanTiles } =
+      createClosedKanState();
+
+    state.round.players[0].drawnTileId =
+      kanTiles[3].id;
+
+    for (const player of state.round.players) {
+      player.ippatsu = true;
+    }
+
+    const handTileIds =
+      state.round.players[0].hand.map(
+        (tile) => tile.id
+      );
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "暗槓候補が見つかりません。"
+      );
+    }
+
+    const result = declarePlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "reaction"
+    );
+    expect(result.round.pendingKan).toEqual({
+      ...option,
+      declarerSeat: 0,
+      chankanTileId: kanTiles[3].id
+    });
+    expect(
+      result.round.players[0].hand.map(
+        (tile) => tile.id
+      )
+    ).toEqual(handTileIds);
+    expect(
+      result.round.players[0].melds
+    ).toEqual([]);
+    expect(
+      result.round.players.map(
+        (player) => player.ippatsu
+      )
+    ).toEqual([true, true, true, true]);
+    expect(result.notice).toBe(
+      "暗槓を宣言しました。槍槓を確認します。"
+    );
+  });
+
+  it("加槓する牌を槍槓確認用に保持する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const ponTiles = createTiles(
+      "honor",
+      [6, 6, 6]
+    );
+    const addedTile = createTile(
+      "honor",
+      6
+    );
+    const otherTiles = createTiles(
+      "sou",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+    );
+    const pon: Meld = {
+      kind: "pon",
+      tiles: ponTiles,
+      calledFrom: 3,
+      calledTileId: ponTiles[0].id
+    };
+
+    setPlayerHand(
+      state,
+      [addedTile, ...otherTiles],
+      otherTiles[otherTiles.length - 1].id,
+      [pon]
+    );
+
+    const handTileIds =
+      state.round.players[0].hand.map(
+        (tile) => tile.id
+      );
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "加槓候補が見つかりません。"
+      );
+    }
+
+    const result = declarePlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "reaction"
+    );
+    expect(result.round.pendingKan).toEqual({
+      ...option,
+      declarerSeat: 0,
+      chankanTileId: addedTile.id
+    });
+    expect(
+      result.round.players[0].hand.map(
+        (tile) => tile.id
+      )
+    ).toEqual(handTileIds);
+    expect(
+      result.round.players[0].melds
+    ).toEqual([pon]);
+    expect(result.notice).toBe(
+      "加槓を宣言しました。槍槓を確認します。"
+    );
+  });
+
+  it("利用できない候補IDでは状態を変更しない", () => {
+    const { state } =
+      createClosedKanState();
+
+    const result = declarePlayerSelfKan(
+      state,
+      "unknown-kan-option"
+    );
+
+    expect(result.round).toBe(state.round);
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(
+      result.round.pendingKan
+    ).toBeNull();
+    expect(result.notice).toBe(
+      "選択した槓候補は利用できません。"
+    );
   });
 });
