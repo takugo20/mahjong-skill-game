@@ -312,6 +312,66 @@ function getMeldDisplayTiles(
   ];
 }
 
+interface WinResultDoraIndicatorsProps {
+  doraIndicators: readonly Tile[];
+  uraDoraIndicators: readonly Tile[];
+}
+
+function WinResultDoraIndicators({
+  doraIndicators,
+  uraDoraIndicators
+}: WinResultDoraIndicatorsProps) {
+  if (
+    doraIndicators.length === 0 &&
+    uraDoraIndicators.length === 0
+  ) {
+    return null;
+  }
+
+  return (
+    <div
+      className="win-result-dora-indicators"
+      aria-label="ドラ表示牌"
+    >
+      {doraIndicators.length > 0 && (
+        <div className="win-result-dora-row">
+          <span className="win-result-dora-label">
+            ドラ表示牌
+          </span>
+
+          <div className="win-result-dora-tiles">
+            {doraIndicators.map((tile) => (
+              <TileView
+                key={`result-dora-${tile.id}`}
+                tile={tile}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {uraDoraIndicators.length > 0 && (
+        <div className="win-result-dora-row">
+          <span className="win-result-dora-label">
+            裏ドラ表示牌
+          </span>
+
+          <div className="win-result-dora-tiles">
+            {uraDoraIndicators.map((tile) => (
+              <TileView
+                key={`result-ura-dora-${tile.id}`}
+                tile={tile}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MeldArea({
   player,
   position,
@@ -545,6 +605,18 @@ export function GameBoard({
 
   const doubleRonResult =
     round.doubleRonResult ?? null;
+
+  const doubleRonDoraIndicatorTiles =
+    doubleRonResult?.winResults.find(
+      (result) =>
+        (result.doraIndicatorTiles?.length ?? 0) > 0
+    )?.doraIndicatorTiles ?? [];
+
+  const doubleRonUraDoraIndicatorTiles =
+    doubleRonResult?.winResults.find(
+      (result) =>
+        (result.uraDoraIndicatorTiles?.length ?? 0) > 0
+    )?.uraDoraIndicatorTiles ?? [];
 
   const drawResult =
     round.drawResult ?? null;
@@ -1026,10 +1098,13 @@ export function GameBoard({
                   <strong>和了</strong>
                 </div>
 
-                <TileView
-                  tile={winResult.winningTile}
-                  compact
-                  highlighted
+                <WinResultDoraIndicators
+                  doraIndicators={
+                    winResult.doraIndicatorTiles ?? []
+                  }
+                  uraDoraIndicators={
+                    winResult.uraDoraIndicatorTiles ?? []
+                  }
                 />
               </header>
 
@@ -1039,6 +1114,13 @@ export function GameBoard({
                     <span key={name}>{name}</span>
                   )
                 )}
+
+                {winResult.yakumanMultiplier === 0 &&
+                  (winResult.doraCount ?? 0) > 0 && (
+                    <span>
+                      ドラ{winResult.doraCount}
+                    </span>
+                  )}
               </div>
 
               <div className="win-result-score">
@@ -1130,9 +1212,20 @@ export function GameBoard({
                     <strong>ダブロン</strong>
                   </div>
 
-                  <b className="draw-result-count">
-                    2人和了
-                  </b>
+                  <div className="double-ron-header-summary">
+                    <b className="draw-result-count">
+                      2人和了
+                    </b>
+
+                    <WinResultDoraIndicators
+                      doraIndicators={
+                        doubleRonDoraIndicatorTiles
+                      }
+                      uraDoraIndicators={
+                        doubleRonUraDoraIndicatorTiles
+                      }
+                    />
+                  </div>
                 </header>
 
                 <div className="double-ron-winners">
@@ -1168,14 +1261,6 @@ export function GameBoard({
                                 </span>
                               )}
                             </div>
-
-                            <TileView
-                              tile={
-                                ronResult.winningTile
-                              }
-                              compact
-                              highlighted
-                            />
                           </header>
 
                           <div className="win-result-yaku">
@@ -1186,6 +1271,16 @@ export function GameBoard({
                                 </span>
                               )
                             )}
+
+                            {ronResult.yakumanMultiplier ===
+                              0 &&
+                              (ronResult.doraCount ?? 0) >
+                                0 && (
+                                <span>
+                                  ドラ
+                                  {ronResult.doraCount}
+                                </span>
+                              )}
                           </div>
 
                           <div className="win-result-score">
