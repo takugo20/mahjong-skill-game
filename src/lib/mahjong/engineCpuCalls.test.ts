@@ -522,3 +522,241 @@ describe("CPU副露のゲーム進行", () => {
     ).toHaveLength(0);
   });
 });
+
+describe("CPU大明槓のゲーム進行", () => {
+  it("プレイヤーの捨て牌をCPUが大明槓して嶺上牌をツモる", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const calledTile =
+      createTile("honor", 5);
+    const matchingTiles = createTiles(
+      "honor",
+      [5, 5, 5]
+    );
+    const discardAfterKan =
+      createTile("man", 9);
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [calledTile],
+      drawnTileId: calledTile.id
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...matchingTiles,
+        ...createTiles("man", [2, 2]),
+        discardAfterKan,
+        ...createTiles(
+          "pin",
+          [1, 2, 3, 4, 5, 6]
+        ),
+        createTile("sou", 7)
+      ],
+      melds: [],
+      drawnTileId: null
+    };
+    setEmptyCpuHand(state, 2);
+    setEmptyCpuHand(state, 3);
+    setShortLiveWall(state);
+
+    const initialLiveWallLength =
+      state.round.liveWall.length;
+    const result = playPlayerDiscard(
+      state,
+      calledTile.id,
+      () => 0.5
+    );
+    const caller = result.round.players[1];
+    const openKan = caller.melds[0];
+
+    expect(openKan).toMatchObject({
+      kind: "openKan",
+      calledFrom: 0,
+      calledTileId: calledTile.id
+    });
+    expect(openKan?.tiles).toHaveLength(4);
+    expect(result.round.kanCount).toBe(1);
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(2);
+    expect(
+      result.round.rinshanDrawCount
+    ).toBe(1);
+    expect(result.round.liveWall).toHaveLength(
+      initialLiveWallLength - 4
+    );
+    expect(
+      result.round.players[0]
+        .discards[0].called
+    ).toBe(true);
+    expect(caller.discards).toHaveLength(1);
+    expect(
+      caller.discards[0].tile.id
+    ).toBe(discardAfterKan.id);
+  });
+
+  it("CPUの大明槓とプレイヤーのチーが競合すると大明槓を優先する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const initialDiscard =
+      createTile("sou", 1);
+    const calledTile =
+      createTile("man", 4);
+    const matchingTiles = createTiles(
+      "man",
+      [4, 4, 4]
+    );
+    const valueHonorTiles =
+      createTiles("honor", [5, 5, 5]);
+    const valueHonorMeld: Meld = {
+      kind: "pon",
+      tiles: valueHonorTiles,
+      calledFrom: 0,
+      calledTileId:
+        valueHonorTiles[0].id
+    };
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        initialDiscard,
+        createTile("man", 5),
+        createTile("man", 6),
+        createTile("pin", 1)
+      ],
+      melds: [],
+      drawnTileId: initialDiscard.id
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...matchingTiles,
+        ...createTiles(
+          "pin",
+          [2, 2, 2, 3, 4]
+        ),
+        ...createTiles("sou", [7, 8])
+      ],
+      melds: [valueHonorMeld],
+      drawnTileId: null
+    };
+    setEmptyCpuHand(state, 2);
+    setEmptyCpuHand(state, 3);
+    state.round.liveWall = [
+      createTile("honor", 7),
+      createTile("honor", 1),
+      calledTile,
+      createTile("honor", 2),
+      createTile("honor", 3),
+      createTile("honor", 4)
+    ];
+
+    const result = playPlayerDiscard(
+      state,
+      initialDiscard.id,
+      () => 0.5
+    );
+    const cpuOpenKan =
+      result.round.players[1]
+        .melds.find(
+          (meld) =>
+            meld.calledTileId ===
+            calledTile.id
+        );
+
+    expect(cpuOpenKan?.kind).toBe(
+      "openKan"
+    );
+    expect(
+      result.round.players[0].melds
+    ).toHaveLength(0);
+    expect(
+      result.round.players[3]
+        .discards.find(
+          (discard) =>
+            discard.tile.id ===
+            calledTile.id
+        )?.called
+    ).toBe(true);
+  });
+
+  it("プレイヤーのポンがCPUの大明槓より打牌者に近ければプレイヤーを優先する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const initialDiscard =
+      createTile("sou", 1);
+    const calledTile =
+      createTile("man", 4);
+    const playerMatchingTiles =
+      createTiles("man", [4, 4]);
+    const cpuMatchingTiles =
+      createTiles("man", [4, 4, 4]);
+    const valueHonorTiles =
+      createTiles("honor", [5, 5, 5]);
+    const valueHonorMeld: Meld = {
+      kind: "pon",
+      tiles: valueHonorTiles,
+      calledFrom: 0,
+      calledTileId:
+        valueHonorTiles[0].id
+    };
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        initialDiscard,
+        ...playerMatchingTiles,
+        createTile("pin", 1)
+      ],
+      melds: [],
+      drawnTileId: initialDiscard.id
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...cpuMatchingTiles,
+        ...createTiles(
+          "pin",
+          [2, 2, 2, 3, 4]
+        ),
+        ...createTiles("sou", [7, 8])
+      ],
+      melds: [valueHonorMeld],
+      drawnTileId: null
+    };
+    setEmptyCpuHand(state, 2);
+    setEmptyCpuHand(state, 3);
+    state.round.liveWall = [
+      createTile("honor", 7),
+      createTile("honor", 1),
+      calledTile,
+      createTile("honor", 2),
+      createTile("honor", 3)
+    ];
+
+    const result = playPlayerDiscard(
+      state,
+      initialDiscard.id,
+      () => 0.5
+    );
+
+    expect(result.round.phase).toBe(
+      "reaction"
+    );
+    expect(
+      result.round.lastDiscard?.seat
+    ).toBe(3);
+    expect(
+      getPlayerMeldCallOptions(result).map(
+        (option) => option.kind
+      )
+    ).toContain("pon");
+    expect(
+      result.round.players[1].melds
+    ).toHaveLength(1);
+  });
+});
