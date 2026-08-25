@@ -7,7 +7,8 @@ import {
   completePlayerSelfKan,
   createInitialGameState,
   declarePlayerSelfKan,
-  getPlayerSelfKanOptions
+  getPlayerSelfKanOptions,
+  playPlayerSelfKan
 } from "./engine";
 import type {
   GameState,
@@ -555,5 +556,213 @@ describe("プレイヤーの槓成立", () => {
     expect(result.notice).toBe(
       "成立待ちの槓はありません。"
     );
+  });
+});
+
+describe("プレイヤーの加槓とCPUの槍槓", () => {
+  it("CPUが加槓牌で和了できれば槍槓を成立させる", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const ponTiles = createTiles(
+      "man",
+      [2, 2, 2]
+    );
+    const addedTile = createTile(
+      "man",
+      2
+    );
+    const otherTiles = createTiles(
+      "sou",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+    );
+    const pon: Meld = {
+      kind: "pon",
+      tiles: ponTiles,
+      calledFrom: 3,
+      calledTileId: ponTiles[0].id
+    };
+
+    setPlayerHand(
+      state,
+      [addedTile, ...otherTiles],
+      otherTiles[otherTiles.length - 1].id,
+      [pon]
+    );
+
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...createTiles(
+          "man",
+          [3, 4, 5, 6, 7]
+        ),
+        ...createTiles(
+          "pin",
+          [2, 3, 4]
+        ),
+        ...createTiles(
+          "sou",
+          [6, 7, 8]
+        ),
+        ...createTiles(
+          "honor",
+          [3, 3]
+        )
+      ]
+    };
+    state.round.players[2].hand = [];
+    state.round.players[3].hand = [];
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "加槓候補が見つかりません。"
+      );
+    }
+
+    const result = playPlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.pendingKan).toBeNull();
+    expect(result.round.kanCount).toBe(0);
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(1);
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "ron",
+      winnerSeat: 1,
+      loserSeat: 0,
+      winningTile: addedTile
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("槍槓");
+    expect(
+      result.round.players[0].melds[0].kind
+    ).toBe("pon");
+  });
+
+  it("誰も槍槓できなければ加槓を成立させる", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const ponTiles = createTiles(
+      "honor",
+      [6, 6, 6]
+    );
+    const addedTile = createTile(
+      "honor",
+      6
+    );
+    const otherTiles = createTiles(
+      "sou",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+    );
+    const pon: Meld = {
+      kind: "pon",
+      tiles: ponTiles,
+      calledFrom: 3,
+      calledTileId: ponTiles[0].id
+    };
+
+    setPlayerHand(
+      state,
+      [addedTile, ...otherTiles],
+      otherTiles[otherTiles.length - 1].id,
+      [pon]
+    );
+
+    state.round.players[1].hand = [];
+    state.round.players[2].hand = [];
+    state.round.players[3].hand = [];
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "加槓候補が見つかりません。"
+      );
+    }
+
+    const result = playPlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.pendingKan).toBeNull();
+    expect(result.round.winResult).toBeNull();
+    expect(result.round.kanCount).toBe(1);
+    expect(
+      result.round.doraIndicatorCount
+    ).toBe(2);
+    expect(
+      result.round.players[0].melds[0].kind
+    ).toBe("addedKan");
+    expect(
+      result.round.players[0]
+        .drawnTileSource
+    ).toBe("rinshan");
+  });
+
+  it("通常手では暗槓を槍槓できない", () => {
+    const { state } =
+      createClosedKanState();
+
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...createTiles(
+          "man",
+          [2, 3, 4, 6, 7]
+        ),
+        ...createTiles(
+          "pin",
+          [2, 3, 4]
+        ),
+        ...createTiles(
+          "sou",
+          [6, 7, 8]
+        ),
+        ...createTiles(
+          "honor",
+          [3, 3]
+        )
+      ]
+    };
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "暗槓候補が見つかりません。"
+      );
+    }
+
+    const result = playPlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.winResult).toBeNull();
+    expect(result.round.kanCount).toBe(1);
+    expect(
+      result.round.players[0].melds[0].kind
+    ).toBe("closedKan");
   });
 });
