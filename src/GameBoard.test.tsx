@@ -245,6 +245,75 @@ function createMeldCallReactionState() {
   return state;
 }
 
+function createOpenKanReactionDisplayState() {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const calledTile =
+    createTile("man", 2);
+  const matchingTiles = createTiles(
+    "man",
+    [2, 2, 2]
+  );
+  const firstMan = createTile("man", 1);
+  const thirdMan = createTile("man", 3);
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      ...matchingTiles,
+      firstMan,
+      thirdMan,
+      ...createTiles(
+        "sou",
+        [1, 2, 3, 4, 5, 6, 7, 8]
+      )
+    ],
+    melds: [],
+    discards: [],
+    riichi: false,
+    ippatsu: false,
+    drawnTileId: null
+  };
+  state.round.phase = "reaction";
+  state.round.lastDiscard = {
+    seat: 3,
+    discard: {
+      tile: calledTile,
+      tsumogiri: false,
+      riichiDeclaration: false,
+      faceDown: false,
+      called: false
+    }
+  };
+  state.round.meldCallOptions = [
+    {
+      id: "ui-open-kan-pon",
+      kind: "pon",
+      callerSeat: 0,
+      discarderSeat: 3,
+      calledTileId: calledTile.id,
+      handTileIds: [
+        matchingTiles[0].id,
+        matchingTiles[1].id
+      ]
+    },
+    {
+      id: "ui-open-kan-chi",
+      kind: "chi",
+      callerSeat: 0,
+      discarderSeat: 3,
+      calledTileId: calledTile.id,
+      handTileIds: [
+        firstMan.id,
+        thirdMan.id
+      ]
+    }
+  ];
+
+  return state;
+}
+
 function createDisplayMeld(
   kind: "chi" | "pon",
   suit: TileSuit,
@@ -474,6 +543,37 @@ describe("対局画面", () => {
     );
     expect(html).not.toContain(
       ">ロン</button>"
+    );
+    expect(html).not.toContain("大明槓");
+  });
+
+  it("大明槓候補を牌名付きでポンとチーの間に表示する", () => {
+    const html = renderToStaticMarkup(
+      <GameBoard
+        initialState={
+          createOpenKanReactionDisplayState()
+        }
+      />
+    );
+    const ponButtonIndex =
+      html.indexOf(">ポン</button>");
+    const openKanButtonIndex =
+      html.indexOf(">大明槓 二萬</button>");
+    const chiButtonIndex =
+      html.indexOf(">チー</button>");
+
+    expect(html).toContain(
+      "ポン・大明槓・チー可能"
+    );
+    expect(html).toContain(
+      'class="primary-button kan-button"'
+    );
+    expect(ponButtonIndex).toBeGreaterThan(-1);
+    expect(openKanButtonIndex).toBeGreaterThan(
+      ponButtonIndex
+    );
+    expect(chiButtonIndex).toBeGreaterThan(
+      openKanButtonIndex
     );
   });
 
