@@ -1,6 +1,7 @@
 import type {
   Discard,
   GameState,
+  MeldCallOption,
   PlayerState,
   RoundPointResult,
   RoundWinResult,
@@ -9,6 +10,9 @@ import type {
   Tile,
   Wind
 } from "./types";
+import {
+  getMeldCallOptions
+} from "./calls";
 import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
@@ -200,6 +204,8 @@ export function createInitialGameState(
       currentSeat: 0,
       phase: "discarding",
       lastDiscard: null,
+      meldCallOptions: [],
+      turnNumber: 0,
       turnNumber: 0,
       kanCount: 0,
       doraIndicatorCount: 1,
@@ -269,7 +275,8 @@ export function drawTile(
         round.players,
         updatedPlayer
       ),
-      phase: "discarding"
+      phase: "discarding",
+      meldCallOptions: []
     },
     notice:
       seat === 0
@@ -359,6 +366,7 @@ export function discardTile(
         seat,
         discard
       },
+      meldCallOptions: [],
       turnNumber: round.turnNumber + 1
     },
     notice: wallIsEmpty
@@ -990,6 +998,77 @@ function finishCpuTsumoIfAvailable(
     : null;
 }
 
+function createPlayerMeldCallOptions(
+  state: GameState
+): MeldCallOption[] {
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    !lastDiscard ||
+    lastDiscard.seat === 0
+  ) {
+    return [];
+  }
+
+  const player = state.round.players[0];
+
+  return getMeldCallOptions({
+    callerSeat: 0,
+    discarderSeat: lastDiscard.seat,
+    calledTile:
+      lastDiscard.discard.tile,
+    concealedTiles: player.hand,
+    callerRiichi: player.riichi,
+    liveWallTileCount:
+      state.round.liveWall.length
+  });
+}
+
+export function getPlayerMeldCallOptions(
+  state: GameState
+): MeldCallOption[] {
+  if (state.round.phase !== "reaction") {
+    return [];
+  }
+
+  return [
+    ...(state.round.meldCallOptions ?? [])
+  ];
+}
+
+function getMeldCallNotice(
+  state: GameState,
+  options: readonly MeldCallOption[]
+): string {
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (!lastDiscard) {
+    return "副露できます。";
+  }
+
+  const canPon = options.some(
+    (option) => option.kind === "pon"
+  );
+  const canChi = options.some(
+    (option) => option.kind === "chi"
+  );
+
+  const actionLabel =
+    canPon && canChi
+      ? "ポンまたはチー"
+      : canPon
+        ? "ポン"
+        : "チー";
+
+  return (
+    `${state.round.players[lastDiscard.seat].name}の` +
+    `${getTileLabel(lastDiscard.discard.tile)}に` +
+    `${actionLabel}できます。`
+  );
+}
+
 function completeCpuTurns(
   state: GameState,
   random: () => number
@@ -1046,6 +1125,11 @@ function completeCpuTurns(
 
     processedCpuCount += 1;
 
+    const meldCallOptions =
+      createPlayerMeldCallOptions(
+        nextState
+      );
+
     if (canPlayerRon(nextState)) {
       const lastDiscard =
         nextState.round.lastDiscard;
@@ -1060,7 +1144,8 @@ function completeCpuTurns(
         ...nextState,
         round: {
           ...nextState.round,
-          phase: "reaction"
+          phase: "reaction",
+          meldCallOptions
         },
         notice:
           `${nextState.round.players[lastDiscard.seat].name}の` +
@@ -1075,6 +1160,21 @@ function completeCpuTurns(
 
     if (otherCpuRonState) {
       return otherCpuRonState;
+    }
+
+    if (meldCallOptions.length > 0) {
+      return {
+        ...nextState,
+        round: {
+          ...nextState.round,
+          phase: "reaction",
+          meldCallOptions
+        },
+        notice: getMeldCallNotice(
+          nextState,
+          meldCallOptions
+        )
+      };
     }
   }
 
@@ -1100,7 +1200,6 @@ function completeCpuTurns(
 
   return nextState;
 }
-
 export function skipPlayerRon(
   state: GameState,
   random: () => number = Math.random
@@ -1110,13 +1209,16 @@ export function skipPlayerRon(
   }
 
   const player = state.round.players[0];
+  const skippedRon = canPlayerRon(state);
 
   const skippedPlayer: PlayerState = {
     ...player,
     temporaryFuriten:
-      player.riichi ? false : true,
+      skippedRon && !player.riichi
+        ? true
+        : player.temporaryFuriten,
     riichiFuriten:
-      player.riichi ||
+      (skippedRon && player.riichi) ||
       player.riichiFuriten === true
   };
 
@@ -1127,9 +1229,14 @@ export function skipPlayerRon(
       players: replacePlayer(
         state.round.players,
         skippedPlayer
-      )
+      ),
+      meldCallOptions: []
     }
   };
+
+  const skippedNotice = skippedRon
+    ? "ロンを見送りました。"
+    : "副露を見送りました。";
 
   if (
     skippedState.round.liveWall.length === 0
@@ -1145,9 +1252,24 @@ export function skipPlayerRon(
 
     return finishRoundWithExhaustiveDraw(
       skippedState,
-      "ロンを見送りました。通常山が尽きたため、荒牌平局です。"
+      `${skippedNotice}通常山が尽きたため、荒牌平局です。`
     );
   }
+
+  const resumedState: GameState = {
+    ...skippedState,
+    round: {
+      ...skippedState.round,
+      phase: "drawing"
+    },
+    notice: skippedNotice
+  };
+
+  return completeCpuTurns(
+    resumedState,
+    random
+  );
+}
 
   const resumedState: GameState = {
     ...skippedState,
@@ -1700,6 +1822,7 @@ export function startNextRound(
       currentSeat: nextDealerSeat,
       phase: "drawing",
       lastDiscard: null,
+      meldCallOptions: [],
       turnNumber: 0,
       kanCount: 0,
       doraIndicatorCount: 1,
