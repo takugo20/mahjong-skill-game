@@ -14,12 +14,17 @@ import {
   getDoraIndicators,
   getPlayerMeldCallOptions,
   getPlayerRiichiDiscardTileIds,
+  getPlayerSelfKanOptions,
   getRoundLabel,
   getWindLabel,
   playPlayerDiscard,
+  playPlayerSelfKan,
   skipPlayerRon,
   startNextRound
 } from "./lib/mahjong/engine";
+import type {
+  SelfKanOption
+} from "./lib/mahjong/kan";
 import {
   getTileLabel
 } from "./lib/mahjong/tiles";
@@ -205,6 +210,28 @@ function getMeldCallOptionLabel(
     : `${actionLabel} ${
         handTileLabels.join("+")
       }`;
+}
+
+function getSelfKanOptionLabel(
+  option: SelfKanOption,
+  player: PlayerState
+): string {
+  const tileId =
+    option.kind === "closedKan"
+      ? option.tileIds[0]
+      : option.tileId;
+  const tile = player.hand.find(
+    (candidate) =>
+      candidate.id === tileId
+  );
+  const actionLabel =
+    option.kind === "closedKan"
+      ? "暗槓"
+      : "加槓";
+
+  return tile
+    ? `${actionLabel} ${getTileLabel(tile)}`
+    : actionLabel;
 }
 
 function getMeldKindLabel(
@@ -548,6 +575,21 @@ export function GameBoard({
   const canRiichi =
     canPlayerRiichi(gameState);
 
+  const selfKanOptions =
+    getPlayerSelfKanOptions(gameState);
+
+  const canClosedKan =
+    selfKanOptions.some(
+      (option) =>
+        option.kind === "closedKan"
+    );
+
+  const canAddedKan =
+    selfKanOptions.some(
+      (option) =>
+        option.kind === "addedKan"
+    );
+
   const selectedTileCanDeclareRiichi =
     selectedTileId !== null &&
     riichiDiscardTileIds.includes(
@@ -703,6 +745,19 @@ export function GameBoard({
   ) {
     setGameState((currentState) =>
       declarePlayerMeldCall(
+        currentState,
+        optionId
+      )
+    );
+
+    setSelectedTileId(null);
+  }
+
+  function handleSelfKan(
+    optionId: string
+  ) {
+    setGameState((currentState) =>
+      playPlayerSelfKan(
         currentState,
         optionId
       )
@@ -946,7 +1001,13 @@ export function GameBoard({
                 ? reactionStatus
                 : canTsumo
                   ? "ツモ和了可能"
-                  : player.riichi
+                  : canClosedKan && canAddedKan
+                    ? "暗槓・加槓可能"
+                    : canClosedKan
+                      ? "暗槓可能"
+                      : canAddedKan
+                        ? "加槓可能"
+                        : player.riichi
                     ? `${getRiichiStatusLabel(
                         player
                       )}中・ツモ切り`
@@ -1044,7 +1105,27 @@ export function GameBoard({
                   </button>
                 )}
 
-                 {canRiichi && (
+                {selfKanOptions.map(
+                  (option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className="secondary-button kan-button"
+                      onClick={() =>
+                        handleSelfKan(
+                          option.id
+                        )
+                      }
+                    >
+                      {getSelfKanOptionLabel(
+                        option,
+                        player
+                      )}
+                    </button>
+                  )
+                )}
+
+                {canRiichi && (
                   <button
                     type="button"
                     className="secondary-button riichi-button"
