@@ -1780,7 +1780,7 @@ body {
 
 .table-center {
   position: absolute;
-  z-index: 4;
+  z-index: 12;
   top: 1.2%;
   left: 1.5%;
   display: grid;
