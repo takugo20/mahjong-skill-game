@@ -204,8 +204,14 @@ export function GameBoard({
   const winResult =
     round.winResult ?? null;
 
+  const doubleRonResult =
+    round.doubleRonResult ?? null;
+
   const drawResult =
     round.drawResult ?? null;
+
+  const abortiveDrawResult =
+    round.abortiveDrawResult ?? null;
 
   const matchResult =
     gameState.matchResult;
@@ -660,6 +666,234 @@ export function GameBoard({
             </article>
           </section>
         )}
+                {doubleRonResult &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="ダブロン結果"
+            >
+              <article className="win-result-card double-ron-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>ロン</span>
+
+                    <strong>ダブロン</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    2人和了
+                  </b>
+                </header>
+
+                <div className="double-ron-winners">
+                  {doubleRonResult.winResults.map(
+                    (ronResult) => {
+                      const winner =
+                        round.players[
+                          ronResult.winnerSeat
+                        ];
+
+                      const receivesRiichiPool =
+                        doubleRonResult
+                          .riichiPoolRecipientSeat ===
+                        ronResult.winnerSeat;
+
+                      return (
+                        <section
+                          key={ronResult.winnerSeat}
+                          className="double-ron-winner"
+                        >
+                          <header className="double-ron-winner-header">
+                            <div>
+                              <strong>
+                                {getWindLabel(
+                                  winner.seatWind
+                                )}
+                                ・{winner.name}
+                              </strong>
+
+                              {receivesRiichiPool && (
+                                <span>
+                                  供託取得
+                                </span>
+                              )}
+                            </div>
+
+                            <TileView
+                              tile={
+                                ronResult.winningTile
+                              }
+                              compact
+                              highlighted
+                            />
+                          </header>
+
+                          <div className="win-result-yaku">
+                            {ronResult.yakuNames.map(
+                              (name) => (
+                                <span key={name}>
+                                  {name}
+                                </span>
+                              )
+                            )}
+                          </div>
+
+                          <div className="win-result-score">
+                            <strong>
+                              {ronResult.yakumanMultiplier >
+                              0
+                                ? ronResult.limitName ??
+                                  "役満"
+                                : `${ronResult.han}翻 ${ronResult.fu ?? 0}符`}
+                            </strong>
+
+                            {ronResult.limitName &&
+                              ronResult.yakumanMultiplier ===
+                                0 && (
+                                <span>
+                                  {
+                                    ronResult.limitName
+                                  }
+                                </span>
+                              )}
+
+                            <b>
+                              {formatScore(
+                                ronResult.totalPoints
+                              )}
+                              点
+                            </b>
+                          </div>
+                        </section>
+                      );
+                    }
+                  )}
+                </div>
+
+                <div className="win-result-changes double-ron-result-changes">
+                  {doubleRonResult.pointChanges.map(
+                    (change) => {
+                      const changedPlayer =
+                        round.players[change.seat];
+
+                      return (
+                        <div key={change.playerId}>
+                          <span>
+                            {getWindLabel(
+                              changedPlayer.seatWind
+                            )}
+                            ・{changedPlayer.name}
+                          </span>
+
+                          <strong
+                            className={
+                              change.change > 0
+                                ? "point-change--plus"
+                                : change.change < 0
+                                  ? "point-change--minus"
+                                  : ""
+                            }
+                          >
+                            {formatPointChange(
+                              change.change
+                            )}
+                          </strong>
+
+                          <small>
+                            {formatScore(
+                              change.pointsAfter
+                            )}
+                            点
+                          </small>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
+        {abortiveDrawResult?.reason ===
+          "tripleRon" &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="三家和結果"
+            >
+              <article className="win-result-card triple-ron-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>途中流局</span>
+
+                    <strong>三家和</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    3人ロン
+                  </b>
+                </header>
+
+                <div className="triple-ron-players">
+                  {abortiveDrawResult.ronCandidateSeats.map(
+                    (seat) => {
+                      const candidate =
+                        round.players[seat];
+
+                      return (
+                        <div key={seat}>
+                          <span className="wind-badge">
+                            {getWindLabel(
+                              candidate.seatWind
+                            )}
+                          </span>
+
+                          <strong>
+                            {candidate.name}
+                          </strong>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>点数移動なし</strong>
+                </div>
+
+                <p className="triple-ron-description">
+                  3人の和了はすべて無効となり、
+                  親は連荘します。
+                  {round.riichiPool > 0
+                    ? `供託${formatScore(
+                        round.riichiPool
+                      )}点は次局へ持ち越します。`
+                    : "供託点はありません。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
         {drawResult &&
           round.phase === "roundEnd" && (
             <section
