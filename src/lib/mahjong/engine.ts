@@ -481,6 +481,8 @@ function createWinInput(
     round: state.round,
     winnerSeat,
     winMethod,
+    doubleRiichi:
+      player.doubleRiichi === true,
     doraIndicators:
       getDoraIndicators(state.round),
     uraDoraIndicators:
