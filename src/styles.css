@@ -1780,59 +1780,61 @@ body {
 
 .table-center {
   position: absolute;
-  z-index: 20;
-  top: 1.5%;
+  z-index: 4;
+  top: 1.2%;
   left: 1.5%;
   display: grid;
   grid-template-columns:
-    minmax(74px, 0.72fr)
-    minmax(0, 1.55fr);
-  grid-template-rows:
-    minmax(0, 0.72fr)
-    minmax(0, 1.28fr);
-  gap: clamp(2px, 0.45vmin, 5px);
+    max-content
+    max-content
+    minmax(88px, 1fr);
+  grid-template-rows: auto;
+  align-items: stretch;
+  gap: clamp(1px, 0.3vmin, 3px);
   box-sizing: border-box;
   width: clamp(
-    235px,
-    min(33vw, 55vh),
-    440px
+    210px,
+    min(23vw, 38vh),
+    300px
   );
-  aspect-ratio: 2 / 1;
-  padding: clamp(4px, 0.7vmin, 8px);
+  padding: clamp(2px, 0.4vmin, 5px);
   transform: none;
-  border: clamp(1px, 0.25vmin, 2px)
-    solid #d3ad56;
-  border-radius: clamp(5px, 0.8vmin, 9px);
+  border: 1px solid
+    rgb(211 173 86 / 70%);
+  border-radius: clamp(4px, 0.6vmin, 7px);
   background:
     linear-gradient(
       145deg,
-      rgb(2 31 16 / 94%),
-      rgb(1 17 9 / 94%)
+      rgb(8 58 32 / 56%),
+      rgb(2 34 18 / 48%)
     );
   box-shadow:
-    0 5px 12px rgb(0 0 0 / 40%),
+    0 3px 8px rgb(0 0 0 / 25%),
     inset 0 0 0 1px rgb(255 255 255 / 4%);
+  pointer-events: none;
 }
 
 .center-remaining {
   grid-row: 1;
-  grid-column: 1 / -1;
+  grid-column: 1;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
-  gap: clamp(2px, 0.45vmin, 5px);
+  gap: clamp(1px, 0.25vmin, 3px);
   min-height: 0;
-  padding-bottom: clamp(2px, 0.35vmin, 4px);
-  border-bottom: 1px solid
+  padding: 0 clamp(2px, 0.4vmin, 4px)
+    0 0;
+  border-right: 1px solid
     rgb(255 255 255 / 14%);
+  border-bottom: 0;
 }
 
 .center-remaining span {
   color: #eaf5ec;
   font-size: clamp(
-    0.52rem,
-    min(1.05vw, 1.6vh),
-    0.72rem
+    0.44rem,
+    min(0.85vw, 1.3vh),
+    0.6rem
   );
   font-weight: 800;
 }
@@ -1840,9 +1842,9 @@ body {
 .center-remaining strong {
   color: #ffe36e;
   font-size: clamp(
-    1.2rem,
-    min(3.2vw, 4.8vh),
-    2.15rem
+    1rem,
+    min(2.5vw, 3.6vh),
+    1.6rem
   );
   line-height: 1;
   text-shadow:
@@ -1851,11 +1853,11 @@ body {
 }
 
 .table-center .center-stat-grid {
-  grid-row: 2;
-  grid-column: 1;
+  grid-row: 1;
+  grid-column: 2;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: clamp(1px, 0.25vmin, 3px);
+  gap: 1px;
   min-width: 0;
   min-height: 0;
   margin: 0;
@@ -1863,53 +1865,53 @@ body {
 
 .table-center .center-stat-grid > div {
   justify-content: center;
-  gap: clamp(1px, 0.2vmin, 2px);
+  gap: 0;
   min-width: 0;
   min-height: 0;
-  padding: clamp(1px, 0.3vmin, 3px);
-  border-radius: clamp(3px, 0.5vmin, 6px);
+  padding: 1px clamp(2px, 0.35vmin, 4px);
+  border-radius: clamp(2px, 0.35vmin, 4px);
 }
 
 .table-center .center-stat-grid span {
   font-size: clamp(
-    0.44rem,
-    min(0.85vw, 1.3vh),
-    0.6rem
+    0.38rem,
+    min(0.7vw, 1.05vh),
+    0.5rem
   );
 }
 
 .table-center .center-stat-grid strong {
   font-size: clamp(
-    0.76rem,
-    min(1.55vw, 2.3vh),
-    1.08rem
+    0.64rem,
+    min(1.15vw, 1.7vh),
+    0.82rem
   );
 }
 
 .table-center .dora-panel {
-  grid-row: 2;
-  grid-column: 2;
+  grid-row: 1;
+  grid-column: 3;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(1px, 0.25vmin, 3px);
+  gap: 1px;
   min-width: 0;
   min-height: 0;
-  padding: clamp(1px, 0.3vmin, 3px);
-  border-radius: clamp(3px, 0.5vmin, 6px);
-  background: rgb(255 255 255 / 5%);
+  padding: 1px;
+  border-radius: clamp(2px, 0.35vmin, 4px);
+  background: rgb(255 255 255 / 3%);
 }
 
 .table-center .dora-panel > span {
   font-size: clamp(
-    0.44rem,
-    min(0.85vw, 1.3vh),
-    0.6rem
+    0.38rem,
+    min(0.7vw, 1.05vh),
+    0.5rem
   );
 }
 
 .table-center .dora-tiles {
   justify-content: center;
-  gap: clamp(1px, 0.25vmin, 3px);
+  gap: clamp(1px, 0.18vmin, 2px);
   width: 100%;
   min-width: 0;
   flex-wrap: nowrap;
@@ -1918,9 +1920,9 @@ body {
 .table-center .mahjong-tile--compact {
   flex: 0 0 auto;
   width: clamp(
-    14px,
-    min(2.2vw, 3.5vh),
-    28px
+    11px,
+    min(1.55vw, 2.5vh),
+    19px
   );
   height: auto;
   aspect-ratio: 25 / 35;
