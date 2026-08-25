@@ -64,6 +64,19 @@ export interface LastDiscard {
   discard: Discard;
 }
 
+export type MeldCallKind =
+  | "chi"
+  | "pon";
+
+export interface MeldCallOption {
+  id: string;
+  kind: MeldCallKind;
+  callerSeat: SeatIndex;
+  discarderSeat: SeatIndex;
+  calledTileId: string;
+  handTileIds: [string, string];
+}
+
 export interface RoundPointResult {
   playerId: string;
   seat: SeatIndex;
@@ -143,6 +156,7 @@ export interface RoundState {
   currentSeat: SeatIndex;
   phase: GamePhase;
   lastDiscard: LastDiscard | null;
+  meldCallOptions?: MeldCallOption[];
   turnNumber: number;
   kanCount: number;
   doraIndicatorCount: number;
