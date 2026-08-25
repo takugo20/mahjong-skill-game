@@ -29,9 +29,11 @@ import {
   getFuritenStatus
 } from "./furiten";
 import {
+  getOpenKanCallOptions,
   getSelfKanOptions
 } from "./kan";
 import type {
+  OpenKanCallOption,
   SelfKanOption
 } from "./kan";
 import {
@@ -1167,6 +1169,56 @@ export function getPlayerMeldCallOptions(
   ];
 }
 
+export function getPlayerOpenKanCallOptions(
+  state: GameState
+): OpenKanCallOption[] {
+  if (state.round.phase !== "reaction") {
+    return [];
+  }
+
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    !lastDiscard ||
+    lastDiscard.seat === 0
+  ) {
+    return [];
+  }
+
+  const hasAvailablePon =
+    (state.round.meldCallOptions ?? [])
+      .some(
+        (option) =>
+          option.callerSeat === 0 &&
+          option.kind === "pon" &&
+          option.discarderSeat ===
+            lastDiscard.seat &&
+          option.calledTileId ===
+            lastDiscard.discard.tile.id
+      );
+
+  if (!hasAvailablePon) {
+    return [];
+  }
+
+  const player = state.round.players[0];
+
+  return getOpenKanCallOptions({
+    callerSeat: 0,
+    discarderSeat: lastDiscard.seat,
+    calledTile:
+      lastDiscard.discard.tile,
+    concealedTiles: player.hand,
+    callerRiichi: player.riichi,
+    kanCount: state.round.kanCount,
+    rinshanDrawCount:
+      state.round.rinshanDrawCount,
+    liveWallTileCount:
+      state.round.liveWall.length
+  });
+}
+
 function getMeldCallSeatDistance(
   discarderSeat: SeatIndex,
   callerSeat: SeatIndex
@@ -1728,6 +1780,73 @@ export function declarePlayerMeldCall(
     notice:
       `${actionLabel}しました。` +
       "捨てる牌を選んでください。"
+  };
+}
+
+export function declarePlayerOpenKan(
+  state: GameState,
+  optionId: string
+): GameState {
+  const option =
+    getPlayerOpenKanCallOptions(state)
+      .find(
+        (candidate) =>
+          candidate.id === optionId
+      );
+
+  if (!option) {
+    return {
+      ...state,
+      notice:
+        "選択した大明槓候補は利用できません。"
+    };
+  }
+
+  const originalPlayer =
+    state.round.players[0];
+  const callState = canPlayerRon(state)
+    ? {
+        ...state,
+        round: {
+          ...state.round,
+          players: replacePlayer(
+            state.round.players,
+            {
+              ...originalPlayer,
+              temporaryFuriten:
+                originalPlayer.riichi
+                  ? originalPlayer
+                      .temporaryFuriten
+                  : true,
+              riichiFuriten:
+                originalPlayer.riichi ||
+                originalPlayer
+                  .riichiFuriten === true
+            }
+          )
+        }
+      }
+    : state;
+  const cpuRonState =
+    finishCpuRonIfAvailable(callState);
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
+
+  const execution = executeKan({
+    round: callState.round,
+    option
+  });
+
+  return {
+    ...callState,
+    round: execution.round,
+    notice:
+      "大明槓が成立し、" +
+      `${getTileLabel(
+        execution.rinshanTile
+      )}を嶺上牌としてツモりました。`
   };
 }
 
