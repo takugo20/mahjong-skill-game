@@ -6,6 +6,8 @@ import {
 import {
   canPlayerRon,
   createInitialGameState,
+  declarePlayerMeldCall,
+  discardTile,
   getPlayerMeldCallOptions,
   playPlayerDiscard,
   skipPlayerRon,
@@ -312,5 +314,250 @@ describe("ゲーム進行中の副露候補", () => {
     expect(
       result.round.meldCallOptions
     ).toEqual([]);
+  });
+});
+
+describe("プレイヤーの副露成立", () => {
+  it("ポンを手牌・副露・河へ反映して全員の一発を消す", () => {
+    const reactionState =
+      startNextRoundWithSeed(15);
+    const option =
+      getPlayerMeldCallOptions(
+        reactionState
+      )[0];
+    const handLengthBefore =
+      reactionState.round.players[0]
+        .hand.length;
+
+    for (
+      const player of
+        reactionState.round.players
+    ) {
+      player.ippatsu = true;
+    }
+
+    const result = declarePlayerMeldCall(
+      reactionState,
+      option.id
+    );
+    const player = result.round.players[0];
+    const meld =
+      player.melds[
+        player.melds.length - 1
+      ];
+    const discarder =
+      result.round.players[
+        option.discarderSeat
+      ];
+
+    expect(result.round.phase).toBe(
+      "discarding"
+    );
+    expect(result.round.currentSeat).toBe(0);
+    expect(player.hand).toHaveLength(
+      handLengthBefore - 2
+    );
+    expect(meld?.kind).toBe("pon");
+    expect(meld?.calledFrom).toBe(1);
+    expect(meld?.tiles).toHaveLength(3);
+    expect(
+      meld?.tiles.every(
+        (tile) =>
+          tile.suit === "honor" &&
+          tile.rank === 4
+      )
+    ).toBe(true);
+    expect(
+      discarder.discards.find(
+        (discard) =>
+          discard.tile.id ===
+          option.calledTileId
+      )?.called
+    ).toBe(true);
+    expect(
+      result.round.players.every(
+        (roundPlayer) =>
+          !roundPlayer.ippatsu
+      )
+    ).toBe(true);
+    expect(result.round.meldCallOptions).toEqual(
+      []
+    );
+    expect(
+      result.round.meldCallDiscardRestriction
+    ).toEqual({
+      callerSeat: 0,
+      forbiddenTileTypes: [
+        {
+          suit: "honor",
+          rank: 4
+        }
+      ]
+    });
+    expect(result.notice).toContain(
+      "ポンしました"
+    );
+  });
+
+  it("チーを反映して現物と筋の喰い替えを禁止する", () => {
+    const reactionState =
+      startNextRoundWithSeed(2);
+    const option =
+      getPlayerMeldCallOptions(
+        reactionState
+      )[0];
+
+    const result = declarePlayerMeldCall(
+      reactionState,
+      option.id
+    );
+    const meld =
+      result.round.players[0].melds[
+        result.round.players[0]
+          .melds.length - 1
+      ];
+
+    expect(meld?.kind).toBe("chi");
+    expect(meld?.calledFrom).toBe(3);
+    expect(
+      meld?.tiles.map((tile) => tile.rank)
+    ).toEqual([1, 2, 3]);
+    expect(
+      result.round.meldCallDiscardRestriction
+    ).toEqual({
+      callerSeat: 0,
+      forbiddenTileTypes: [
+        {
+          suit: "pin",
+          rank: 1
+        },
+        {
+          suit: "pin",
+          rank: 4
+        }
+      ]
+    });
+    expect(result.notice).toContain(
+      "チーしました"
+    );
+  });
+
+  it("チー直後の現物・筋喰い替えを拒否する", () => {
+    const reactionState =
+      startNextRoundWithSeed(2);
+    const option =
+      getPlayerMeldCallOptions(
+        reactionState
+      )[0];
+    const player =
+      reactionState.round.players[0];
+    const replacementIndexes =
+      player.hand
+        .map((tile, index) => ({
+          tile,
+          index
+        }))
+        .filter(
+          ({ tile }) =>
+            !option.handTileIds.includes(
+              tile.id
+            )
+        )
+        .slice(0, 2)
+        .map(({ index }) => index);
+
+    player.hand[replacementIndexes[0]] =
+      createTile("pin", 1);
+    player.hand[replacementIndexes[1]] =
+      createTile("pin", 4);
+
+    const calledState =
+      declarePlayerMeldCall(
+        reactionState,
+        option.id
+      );
+    const calledPlayer =
+      calledState.round.players[0];
+    const sameTile = calledPlayer.hand.find(
+      (tile) =>
+        tile.suit === "pin" &&
+        tile.rank === 1
+    );
+    const sujiTile = calledPlayer.hand.find(
+      (tile) =>
+        tile.suit === "pin" &&
+        tile.rank === 4
+    );
+
+    expect(sameTile).toBeDefined();
+    expect(sujiTile).toBeDefined();
+
+    const sameTileResult = discardTile(
+      calledState,
+      sameTile!.id
+    );
+    const sujiTileResult = discardTile(
+      calledState,
+      sujiTile!.id
+    );
+
+    expect(
+      sameTileResult.round.turnNumber
+    ).toBe(calledState.round.turnNumber);
+    expect(
+      sujiTileResult.round.turnNumber
+    ).toBe(calledState.round.turnNumber);
+    expect(sameTileResult.notice).toContain(
+      "喰い替え"
+    );
+    expect(sujiTileResult.notice).toContain(
+      "喰い替え"
+    );
+  });
+
+  it("合法な打牌後は喰い替え制限を解除する", () => {
+    const reactionState =
+      startNextRoundWithSeed(2);
+    const option =
+      getPlayerMeldCallOptions(
+        reactionState
+      )[0];
+    const calledState =
+      declarePlayerMeldCall(
+        reactionState,
+        option.id
+      );
+    const restriction =
+      calledState.round
+        .meldCallDiscardRestriction;
+    const legalTile =
+      calledState.round.players[0]
+        .hand.find(
+          (tile) =>
+            !restriction
+              ?.forbiddenTileTypes.some(
+                (tileType) =>
+                  tile.suit ===
+                    tileType.suit &&
+                  tile.rank ===
+                    tileType.rank
+              )
+        );
+
+    expect(legalTile).toBeDefined();
+
+    const result = discardTile(
+      calledState,
+      legalTile!.id
+    );
+
+    expect(result.round.turnNumber).toBe(
+      calledState.round.turnNumber + 1
+    );
+    expect(
+      result.round.meldCallDiscardRestriction
+    ).toBeNull();
+    expect(result.round.currentSeat).toBe(1);
+    expect(result.round.phase).toBe("drawing");
   });
 });
