@@ -3,12 +3,15 @@ import {
 } from "react";
 import { TileView } from "./components/TileView";
 import {
+  canPlayerRiichi,
   canPlayerRon,
   canPlayerTsumo,
   createInitialGameState,
+  declarePlayerRiichi,
   declarePlayerRon,
   declarePlayerTsumo,
   getDoraIndicators,
+  getPlayerRiichiDiscardTileIds,
   getRoundLabel,
   getWindLabel,
   playPlayerDiscard,
@@ -197,6 +200,20 @@ export function GameBoard({
   const canTsumo =
     canPlayerTsumo(gameState);
 
+  const riichiDiscardTileIds =
+    getPlayerRiichiDiscardTileIds(
+      gameState
+    );
+
+  const canRiichi =
+    canPlayerRiichi(gameState);
+
+  const selectedTileCanDeclareRiichi =
+    selectedTileId !== null &&
+    riichiDiscardTileIds.includes(
+      selectedTileId
+    );
+  
   const canRon =
     round.phase === "reaction" &&
     canPlayerRon(gameState);
@@ -245,6 +262,24 @@ export function GameBoard({
     setSelectedTileId(null);
   }
 
+  function handleRiichi() {
+    if (
+      !selectedTileId ||
+      !selectedTileCanDeclareRiichi
+    ) {
+      return;
+    }
+
+    setGameState((currentState) =>
+      declarePlayerRiichi(
+        currentState,
+        selectedTileId
+      )
+    );
+
+    setSelectedTileId(null);
+  }
+  
   function handleTsumo() {
     setGameState((currentState) =>
       declarePlayerTsumo(currentState)
@@ -291,14 +326,26 @@ export function GameBoard({
           selectedTileId === tile.id
         }
         highlighted={
-          player.drawnTileId === tile.id
+          player.drawnTileId === tile.id ||
+          (
+            canRiichi &&
+            riichiDiscardTileIds.includes(
+              tile.id
+            )
+          )
         }
-        disabled={!canDiscard}
+        disabled={
+          !canDiscard ||
+          (
+            player.riichi &&
+            player.drawnTileId !== tile.id
+          )
+        }
         onSelect={handleTileSelection}
       />
     );
   }
-
+  
   return (
     <main className="app-shell">
       <section
@@ -489,11 +536,20 @@ export function GameBoard({
                 ? "ロン可能"
                 : canTsumo
                   ? "ツモ和了可能"
-                  : selectedTile
-                    ? `${getTileLabel(
+                  : player.riichi
+                    ? "立直中・ツモ切り"
+                    : selectedTileCanDeclareRiichi &&
                         selectedTile
-                      )}を選択中`
-                    : "牌を選択"}
+                      ? `${getTileLabel(
+                          selectedTile
+                        )}で立直可能`
+                      : selectedTile
+                        ? `${getTileLabel(
+                            selectedTile
+                          )}を選択中`
+                        : canRiichi
+                          ? "青枠の牌で立直可能"
+                          : "牌を選択"}
           </div>
 
           <div className="control-buttons">
@@ -544,6 +600,19 @@ export function GameBoard({
                   </button>
                 )}
 
+                 {canRiichi && (
+                  <button
+                    type="button"
+                    className="secondary-button riichi-button"
+                    disabled={
+                      !selectedTileCanDeclareRiichi
+                    }
+                    onClick={handleRiichi}
+                  >
+                    立直
+                  </button>
+                )}
+                
                 <button
                   type="button"
                   className="primary-button"
