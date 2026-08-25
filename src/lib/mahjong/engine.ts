@@ -1648,23 +1648,95 @@ export function declarePlayerMeldCall(
 
 function completeCpuTurns(
   state: GameState,
-  random: () => number
+  random: () => number,
+  skipInitialPlayerMeldCallReaction = false
 ): GameState {
-  const cpuRonState =
-    finishCpuRonIfAvailable(state);
-
-  if (cpuRonState) {
-    return cpuRonState;
-  }
-
   let nextState = state;
-  let processedCpuCount = 0;
+  let processedActionCount = 0;
+  let skipPlayerMeldCallReaction =
+    skipInitialPlayerMeldCallReaction;
 
-  while (
-    nextState.round.phase === "drawing" &&
-    nextState.round.currentSeat !== 0 &&
-    processedCpuCount < 3
-  ) {
+  while (processedActionCount < 24) {
+    const cpuDecisions =
+      getCpuMeldCallDecisions(nextState);
+    const cpuDecision =
+      cpuDecisions[0] ?? null;
+    const playerMeldCallOptions =
+      skipPlayerMeldCallReaction
+        ? []
+        : getAvailablePlayerMeldCallOptions(
+            nextState,
+            cpuDecision
+          );
+
+    if (canPlayerRon(nextState)) {
+      const lastDiscard =
+        nextState.round.lastDiscard;
+
+      if (!lastDiscard) {
+        throw new Error(
+          "ロン対象の捨て牌が見つかりません。"
+        );
+      }
+
+      return {
+        ...nextState,
+        round: {
+          ...nextState.round,
+          phase: "reaction",
+          meldCallOptions:
+            playerMeldCallOptions
+        },
+        notice:
+          `${nextState.round.players[lastDiscard.seat].name}の` +
+          `${getTileLabel(lastDiscard.discard.tile)}にロンできます。`
+      };
+    }
+
+    const cpuRonState =
+      finishCpuRonIfAvailable(nextState);
+
+    if (cpuRonState) {
+      return cpuRonState;
+    }
+
+    if (playerMeldCallOptions.length > 0) {
+      return {
+        ...nextState,
+        round: {
+          ...nextState.round,
+          phase: "reaction",
+          meldCallOptions:
+            playerMeldCallOptions
+        },
+        notice: getMeldCallNotice(
+          nextState,
+          playerMeldCallOptions
+        )
+      };
+    }
+
+    if (cpuDecision) {
+      nextState = applyCpuMeldCall(
+        nextState,
+        cpuDecision
+      );
+      processedActionCount += 1;
+      skipPlayerMeldCallReaction = false;
+      continue;
+    }
+
+    if (
+      nextState.round.phase !== "drawing"
+    ) {
+      break;
+    }
+
+    if (nextState.round.currentSeat === 0) {
+      nextState = drawTile(nextState, 0);
+      break;
+    }
+
     const cpuSeat = nextState.round.currentSeat;
 
     nextState = drawTile(
@@ -1700,66 +1772,8 @@ function completeCpuTurns(
       selectedTile.id
     );
 
-    processedCpuCount += 1;
-
-    const meldCallOptions =
-      createPlayerMeldCallOptions(
-        nextState
-      );
-
-    if (canPlayerRon(nextState)) {
-      const lastDiscard =
-        nextState.round.lastDiscard;
-
-      if (!lastDiscard) {
-        throw new Error(
-          "ロン対象の捨て牌が見つかりません。"
-        );
-      }
-
-      return {
-        ...nextState,
-        round: {
-          ...nextState.round,
-          phase: "reaction",
-          meldCallOptions
-        },
-        notice:
-          `${nextState.round.players[lastDiscard.seat].name}の` +
-          `${getTileLabel(lastDiscard.discard.tile)}にロンできます。`
-      };
-    }
-
-    const otherCpuRonState =
-      finishCpuRonIfAvailable(
-        nextState
-      );
-
-    if (otherCpuRonState) {
-      return otherCpuRonState;
-    }
-
-    if (meldCallOptions.length > 0) {
-      return {
-        ...nextState,
-        round: {
-          ...nextState.round,
-          phase: "reaction",
-          meldCallOptions
-        },
-        notice: getMeldCallNotice(
-          nextState,
-          meldCallOptions
-        )
-      };
-    }
-  }
-
-  if (
-    nextState.round.phase === "drawing" &&
-    nextState.round.currentSeat === 0
-  ) {
-    nextState = drawTile(nextState, 0);
+    processedActionCount += 1;
+    skipPlayerMeldCallReaction = false;
   }
 
   if (
@@ -1777,6 +1791,7 @@ function completeCpuTurns(
 
   return nextState;
 }
+
 export function skipPlayerRon(
   state: GameState,
   random: () => number = Math.random
@@ -1844,7 +1859,8 @@ export function skipPlayerRon(
 
   return completeCpuTurns(
     resumedState,
-    random
+    random,
+    true
   );
 }
 
