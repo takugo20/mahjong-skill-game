@@ -759,13 +759,6 @@ export function GameBoard({
         className="game-table"
         aria-label="麻雀卓"
       >
-        <p
-          className="game-notice table-notice"
-          aria-live="polite"
-        >
-          {gameState.notice}
-        </p>
-
         <div className="round-corner-panel">
           <span>半荘戦</span>
           <strong>
@@ -826,7 +819,7 @@ export function GameBoard({
 
         <section
           className="table-center"
-          aria-label="卓中央の情報"
+          aria-label="対局情報"
         >
           <div className="center-remaining">
             <span>残り</span>
