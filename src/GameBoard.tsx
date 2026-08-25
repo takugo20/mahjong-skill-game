@@ -24,6 +24,7 @@ import {
   getTileLabel
 } from "./lib/mahjong/tiles";
 import type {
+  Meld,
   MeldCallOption,
   PlayerState,
   Tile
@@ -47,6 +48,12 @@ interface RiverProps {
 interface OpponentAreaProps {
   player: PlayerState;
   position: OpponentPosition;
+}
+
+interface MeldAreaProps {
+  player: PlayerState;
+  position: RiverPosition;
+  compact?: boolean;
 }
 
 interface GameBoardProps {
@@ -199,6 +206,80 @@ function getMeldCallOptionLabel(
       }`;
 }
 
+function getMeldKindLabel(
+  meld: Meld
+): string {
+  switch (meld.kind) {
+    case "chi":
+      return "チー";
+
+    case "pon":
+      return "ポン";
+
+    case "openKan":
+      return "大明槓";
+
+    case "closedKan":
+      return "暗槓";
+
+    case "addedKan":
+      return "加槓";
+  }
+}
+
+function MeldArea({
+  player,
+  position,
+  compact = false
+}: MeldAreaProps) {
+  if (player.melds.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`meld-area meld-area--${position}`}
+      aria-label={`${player.name}の面子`}
+    >
+      {player.melds.map((meld, meldIndex) => (
+        <div
+          key={`${player.id}-meld-${meldIndex}`}
+          className={`meld-group meld-group--${meld.kind}`}
+          aria-label={getMeldKindLabel(meld)}
+          data-meld-kind={meld.kind}
+          data-called-from={meld.calledFrom}
+        >
+          {meld.tiles.map((tile) => {
+            const isCalledTile =
+              tile.id === meld.calledTileId;
+
+            return (
+              <span
+                key={tile.id}
+                className={
+                  isCalledTile
+                    ? "meld-tile meld-tile--called"
+                    : "meld-tile"
+                }
+                data-called-tile={
+                  isCalledTile
+                    ? "true"
+                    : undefined
+                }
+              >
+                <TileView
+                  tile={tile}
+                  compact={compact}
+                />
+              </span>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function OpponentArea({
   player,
   position
@@ -223,6 +304,12 @@ function OpponentArea({
           />
         ))}
       </div>
+
+      <MeldArea
+        player={player}
+        position={position}
+        compact
+      />
 
       <div className="opponent-meta">
         <div className="player-status">
@@ -687,6 +774,11 @@ export function GameBoard({
                 {renderPlayerTile(drawnTile)}
               </div>
             )}
+
+            <MeldArea
+              player={player}
+              position="bottom"
+            />
           </div>
         </section>
 
