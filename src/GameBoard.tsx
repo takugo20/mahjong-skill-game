@@ -337,35 +337,43 @@ function River({
       className={classes.join(" ")}
       aria-label={`${player.name}の河`}
     >
-      {player.discards.map((discard) => (
-        <span
-          key={discard.tile.id}
-          className={
-            discard.riichiDeclaration
-              ? "discard-tile discard-tile--riichi"
-              : "discard-tile"
-          }
-          data-riichi-declaration={
-            discard.riichiDeclaration
-              ? "true"
-              : undefined
-          }
-        >
-          <TileView
-            tile={discard.tile}
-            compact
-            highlighted={
-              discard.tile.id ===
-              lastDiscardTileId
+      {player.discards.map((discard) => {
+        const showRiichiDeclaration =
+          discard.riichiDeclaration &&
+          !declarationTargetTileIds.includes(
+            discard.tile.id
+          );
+
+        return (
+          <span
+            key={discard.tile.id}
+            className={
+              showRiichiDeclaration
+                ? "discard-tile discard-tile--riichi"
+                : "discard-tile"
             }
-            declarationTarget={
-              declarationTargetTileIds.includes(
-                discard.tile.id
-              )
+            data-riichi-declaration={
+              showRiichiDeclaration
+                ? "true"
+                : undefined
             }
-          />
-        </span>
-      ))}
+          >
+            <TileView
+              tile={discard.tile}
+              compact
+              highlighted={
+                discard.tile.id ===
+                lastDiscardTileId
+              }
+              declarationTarget={
+                declarationTargetTileIds.includes(
+                  discard.tile.id
+                )
+              }
+            />
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -1166,11 +1174,39 @@ export function GameBoard({
         cpuDeclarations[stateIndex];
 
       if (cpuDeclaration) {
+        const isRiichiDeclaration =
+          cpuDeclaration.kind === "riichi";
+
+        if (isRiichiDeclaration) {
+          setGameState(nextState);
+        }
+
         showDeclaration(
           cpuDeclaration.kind,
           cpuDeclaration.seat,
-          cpuDeclaration.targetTileIds
+          cpuDeclaration.targetTileIds,
+          () => {
+            if (!isRiichiDeclaration) {
+              setGameState(nextState);
+            }
+
+            stateIndex += 1;
+
+            if (stateIndex >= states.length) {
+              cpuProgressTimerRef.current = null;
+              cpuProgressingRef.current = false;
+              setIsCpuProgressing(false);
+              return;
+            }
+
+            cpuProgressTimerRef.current =
+              setTimeout(
+                showNextState,
+                CPU_PROGRESS_INTERVAL_MS
+              );
+          }
         );
+        return;
       }
 
       setGameState(nextState);
