@@ -6,6 +6,7 @@ import {
 import {
   createInitialGameState,
   declarePlayerOpenKan,
+  declarePlayerTsumo,
   getPlayerOpenKanCallOptions,
   getPlayerSelfKanOptions,
   playPlayerDiscard,
@@ -470,6 +471,214 @@ describe("四槓散了のゲーム進行", () => {
     expect(
       result.round.players[1].discards
     ).toHaveLength(1);
+  });
+
+  it("4回目の槓後の嶺上開花を四槓散了より優先する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const kanTiles = createTiles(
+      "honor",
+      [7, 7, 7, 7]
+    );
+    const otherTiles = [
+      ...createTiles("man", [1, 2]),
+      ...createTiles(
+        "man",
+        [4, 5, 6]
+      ),
+      ...createTiles(
+        "pin",
+        [2, 3, 4]
+      ),
+      ...createTiles("sou", [5, 5])
+    ];
+    const rinshanTile = createTile(
+      "man",
+      3
+    );
+
+    setThreeEstablishedKans(state);
+    state.round.deadWall[3] =
+      rinshanTile;
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        ...kanTiles,
+        ...otherTiles
+      ],
+      melds: [],
+      drawnTileId:
+        otherTiles[
+          otherTiles.length - 1
+        ].id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [],
+      melds: [
+        createKanMeld("man", 9),
+        createKanMeld("pin", 9),
+        createKanMeld("sou", 9)
+      ],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    emptyPlayer(state, 2);
+    emptyPlayer(state, 3);
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "4回目の暗槓候補が見つかりません。"
+      );
+    }
+
+    const kanResult = playPlayerSelfKan(
+      state,
+      option.id
+    );
+
+    expect(
+      kanResult.round.players[0]
+        .drawnTileId
+    ).toBe(rinshanTile.id);
+    expect(
+      kanResult.round.abortiveDrawResult
+    ).toBeNull();
+
+    const result = declarePlayerTsumo(
+      kanResult
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "tsumo",
+      winnerSeat: 0,
+      winningTile: rinshanTile
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("嶺上開花");
+    expect(result.round.kanCount).toBe(4);
+    expect(
+      result.round.abortiveDrawResult
+    ).toBeNull();
+  });
+
+  it("4回目の槓後の打牌へのロンを四槓散了より優先する", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const kanTiles = createTiles(
+      "honor",
+      [7, 7, 7, 7]
+    );
+    const winningTile = createTile(
+      "man",
+      2
+    );
+    const otherTiles = [
+      winningTile,
+      ...createTiles(
+        "sou",
+        [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      )
+    ];
+
+    setThreeEstablishedKans(state);
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        ...kanTiles,
+        ...otherTiles
+      ],
+      melds: [],
+      drawnTileId:
+        otherTiles[
+          otherTiles.length - 1
+        ].id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [
+        ...createTiles(
+          "man",
+          [3, 4, 5, 6, 7]
+        ),
+        ...createTiles(
+          "pin",
+          [2, 3, 4]
+        ),
+        ...createTiles(
+          "sou",
+          [6, 7, 8]
+        ),
+        ...createTiles(
+          "honor",
+          [3, 3]
+        )
+      ],
+      melds: [],
+      discards: [],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: [],
+      melds: [
+        createKanMeld("man", 9),
+        createKanMeld("pin", 9),
+        createKanMeld("sou", 9)
+      ],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    emptyPlayer(state, 3);
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+
+    const option =
+      getPlayerSelfKanOptions(state)[0];
+
+    if (!option) {
+      throw new Error(
+        "4回目の暗槓候補が見つかりません。"
+      );
+    }
+
+    const kanResult = playPlayerSelfKan(
+      state,
+      option.id
+    );
+    const result = playPlayerDiscard(
+      kanResult,
+      winningTile.id,
+      () => 0.5
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "ron",
+      winnerSeat: 1,
+      loserSeat: 0,
+      winningTile
+    });
+    expect(result.round.kanCount).toBe(4);
+    expect(
+      result.round.abortiveDrawResult
+    ).toBeNull();
   });
   
   it("4回すべて同じプレイヤーの槓なら流局させず続行する", () => {
