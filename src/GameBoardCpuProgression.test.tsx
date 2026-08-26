@@ -155,6 +155,54 @@ function createMeldReactionState(): GameState {
   return state;
 }
 
+function createRiichiProgressionState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const hand = [
+    createTile("man", 2),
+    createTile("man", 3),
+    createTile("man", 4),
+    createTile("pin", 2),
+    createTile("pin", 3),
+    createTile("pin", 4),
+    createTile("sou", 2),
+    createTile("sou", 3),
+    createTile("sou", 4),
+    createTile("sou", 6),
+    createTile("sou", 7),
+    createTile("sou", 8),
+    createTile("man", 5),
+    createTile("pin", 5)
+  ];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand,
+    melds: [],
+    discards: [],
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    drawnTileId: hand[13].id,
+    drawnTileSource: "liveWall"
+  };
+  emptyCpuHand(state, 1);
+  emptyCpuHand(state, 2);
+  emptyCpuHand(state, 3);
+  state.round.liveWall = [
+    createTile("man", 1),
+    createTile("pin", 1),
+    createTile("sou", 1),
+    createTile("honor", 4)
+  ];
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
 function advanceTime(milliseconds: number) {
   act(() => {
     vi.advanceTimersByTime(milliseconds);
@@ -377,6 +425,64 @@ describe("GameBoardのCPU進行演出", () => {
     ).not.toBeNull();
 
     advanceTime(1000);
+
+    expect(
+      screen.queryByText("CPU進行中…")
+    ).toBeNull();
+  });
+
+    it("立直成立後もCPUのツモまで0.5秒待機する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createRiichiProgressionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "五筒"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "立直"
+      })
+    );
+
+    expect(
+      screen.getByText("CPU進行中…")
+    ).not.toBeNull();
+    expect(
+      screen.getByText("24,000点")
+    ).not.toBeNull();
+    expect(
+      screen.getByText("1,000")
+    ).not.toBeNull();
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌0枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌0枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌1枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(3000);
 
     expect(
       screen.queryByText("CPU進行中…")
