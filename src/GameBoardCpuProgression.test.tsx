@@ -702,7 +702,7 @@ describe("GameBoardのCPU進行演出", () => {
     ).toBeNull();
   });
 
-    it("立直成立後もCPUのツモまで0.5秒待機する", () => {
+  it("立直演出後もCPUのツモまで0.5秒待機する", () => {
     render(
       <GameBoard
         initialState={
@@ -721,6 +721,31 @@ describe("GameBoardのCPU進行演出", () => {
         name: "立直"
       })
     );
+
+    expect(
+      screen.getByText("宣言演出中…")
+    ).not.toBeNull();
+    expect(
+      screen.queryByText("24,000点")
+    ).toBeNull();
+    expect(
+      screen.queryByText("1,000")
+    ).toBeNull();
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌0枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌0枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(1);
 
     expect(
       screen.getByText("CPU進行中…")
@@ -875,7 +900,7 @@ describe("GameBoardのCPU進行演出", () => {
       }).textContent
     ).toBe("リーチ");
     expect(
-      screen.getByText("CPU進行中…")
+      screen.getByText("宣言演出中…")
     ).not.toBeNull();
 
     advanceTime(499);
@@ -893,6 +918,10 @@ describe("GameBoardのCPU進行演出", () => {
         name: "あなたのリーチ"
       })
     ).toBeNull();
+
+    expect(
+      screen.getByText("CPU進行中…")
+    ).not.toBeNull();
   });
 
     it("CPUのポンを行動ステップで中央表示する", () => {
