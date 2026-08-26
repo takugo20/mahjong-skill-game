@@ -1440,7 +1440,11 @@ function showDeclaration(
   return (
     <main className="app-shell">
       <section
-        className="game-table"
+        className={
+          isWinPresenting
+            ? "game-table game-table--win-presenting"
+            : "game-table"
+        }
         aria-label="麻雀卓"
         aria-busy={isInteractionLocked}
       >
