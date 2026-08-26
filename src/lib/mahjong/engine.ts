@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import {
   getAbortiveDrawLabel,
+  getFourKansDrawResult,
   getFourRiichiDrawResult,
   getFourWindsDrawResult,
   getNineTerminalsDrawResult
@@ -1250,6 +1251,22 @@ function finishFourRiichiIfAvailable(
     : null;
 }
 
+function finishFourKansIfAvailable(
+  state: GameState
+): GameState | null {
+  const result =
+    getFourKansDrawResult(
+      state.round
+    );
+
+  return result
+    ? finishRoundWithAbortiveDraw(
+        state,
+        result
+      )
+    : null;
+}
+
 function createPlayerMeldCallOptions(
   state: GameState
 ): MeldCallOption[] {
@@ -1815,6 +1832,16 @@ function applyCpuOpenKanCall(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
+
+    const fourKansState =
+    finishFourKansIfAvailable(
+      kanState
+    );
+
+  if (fourKansState) {
+    return fourKansState;
+  }
+  
   const cpuTsumoState =
     finishCpuTsumoIfAvailable(
       kanState,
@@ -2122,8 +2149,7 @@ export function declarePlayerOpenKan(
     round: callState.round,
     option
   });
-
-  return {
+  const kanState: GameState = {
     ...callState,
     round: execution.round,
     notice:
@@ -2132,6 +2158,12 @@ export function declarePlayerOpenKan(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
+
+  return (
+    finishFourKansIfAvailable(
+      kanState
+    ) ?? kanState
+  );
 }
 
 function getCpuSelfKanDecision(
@@ -2368,6 +2400,16 @@ function completeCpuPendingSelfKan(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
+
+  const fourKansState =
+    finishFourKansIfAvailable(
+      kanState
+    );
+
+  if (fourKansState) {
+    return fourKansState;
+  }
+  
   const continuedState =
     playCpuDiscardingTurn(
       kanState,
@@ -3095,7 +3137,7 @@ export function completePlayerSelfKan(
       ? "暗槓"
       : "加槓";
 
-  return {
+  const kanState: GameState = {
     ...state,
     round: execution.round,
     notice:
@@ -3104,6 +3146,12 @@ export function completePlayerSelfKan(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
+
+  return (
+    finishFourKansIfAvailable(
+      kanState
+    ) ?? kanState
+  );
 }
 
 export function playPlayerSelfKan(
