@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import {
   getAbortiveDrawLabel,
+  getFourWindsDrawResult,
   getNineTerminalsDrawResult
 } from "./abortiveDraw";
 import {
@@ -1200,6 +1201,22 @@ function finishCpuNineTerminalsIfAvailable(
     result,
     `${cpuPlayer.name}が九種九牌を宣言したため、途中流局です。`
   );
+}
+
+function finishFourWindsIfAvailable(
+  state: GameState
+): GameState | null {
+  const result =
+    getFourWindsDrawResult(
+      state.round
+    );
+
+  return result
+    ? finishRoundWithAbortiveDraw(
+        state,
+        result
+      )
+    : null;
 }
 
 function createPlayerMeldCallOptions(
@@ -2645,6 +2662,15 @@ function completeCpuTurns(
       processedActionCount += 1;
       skipPlayerMeldCallReaction = false;
       continue;
+    }
+
+    const fourWindsState =
+      finishFourWindsIfAvailable(
+        nextState
+      );
+
+    if (fourWindsState) {
+      return fourWindsState;
     }
 
     if (
