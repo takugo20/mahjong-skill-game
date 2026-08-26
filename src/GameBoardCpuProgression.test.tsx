@@ -559,4 +559,98 @@ describe("GameBoardのCPU進行演出", () => {
       )
     ).not.toBeNull();
   });
+
+    it("ポンを中央へ500ミリ秒表示する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createMeldReactionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "ポン"
+      })
+    );
+
+    const overlay = screen.getByRole(
+      "status",
+      {
+        name: "あなたのポン"
+      }
+    );
+
+    expect(overlay.textContent).toBe(
+      "ポン"
+    );
+    expect(
+      overlay.classList.contains(
+        "declaration-overlay--pon"
+      )
+    ).toBe(true);
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "あなたのポン"
+      })
+    ).not.toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "あなたのポン"
+      })
+    ).toBeNull();
+  });
+
+  it("リーチを中央へ表示してCPU進行開始時も500ミリ秒維持する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createRiichiProgressionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "五筒"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "立直"
+      })
+    );
+
+    expect(
+      screen.getByRole("status", {
+        name: "あなたのリーチ"
+      }).textContent
+    ).toBe("リーチ");
+    expect(
+      screen.getByText("CPU進行中…")
+    ).not.toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "あなたのリーチ"
+      })
+    ).not.toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "あなたのリーチ"
+      })
+    ).toBeNull();
+  });
 });
