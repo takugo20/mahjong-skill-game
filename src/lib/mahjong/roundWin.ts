@@ -8,7 +8,8 @@ import {
   getYakumanResponsibilities
 } from "./responsibility";
 import type {
-  ResponsibilityDeclaration
+  ResponsibilityDeclaration,
+  ResponsibilitySettlementResult
 } from "./responsibilitySettlement";
 import type {
   InvalidWinningHandEvaluation,
@@ -62,6 +63,9 @@ export interface ValidRoundWinResolution {
   winningTile: Tile;
   evaluation:
     ValidWinningHandEvaluation;
+  responsibility:
+    ResponsibilitySettlementResult["responsibility"] |
+    null;
   pointChanges: RoundPointChange[];
   playersAfter: PlayerState[];
 }
@@ -437,6 +441,8 @@ export function resolveRoundWin(
     loserSeat: source.loser?.seat ?? null,
     winningTile: source.winningTile,
     evaluation: settlement.evaluation,
+    responsibility:
+      settlement.responsibility,
     pointChanges: createPointChanges(
       input.round,
       settlement.pointChanges
