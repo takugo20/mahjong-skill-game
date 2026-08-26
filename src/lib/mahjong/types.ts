@@ -214,6 +214,13 @@ export interface RoundDrawResult {
   pointChanges: RoundPointResult[];
 }
 
+export interface RoundNagashiManganResult {
+  winnerSeats: SeatIndex[];
+  riichiPoolRecipientSeat:
+    SeatIndex | null;
+  pointChanges: RoundPointResult[];
+}
+
 export interface MatchRankingResult {
   rank: 1 | 2 | 3 | 4;
   playerId: string;
@@ -253,6 +260,8 @@ export interface RoundState {
   doubleRonResult?:
     RoundDoubleRonResult | null;
   drawResult?: RoundDrawResult | null;
+  nagashiManganResult?:
+    RoundNagashiManganResult | null;
   abortiveDrawResult?:
     RoundAbortiveDrawResult | null;
 }
