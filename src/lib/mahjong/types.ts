@@ -125,11 +125,21 @@ export interface RoundPointResult {
   pointsAfter: number;
 }
 
+export interface RoundResponsibilityResult {
+  yakumanId:
+    | "bigThreeDragons"
+    | "bigFourWinds";
+  yakumanMultiplier: 1 | 2;
+  responsibleSeat: SeatIndex;
+}
+
 export interface RoundWinResult {
   winMethod: "tsumo" | "ron";
   winnerSeat: SeatIndex;
   loserSeat: SeatIndex | null;
   winningTile: Tile;
+  responsibility?:
+    RoundResponsibilityResult | null;
   yakuNames: string[];
   doraCount?: number;
   doraIndicatorTiles?: Tile[];
