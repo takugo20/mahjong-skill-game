@@ -833,6 +833,9 @@ export function GameBoard({
   >(null);
 
   const winPresentingRef = useRef(false);
+
+  const previousSoundStateRef =
+    useRef(gameState);
   
   useEffect(() => {
     return () => {
@@ -860,7 +863,50 @@ export function GameBoard({
       winPresentingRef.current = false;
     };
   }, []);
-  
+
+  useEffect(() => {
+    const previousState =
+      previousSoundStateRef.current;
+    const previousPlayers =
+      previousState.round.players;
+    const currentPlayers =
+      gameState.round.players;
+
+    const hasNewDrawnTile =
+      currentPlayers.some(
+        (currentPlayer, seat) => {
+          const previousDrawnTileId =
+            previousPlayers[seat]
+              .drawnTileId;
+
+          return (
+            currentPlayer.drawnTileId !== null &&
+            currentPlayer.drawnTileId !==
+              previousDrawnTileId
+          );
+        }
+      );
+
+    const hasNewDiscard =
+      currentPlayers.some(
+        (currentPlayer, seat) =>
+          currentPlayer.discards.length >
+          previousPlayers[seat]
+            .discards.length
+      );
+
+    if (hasNewDrawnTile) {
+      playGameSound("drawTile");
+    }
+
+    if (hasNewDiscard) {
+      playGameSound("discardTile");
+    }
+
+    previousSoundStateRef.current =
+      gameState;
+  }, [gameState]);
+
   const round = gameState.round;
   const player = round.players[0];
   const isDeclarationPresenting =
