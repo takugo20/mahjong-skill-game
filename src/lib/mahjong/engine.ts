@@ -119,6 +119,26 @@ const FIRST_DRAW_TURN_BY_WIND:
     north: 3
   };
 
+export type CpuProgressPhase =
+  | "draw"
+  | "action";
+
+export interface CpuProgressStep {
+  phase: CpuProgressPhase;
+  seat: SeatIndex;
+  state: GameState;
+}
+
+export interface PlayerDiscardProgression {
+  stateAfterDiscard: GameState;
+  cpuSteps: CpuProgressStep[];
+  finalState: GameState;
+}
+
+type CpuProgressObserver = (
+  step: CpuProgressStep
+) => void;
+
 function nextSeat(seat: SeatIndex): SeatIndex {
   return ((seat + 1) % 4) as SeatIndex;
 }
@@ -2810,7 +2830,8 @@ function getPendingCpuRiichiSeat(
 function completeCpuTurns(
   state: GameState,
   random: () => number,
-  skipInitialPlayerMeldCallReaction = false
+  skipInitialPlayerMeldCallReaction = false,
+  onCpuProgress?: CpuProgressObserver
 ): GameState {
   let nextState = state;
   let processedActionCount = 0;
@@ -2896,6 +2917,9 @@ function completeCpuTurns(
     }
 
     if (cpuDecision) {
+      const cpuActionSeat =
+        cpuDecision.option.callerSeat;
+
       nextState =
         cpuDecision.kind === "openKan"
           ? applyCpuOpenKanCall(
@@ -2907,6 +2931,12 @@ function completeCpuTurns(
               nextState,
               cpuDecision.decision
             );
+
+      onCpuProgress?.({
+        phase: "action",
+        seat: cpuActionSeat,
+        state: nextState
+      });
 
       if (
         nextState.round.phase ===
@@ -2944,14 +2974,24 @@ function completeCpuTurns(
       break;
     }
 
-    const cpuSeat = nextState.round.currentSeat;
+    const cpuSeat =
+      nextState.round.currentSeat;
 
     nextState = drawTile(
       nextState,
       cpuSeat
     );
 
-    if (nextState.round.phase !== "discarding") {
+    onCpuProgress?.({
+      phase: "draw",
+      seat: cpuSeat,
+      state: nextState
+    });
+
+    if (
+      nextState.round.phase !==
+      "discarding"
+    ) {
       break;
     }
 
@@ -2960,6 +3000,12 @@ function completeCpuTurns(
       cpuSeat,
       random
     );
+
+    onCpuProgress?.({
+      phase: "action",
+      seat: cpuSeat,
+      state: nextState
+    });
 
     if (nextState.round.pendingKan) {
       return nextState;
