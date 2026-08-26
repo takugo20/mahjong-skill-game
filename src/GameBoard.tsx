@@ -10,6 +10,7 @@ import {
   canPlayerRon,
   canPlayerTsumo,
   createInitialGameState,
+  createNextRoundProgression,
   createPlayerDiscardProgression,
   createPlayerReactionSkipProgression,
   createPlayerRiichiProgression,
@@ -25,8 +26,7 @@ import {
   getPlayerSelfKanOptions,
   getRoundLabel,
   getWindLabel,
-  playPlayerSelfKan,
-  startNextRound
+  playPlayerSelfKan
 } from "./lib/mahjong/engine";
 import type {
   SelfKanOption
@@ -1041,11 +1041,40 @@ function scheduleCpuProgression(
   }
 
   function handleNextRound() {
-    setGameState((currentState) =>
-      startNextRound(currentState)
+    if (cpuProgressingRef.current) {
+      return;
+    }
+
+    const progression =
+      createNextRoundProgression(
+        gameState
+      );
+    const timedStates =
+      progression.cpuSteps.map(
+        (step) => step.state
+      );
+    const lastTimedState =
+      timedStates.length === 0
+        ? progression.stateAfterStart
+        : timedStates[
+            timedStates.length - 1
+          ];
+
+    if (
+      lastTimedState !==
+      progression.finalState
+    ) {
+      timedStates.push(
+        progression.finalState
+      );
+    }
+
+    setGameState(
+      progression.stateAfterStart
     );
 
     setSelectedTileId(null);
+    scheduleCpuProgression(timedStates);
   }
   
   function handleRestart() {
