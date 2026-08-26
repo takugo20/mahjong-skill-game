@@ -3542,18 +3542,29 @@ export function declarePlayerRiichi(
   return progressedState;
 }
 
-export function playPlayerDiscard(
+interface PlayerDiscardResolution {
+  stateAfterDiscard: GameState;
+  finalState: GameState;
+}
+
+function resolvePlayerDiscard(
   state: GameState,
   tileId: string,
-  random: () => number = Math.random
-): GameState {
+  random: () => number,
+  onCpuProgress?: CpuProgressObserver
+): PlayerDiscardResolution {
   if (
     state.round.currentSeat !== 0 ||
     state.round.phase !== "discarding"
   ) {
-    return {
+    const invalidState = {
       ...state,
       notice: "現在はプレイヤーの打牌手番ではありません。"
+    };
+
+    return {
+      stateAfterDiscard: invalidState,
+      finalState: invalidState
     };
   }
 
@@ -3566,7 +3577,10 @@ export function playPlayerDiscard(
     discardedState.round.turnNumber ===
     state.round.turnNumber
   ) {
-    return discardedState;
+    return {
+      stateAfterDiscard: discardedState,
+      finalState: discardedState
+    };
   }
 
   const cpuRonState =
@@ -3575,7 +3589,10 @@ export function playPlayerDiscard(
     );
 
   if (cpuRonState) {
-    return cpuRonState;
+    return {
+      stateAfterDiscard: discardedState,
+      finalState: cpuRonState
+    };
   }
 
   const fourKansState =
@@ -3584,20 +3601,67 @@ export function playPlayerDiscard(
     );
 
   if (fourKansState) {
-    return fourKansState;
+    return {
+      stateAfterDiscard: discardedState,
+      finalState: fourKansState
+    };
   }
 
   if (discardedState.round.phase === "roundEnd") {
-    return finishRoundWithExhaustiveDraw(
-      discardedState,
-      discardedState.notice
-    );
+    return {
+      stateAfterDiscard: discardedState,
+      finalState:
+        finishRoundWithExhaustiveDraw(
+          discardedState,
+          discardedState.notice
+        )
+    };
   }
 
-  return completeCpuTurns(
-    discardedState,
+  return {
+    stateAfterDiscard: discardedState,
+    finalState: completeCpuTurns(
+      discardedState,
+      random,
+      false,
+      onCpuProgress
+    )
+  };
+}
+
+export function playPlayerDiscard(
+  state: GameState,
+  tileId: string,
+  random: () => number = Math.random
+): GameState {
+  return resolvePlayerDiscard(
+    state,
+    tileId,
     random
+  ).finalState;
+}
+
+export function createPlayerDiscardProgression(
+  state: GameState,
+  tileId: string,
+  random: () => number = Math.random
+): PlayerDiscardProgression {
+  const cpuSteps: CpuProgressStep[] = [];
+  const resolution = resolvePlayerDiscard(
+    state,
+    tileId,
+    random,
+    (step) => {
+      cpuSteps.push(step);
+    }
   );
+
+  return {
+    stateAfterDiscard:
+      resolution.stateAfterDiscard,
+    cpuSteps,
+    finalState: resolution.finalState
+  };
 }
 
 function getDealerSeat(
