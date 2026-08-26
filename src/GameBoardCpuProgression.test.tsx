@@ -203,6 +203,36 @@ function createRiichiProgressionState(): GameState {
   return state;
 }
 
+function createCpuDealerNextRoundState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+
+  state.round.phase = "roundEnd";
+  state.round.winResult = {
+    winMethod: "ron",
+    winnerSeat: 1,
+    loserSeat: 0,
+    winningTile: createTile("honor", 7),
+    yakuNames: ["断么九"],
+    doraCount: 0,
+    doraIndicatorTiles: [],
+    uraDoraIndicatorTiles: [],
+    han: 1,
+    fu: 30,
+    yakumanMultiplier: 0,
+    limitName: null,
+    totalPoints: 1000,
+    pointChanges: []
+  };
+  state.round.doubleRonResult = null;
+  state.round.drawResult = null;
+  state.round.nagashiManganResult = null;
+  state.round.abortiveDrawResult = null;
+
+  return state;
+}
+
 function advanceTime(milliseconds: number) {
   act(() => {
     vi.advanceTimersByTime(milliseconds);
@@ -487,5 +517,46 @@ describe("GameBoardのCPU進行演出", () => {
     expect(
       screen.queryByText("CPU進行中…")
     ).toBeNull();
+  });
+
+    it("CPUが次局の親なら最初のツモまで0.5秒待機する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuDealerNextRoundState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "次局へ"
+      })
+    );
+
+    expect(
+      screen.getByText("CPU進行中…")
+    ).not.toBeNull();
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌13枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌13枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.getByLabelText(
+        "CPU・右の手牌14枚"
+      )
+    ).not.toBeNull();
   });
 });
