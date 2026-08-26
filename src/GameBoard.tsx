@@ -697,6 +697,11 @@ export function GameBoard({
     DeclarationOverlayState | null
   >(null);
 
+  const [
+    isWinPresenting,
+    setIsWinPresenting
+  ] = useState(false);
+
   const cpuProgressTimerRef = useRef<
     ReturnType<typeof setTimeout> | null
   >(null);
@@ -709,6 +714,12 @@ export function GameBoard({
 
   const declarationSequenceRef = useRef(0);
 
+  const winPresentationTimerRef = useRef<
+    ReturnType<typeof setTimeout> | null
+  >(null);
+
+  const winPresentingRef = useRef(false);
+  
   useEffect(() => {
     return () => {
       if (cpuProgressTimerRef.current !== null) {
@@ -723,12 +734,23 @@ export function GameBoard({
         );
       }
 
+      if (
+        winPresentationTimerRef.current !== null
+      ) {
+        clearTimeout(
+          winPresentationTimerRef.current
+        );
+      }
+
       cpuProgressingRef.current = false;
+      winPresentingRef.current = false;
     };
   }, []);
   
   const round = gameState.round;
   const player = round.players[0];
+  const isInteractionLocked =
+    isCpuProgressing || isWinPresenting;
 
   const selectedTile = player.hand.find(
     (tile) => tile.id === selectedTileId
@@ -755,7 +777,7 @@ export function GameBoard({
     round.lastDiscard?.discard.tile.id ?? null;
 
   const canDiscard =
-    !isCpuProgressing &&
+    !isInteractionLocked &&
     round.currentSeat === 0 &&
     round.phase === "discarding";
 
@@ -924,6 +946,40 @@ function showDeclaration(
       setTimeout(() => {
         setDeclarationOverlay(null);
         declarationTimerRef.current = null;
+      }, DECLARATION_OVERLAY_DURATION_MS);
+  }
+
+    function showWinPresentation(
+    kind: "tsumo" | "ron",
+    seat: SeatIndex,
+    resultState: GameState
+  ) {
+    const hasWinResult =
+      resultState.round.phase === "roundEnd" &&
+      (
+        resultState.round.winResult != null ||
+        resultState.round.doubleRonResult != null
+      );
+
+    if (!hasWinResult) {
+      setGameState(resultState);
+      return;
+    }
+
+    if (winPresentingRef.current) {
+      return;
+    }
+
+    winPresentingRef.current = true;
+    setIsWinPresenting(true);
+    showDeclaration(kind, seat);
+
+    winPresentationTimerRef.current =
+      setTimeout(() => {
+        setGameState(resultState);
+        setIsWinPresenting(false);
+        winPresentingRef.current = false;
+        winPresentationTimerRef.current = null;
       }, DECLARATION_OVERLAY_DURATION_MS);
   }
   
@@ -1117,13 +1173,23 @@ function showDeclaration(
   }
   
   function handleTsumo() {
-    setGameState((currentState) =>
-      declarePlayerTsumo(currentState)
+    if (winPresentingRef.current) {
+      return;
+    }
+
+    const resultState = declarePlayerTsumo(
+      gameState
+    );
+
+    showWinPresentation(
+      "tsumo",
+      0,
+      resultState
     );
 
     setSelectedTileId(null);
   }
-
+  
   function handleNineTerminals() {
     setGameState((currentState) =>
       declarePlayerNineTerminals(
@@ -1135,8 +1201,18 @@ function showDeclaration(
   }
 
   function handleRon() {
-    setGameState((currentState) =>
-      declarePlayerRon(currentState)
+    if (winPresentingRef.current) {
+      return;
+    }
+
+    const resultState = declarePlayerRon(
+      gameState
+    );
+
+    showWinPresentation(
+      "ron",
+      0,
+      resultState
     );
 
     setSelectedTileId(null);
@@ -1315,7 +1391,7 @@ function showDeclaration(
       <section
         className="game-table"
         aria-label="麻雀卓"
-        aria-busy={isCpuProgressing}
+        aria-busy={isInteractionLocked}
       >
         <div className="round-corner-panel">
           <span>半荘戦</span>
@@ -1498,7 +1574,9 @@ function showDeclaration(
           aria-label="操作欄"
         >
           <div className="selection-status">
-            {isCpuProgressing
+            {isWinPresenting
+              ? "和了演出中…"
+              : isCpuProgressing
               ? "CPU進行中…"
               : round.phase === "matchEnd"
               ? "対局終了"
@@ -1534,7 +1612,7 @@ function showDeclaration(
 
           <fieldset
             className="control-buttons"
-            disabled={isCpuProgressing}
+            disabled={isInteractionLocked}
           >
             {round.phase === "matchEnd" ? (
               <button
