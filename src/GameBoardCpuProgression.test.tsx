@@ -44,6 +44,36 @@ function createTile(
   };
 }
 
+function createTiles(
+  suit: TileSuit,
+  ranks: number[]
+): Tile[] {
+  return ranks.map(
+    (rank) => createTile(suit, rank)
+  );
+}
+
+function createPlayerWinHand(): Tile[] {
+  return [
+    ...createTiles(
+      "man",
+      [2, 3, 4, 5, 6, 7]
+    ),
+    ...createTiles(
+      "pin",
+      [2, 3, 4]
+    ),
+    ...createTiles(
+      "sou",
+      [6, 7, 8]
+    ),
+    ...createTiles(
+      "honor",
+      [3, 3]
+    )
+  ];
+}
+
 function emptyCpuHand(
   state: GameState,
   seat: SeatIndex
@@ -287,6 +317,72 @@ function createCpuPonProgressionState(): GameState {
   state.round.currentSeat = 0;
   state.round.phase = "discarding";
   state.round.lastDiscard = null;
+
+  return state;
+}
+
+function createPlayerTsumoPresentationState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const hand = createPlayerWinHand();
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand,
+    melds: [],
+    discards: [],
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    drawnTileId: hand[0].id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.turnNumber = 4;
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
+function createPlayerRonPresentationState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const completedHand =
+    createPlayerWinHand();
+  const winningTile = completedHand[0];
+  const discard = {
+    tile: winningTile,
+    tsumogiri: false,
+    riichiDeclaration: false,
+    faceDown: false,
+    called: false
+  };
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: completedHand.slice(1),
+    melds: [],
+    discards: [],
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.players[1] = {
+    ...state.round.players[1],
+    discards: [discard]
+  };
+  state.round.currentSeat = 2;
+  state.round.phase = "reaction";
+  state.round.turnNumber = 4;
+  state.round.lastDiscard = {
+    seat: 1,
+    discard
+  };
 
   return state;
 }
@@ -779,5 +875,110 @@ describe("GameBoardのCPU進行演出", () => {
         name: "CPU・右のポン"
       })
     ).toBeNull();
+  });
+
+    it("ツモ表示後に和了結果へ移り演出中の操作を無効にする", () => {
+    render(
+      <GameBoard
+        initialState={
+          createPlayerTsumoPresentationState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "ツモ"
+      })
+    );
+
+    expect(
+      screen.getByRole("status", {
+        name: "あなたのツモ"
+      }).textContent
+    ).toBe("ツモ");
+    expect(
+      screen.getByText("和了演出中…")
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("dialog", {
+        name: "和了結果"
+      })
+    ).toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: "ツモ"
+      }).closest("fieldset")
+        ?.hasAttribute("disabled")
+    ).toBe(true);
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("dialog", {
+        name: "和了結果"
+      })
+    ).toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "あなたのツモ"
+      })
+    ).toBeNull();
+    expect(
+      screen.getByRole("dialog", {
+        name: "和了結果"
+      })
+    ).not.toBeNull();
+  });
+
+  it("ロンを500ミリ秒表示してから和了結果へ移る", () => {
+    render(
+      <GameBoard
+        initialState={
+          createPlayerRonPresentationState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "ロン"
+      })
+    );
+
+    expect(
+      screen.getByRole("status", {
+        name: "あなたのロン"
+      }).textContent
+    ).toBe("ロン");
+    expect(
+      screen.queryByRole("dialog", {
+        name: "和了結果"
+      })
+    ).toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("dialog", {
+        name: "和了結果"
+      })
+    ).toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "あなたのロン"
+      })
+    ).toBeNull();
+    expect(
+      screen.getByRole("dialog", {
+        name: "和了結果"
+      })
+    ).not.toBeNull();
   });
 });
