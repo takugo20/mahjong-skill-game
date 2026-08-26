@@ -6,6 +6,7 @@ import type {
   MeldCallOption,
   PendingKan,
   PlayerState,
+  RoundAbortiveDrawResult,
   RoundPointResult,
   RoundWinResult,
   RoundState,
@@ -13,6 +14,10 @@ import type {
   Tile,
   Wind
 } from "./types";
+import {
+  getAbortiveDrawLabel,
+  getNineTerminalsDrawResult
+} from "./abortiveDraw";
 import {
   getMeldCallOptions
 } from "./calls";
@@ -802,6 +807,31 @@ function finishRoundWithRonCandidates(
   };
 }
 
+function finishRoundWithAbortiveDraw(
+  state: GameState,
+  result: RoundAbortiveDrawResult,
+  notice =
+    `${getAbortiveDrawLabel(
+      result.reason
+    )}で途中流局です。`
+): GameState {
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      phase: "roundEnd",
+      pendingKan: null,
+      meldCallOptions: [],
+      meldCallDiscardRestriction: null,
+      winResult: null,
+      doubleRonResult: null,
+      drawResult: null,
+      abortiveDrawResult: result
+    },
+    notice
+  };
+}
+
 function finishRoundWithExhaustiveDraw(
   state: GameState,
   notice: string
@@ -1142,6 +1172,34 @@ function finishCpuTsumoIfAvailable(
         resolution
       )
     : null;
+}
+
+function finishCpuNineTerminalsIfAvailable(
+  state: GameState,
+  cpuSeat: SeatIndex
+): GameState | null {
+  if (cpuSeat === 0) {
+    return null;
+  }
+
+  const result =
+    getNineTerminalsDrawResult(
+      state.round,
+      cpuSeat
+    );
+
+  if (!result) {
+    return null;
+  }
+
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+
+  return finishRoundWithAbortiveDraw(
+    state,
+    result,
+    `${cpuPlayer.name}が九種九牌を宣言したため、途中流局です。`
+  );
 }
 
 function createPlayerMeldCallOptions(
@@ -2142,6 +2200,16 @@ function playCpuDiscardingTurn(
     return cpuTsumoState;
   }
 
+  const cpuNineTerminalsState =
+    finishCpuNineTerminalsIfAvailable(
+      state,
+      cpuSeat
+    );
+
+  if (cpuNineTerminalsState) {
+    return cpuNineTerminalsState;
+  }
+
   const selfKanDecision =
     getCpuSelfKanDecision(
       state,
@@ -2786,6 +2854,41 @@ export function skipPlayerRon(
     resumedState,
     random,
     true
+  );
+}
+
+export function canPlayerDeclareNineTerminals(
+  state: GameState
+): boolean {
+  return (
+    getNineTerminalsDrawResult(
+      state.round,
+      0
+    ) !== null
+  );
+}
+
+export function declarePlayerNineTerminals(
+  state: GameState
+): GameState {
+  const result =
+    getNineTerminalsDrawResult(
+      state.round,
+      0
+    );
+
+  if (!result) {
+    return {
+      ...state,
+      notice:
+        "現在は九種九牌を宣言できません。"
+    };
+  }
+
+  return finishRoundWithAbortiveDraw(
+    state,
+    result,
+    "九種九牌を宣言したため、途中流局です。"
   );
 }
 
