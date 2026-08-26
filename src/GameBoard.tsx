@@ -63,6 +63,7 @@ interface DeclarationOverlayState {
   id: number;
   kind: DeclarationKind;
   seat: SeatIndex;
+  targetTileIds: string[];
 }
 
 const DECLARATION_LABELS:
@@ -187,6 +188,8 @@ interface RiverProps {
   player: PlayerState;
   position: RiverPosition;
   lastDiscardTileId: string | null;
+  declarationTargetTileIds:
+    readonly string[];
 }
 
 interface OpponentAreaProps {
@@ -199,6 +202,8 @@ interface MeldAreaProps {
   player: PlayerState;
   position: RiverPosition;
   compact?: boolean;
+  declarationTargetTileIds?:
+    readonly string[];
 }
 
 interface GameBoardProps {
@@ -281,7 +286,8 @@ function ResponsibilityNotice({
 function River({
   player,
   position,
-  lastDiscardTileId
+  lastDiscardTileId,
+  declarationTargetTileIds
 }: RiverProps) {
   const classes = [
     "discard-grid",
@@ -317,6 +323,11 @@ function River({
             highlighted={
               discard.tile.id ===
               lastDiscardTileId
+            }
+            declarationTarget={
+              declarationTargetTileIds.includes(
+                discard.tile.id
+              )
             }
           />
         </span>
@@ -590,7 +601,8 @@ function WinResultDoraIndicators({
 function MeldArea({
   player,
   position,
-  compact = false
+  compact = false,
+  declarationTargetTileIds = []
 }: MeldAreaProps) {
   if (player.melds.length === 0) {
     return null;
@@ -633,6 +645,11 @@ function MeldArea({
                 <TileView
                   tile={tile}
                   compact={compact}
+                  declarationTarget={
+                    declarationTargetTileIds.includes(
+                      tile.id
+                    )
+                  }
                 />
               </span>
             );
@@ -805,6 +822,9 @@ export function GameBoard({
     declarationOverlay.kind !== "ron"
       ? declarationOverlay.seat
       : null;
+
+  const declarationTargetTileIds =
+    declarationOverlay?.targetTileIds ?? [];
   
   const selectedTile = player.hand.find(
     (tile) => tile.id === selectedTileId
@@ -978,9 +998,10 @@ export function GameBoard({
   const matchResult =
     gameState.matchResult;
 
-function showDeclaration(
+  function showDeclaration(
     kind: DeclarationKind,
-    seat: SeatIndex
+    seat: SeatIndex,
+    targetTileIds: readonly string[] = []
   ) {
     if (declarationTimerRef.current !== null) {
       clearTimeout(
@@ -993,7 +1014,8 @@ function showDeclaration(
     setDeclarationOverlay({
       id: declarationSequenceRef.current,
       kind,
-      seat
+      seat,
+      targetTileIds: [...targetTileIds]
     });
 
     declarationTimerRef.current =
@@ -1208,7 +1230,11 @@ function showDeclaration(
         selectedTileId
       );
 
-    showDeclaration("riichi", 0);
+    showDeclaration(
+      "riichi",
+      0,
+      [selectedTileId]
+    );
     
     const timedStates =
       progression.cpuSteps.map(
@@ -1338,7 +1364,11 @@ function showDeclaration(
     );
 
     if (option) {
-      showDeclaration(option.kind, 0);
+      showDeclaration(
+        option.kind,
+        0,
+        [option.calledTileId]
+      );
     }
 
     setGameState((currentState) =>
@@ -1354,7 +1384,16 @@ function showDeclaration(
   function handleOpenKan(
     optionId: string
   ) {
-    showDeclaration("kan", 0);
+    const option = openKanCallOptions.find(
+      (candidate) =>
+        candidate.id === optionId
+    );
+
+    showDeclaration(
+      "kan",
+      0,
+      option ? [option.calledTileId] : []
+    );
     
     setGameState((currentState) =>
       declarePlayerOpenKan(
@@ -1369,7 +1408,22 @@ function showDeclaration(
   function handleSelfKan(
     optionId: string
   ) {
-    showDeclaration("kan", 0);
+    const option = selfKanOptions.find(
+      (candidate) =>
+        candidate.id === optionId
+    );
+    const targetTileIds =
+      option?.kind === "closedKan"
+        ? option.tileIds
+        : option
+          ? [option.tileId]
+          : [];
+
+    showDeclaration(
+      "kan",
+      0,
+      targetTileIds
+    );
 
     setGameState((currentState) =>
       playPlayerSelfKan(
@@ -1444,6 +1498,11 @@ function showDeclaration(
             )
           )
         }
+        declarationTarget={
+          declarationTargetTileIds.includes(
+            tile.id
+          )
+        }
         disabled={
           !canDiscard ||
           (
@@ -1507,6 +1566,9 @@ function showDeclaration(
             player={round.players[2]}
             position="top"
             lastDiscardTileId={lastDiscardTileId}
+            declarationTargetTileIds={
+              declarationTargetTileIds
+            }
           />
         </div>
 
@@ -1515,6 +1577,9 @@ function showDeclaration(
             player={round.players[3]}
             position="left"
             lastDiscardTileId={lastDiscardTileId}
+            declarationTargetTileIds={
+              declarationTargetTileIds
+            }
           />
         </div>
 
@@ -1523,6 +1588,9 @@ function showDeclaration(
             player={round.players[1]}
             position="right"
             lastDiscardTileId={lastDiscardTileId}
+            declarationTargetTileIds={
+              declarationTargetTileIds
+            }
           />
         </div>
 
@@ -1531,6 +1599,9 @@ function showDeclaration(
             player={player}
             position="bottom"
             lastDiscardTileId={lastDiscardTileId}
+            declarationTargetTileIds={
+              declarationTargetTileIds
+            }
           />
         </div>
 
@@ -1659,6 +1730,9 @@ function showDeclaration(
             <MeldArea
               player={player}
               position="bottom"
+              declarationTargetTileIds={
+                declarationTargetTileIds
+              }
             />
           </div>
         </section>
