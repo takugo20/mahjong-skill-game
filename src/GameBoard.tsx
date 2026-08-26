@@ -1,4 +1,6 @@
 import {
+  useEffect,
+  useRef,
   useState
 } from "react";
 import { TileView } from "./components/TileView";
@@ -8,6 +10,7 @@ import {
   canPlayerRon,
   canPlayerTsumo,
   createInitialGameState,
+  createPlayerDiscardProgression,
   declarePlayerMeldCall,
   declarePlayerNineTerminals,
   declarePlayerOpenKan,
@@ -21,7 +24,6 @@ import {
   getPlayerSelfKanOptions,
   getRoundLabel,
   getWindLabel,
-  playPlayerDiscard,
   playPlayerSelfKan,
   skipPlayerRon,
   startNextRound
@@ -33,6 +35,7 @@ import {
   getTileLabel
 } from "./lib/mahjong/tiles";
 import type {
+  GameState,
   Meld,
   MeldCallOption,
   PlayerState,
@@ -40,6 +43,8 @@ import type {
   SeatIndex,
   Tile
 } from "./lib/mahjong/types";
+
+const CPU_PROGRESS_INTERVAL_MS = 500;
 
 type OpponentPosition =
   | "top"
@@ -587,6 +592,29 @@ export function GameBoard({
     setSelectedTileId
   ] = useState<string | null>(null);
 
+    const [
+    isCpuProgressing,
+    setIsCpuProgressing
+  ] = useState(false);
+
+  const cpuProgressTimerRef = useRef<
+    ReturnType<typeof setTimeout> | null
+  >(null);
+
+  const cpuProgressingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (cpuProgressTimerRef.current !== null) {
+        clearTimeout(
+          cpuProgressTimerRef.current
+        );
+      }
+
+      cpuProgressingRef.current = false;
+    };
+  }, []);
+  
   const round = gameState.round;
   const player = round.players[0];
 
@@ -615,6 +643,7 @@ export function GameBoard({
     round.lastDiscard?.discard.tile.id ?? null;
 
   const canDiscard =
+    !isCpuProgressing &&
     round.currentSeat === 0 &&
     round.phase === "discarding";
 
@@ -761,10 +790,61 @@ export function GameBoard({
   const matchResult =
     gameState.matchResult;
 
+function scheduleCpuProgression(
+    states: readonly GameState[]
+  ) {
+    if (states.length === 0) {
+      cpuProgressingRef.current = false;
+      setIsCpuProgressing(false);
+      return;
+    }
+
+    let stateIndex = 0;
+
+    cpuProgressingRef.current = true;
+    setIsCpuProgressing(true);
+
+    const showNextState = () => {
+      const nextState = states[stateIndex];
+
+      if (!nextState) {
+        cpuProgressTimerRef.current = null;
+        cpuProgressingRef.current = false;
+        setIsCpuProgressing(false);
+        return;
+      }
+
+      setGameState(nextState);
+      stateIndex += 1;
+
+      if (stateIndex >= states.length) {
+        cpuProgressTimerRef.current = null;
+        cpuProgressingRef.current = false;
+        setIsCpuProgressing(false);
+        return;
+      }
+
+      cpuProgressTimerRef.current =
+        setTimeout(
+          showNextState,
+          CPU_PROGRESS_INTERVAL_MS
+        );
+    };
+
+    cpuProgressTimerRef.current =
+      setTimeout(
+        showNextState,
+        CPU_PROGRESS_INTERVAL_MS
+      );
+  }
+  
   function handleTileSelection(
     tileId: string
   ) {
-    if (!canDiscard) {
+    if (
+      !canDiscard ||
+      cpuProgressingRef.current
+    ) {
       return;
     }
 
@@ -776,18 +856,45 @@ export function GameBoard({
   }
 
   function handleDiscard() {
-    if (!selectedTileId || !canDiscard) {
+    if (
+      !selectedTileId ||
+      !canDiscard ||
+      cpuProgressingRef.current
+    ) {
       return;
     }
 
-    setGameState((currentState) =>
-      playPlayerDiscard(
-        currentState,
+    const progression =
+      createPlayerDiscardProgression(
+        gameState,
         selectedTileId
-      )
+      );
+    const timedStates =
+      progression.cpuSteps.map(
+        (step) => step.state
+      );
+    const lastTimedState =
+      timedStates.length === 0
+        ? progression.stateAfterDiscard
+        : timedStates[
+            timedStates.length - 1
+          ];
+
+    if (
+      lastTimedState !==
+      progression.finalState
+    ) {
+      timedStates.push(
+        progression.finalState
+      );
+    }
+
+    setGameState(
+      progression.stateAfterDiscard
     );
 
     setSelectedTileId(null);
+    scheduleCpuProgression(timedStates);
   }
 
   function handleRiichi() {
@@ -928,6 +1035,7 @@ export function GameBoard({
       <section
         className="game-table"
         aria-label="麻雀卓"
+        aria-busy={isCpuProgressing}
       >
         <div className="round-corner-panel">
           <span>半荘戦</span>
@@ -1110,7 +1218,9 @@ export function GameBoard({
           aria-label="操作欄"
         >
           <div className="selection-status">
-            {round.phase === "matchEnd"
+            {isCpuProgressing
+              ? "CPU進行中…"
+              : round.phase === "matchEnd"
               ? "対局終了"
               : round.phase === "reaction"
                 ? reactionStatus
