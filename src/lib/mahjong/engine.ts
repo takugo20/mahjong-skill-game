@@ -135,6 +135,12 @@ export interface PlayerDiscardProgression {
   finalState: GameState;
 }
 
+export interface PlayerReactionSkipProgression {
+  stateAfterReaction: GameState;
+  cpuSteps: CpuProgressStep[];
+  finalState: GameState;
+}
+
 type CpuProgressObserver = (
   step: CpuProgressStep
 ) => void;
@@ -3043,12 +3049,21 @@ function completeCpuTurns(
   return nextState;
 }
 
-export function skipPlayerRon(
+interface PlayerReactionSkipResolution {
+  stateAfterReaction: GameState;
+  finalState: GameState;
+}
+
+function resolvePlayerReactionSkip(
   state: GameState,
-  random: () => number = Math.random
-): GameState {
+  random: () => number,
+  onCpuProgress?: CpuProgressObserver
+): PlayerReactionSkipResolution {
   if (state.round.phase !== "reaction") {
-    return state;
+    return {
+      stateAfterReaction: state,
+      finalState: state
+    };
   }
 
   const player = state.round.players[0];
@@ -3065,6 +3080,9 @@ export function skipPlayerRon(
       player.riichiFuriten === true
   };
 
+  const skippedNotice = skippedRon
+    ? "ロンを見送りました。"
+    : "副露を見送りました。";
   const skippedState: GameState = {
     ...state,
     round: {
@@ -3074,23 +3092,29 @@ export function skipPlayerRon(
         skippedPlayer
       ),
       meldCallOptions: []
-    }
+    },
+    notice: skippedNotice
   };
 
-  const skippedNotice = skippedRon
-    ? "ロンを見送りました。"
-    : "副露を見送りました。";
-
-    if (
+  if (
     skippedState.round.pendingKan &&
     skippedState.round.pendingKan
       .declarerSeat !== 0
   ) {
+    const cpuSeat =
+      skippedState.round.pendingKan
+        .declarerSeat;
     const resumedState =
       completeCpuPendingSelfKan(
         skippedState,
         random
       );
+
+    onCpuProgress?.({
+      phase: "action",
+      seat: cpuSeat,
+      state: resumedState
+    });
 
     if (
       resumedState.round.phase ===
@@ -3104,16 +3128,24 @@ export function skipPlayerRon(
           .abortiveDrawResult
       )
     ) {
-      return resumedState;
+      return {
+        stateAfterReaction: skippedState,
+        finalState: resumedState
+      };
     }
 
-    return completeCpuTurns(
-      resumedState,
-      random
-    );
+    return {
+      stateAfterReaction: skippedState,
+      finalState: completeCpuTurns(
+        resumedState,
+        random,
+        false,
+        onCpuProgress
+      )
+    };
   }
 
-    const pendingCpuRiichiSeat =
+  const pendingCpuRiichiSeat =
     getPendingCpuRiichiSeat(
       skippedState
     );
@@ -3125,7 +3157,10 @@ export function skipPlayerRon(
       );
 
     if (cpuRonState) {
-      return cpuRonState;
+      return {
+        stateAfterReaction: skippedState,
+        finalState: cpuRonState
+      };
     }
 
     const doubleRiichi =
@@ -3148,13 +3183,23 @@ export function skipPlayerRon(
       }
     };
 
-    return completeCpuTurns(
-      resumedState,
-      random,
-      true
-    );
+    onCpuProgress?.({
+      phase: "action",
+      seat: pendingCpuRiichiSeat,
+      state: resumedState
+    });
+
+    return {
+      stateAfterReaction: skippedState,
+      finalState: completeCpuTurns(
+        resumedState,
+        random,
+        true,
+        onCpuProgress
+      )
+    };
   }
-  
+
   if (
     skippedState.round.liveWall.length === 0
   ) {
@@ -3164,13 +3209,20 @@ export function skipPlayerRon(
       );
 
     if (cpuRonState) {
-      return cpuRonState;
+      return {
+        stateAfterReaction: skippedState,
+        finalState: cpuRonState
+      };
     }
 
-    return finishRoundWithExhaustiveDraw(
-      skippedState,
-      `${skippedNotice}通常山が尽きたため、荒牌平局です。`
-    );
+    return {
+      stateAfterReaction: skippedState,
+      finalState:
+        finishRoundWithExhaustiveDraw(
+          skippedState,
+          `${skippedNotice}通常山が尽きたため、荒牌平局です。`
+        )
+    };
   }
 
   const resumedState: GameState = {
@@ -3182,11 +3234,47 @@ export function skipPlayerRon(
     notice: skippedNotice
   };
 
-  return completeCpuTurns(
-    resumedState,
-    random,
-    true
-  );
+  return {
+    stateAfterReaction: resumedState,
+    finalState: completeCpuTurns(
+      resumedState,
+      random,
+      true,
+      onCpuProgress
+    )
+  };
+}
+
+export function skipPlayerRon(
+  state: GameState,
+  random: () => number = Math.random
+): GameState {
+  return resolvePlayerReactionSkip(
+    state,
+    random
+  ).finalState;
+}
+
+export function createPlayerReactionSkipProgression(
+  state: GameState,
+  random: () => number = Math.random
+): PlayerReactionSkipProgression {
+  const cpuSteps: CpuProgressStep[] = [];
+  const resolution =
+    resolvePlayerReactionSkip(
+      state,
+      random,
+      (step) => {
+        cpuSteps.push(step);
+      }
+    );
+
+  return {
+    stateAfterReaction:
+      resolution.stateAfterReaction,
+    cpuSteps,
+    finalState: resolution.finalState
+  };
 }
 
 export function canPlayerDeclareNineTerminals(
