@@ -2173,6 +2173,106 @@ body {
 
 /* 和了操作・和了結果 */
 
+.declaration-overlay {
+  --declaration-color: #f2d56b;
+
+  position: absolute;
+  z-index: 80;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.declaration-overlay span {
+  min-width: clamp(120px, 24vmin, 220px);
+  padding: clamp(8px, 2vmin, 18px)
+    clamp(20px, 5vmin, 46px);
+  border: clamp(2px, 0.45vmin, 4px)
+    solid var(--declaration-color);
+  border-radius: clamp(10px, 2vmin, 20px);
+  color: #fff;
+  background:
+    radial-gradient(
+      circle at 50% 15%,
+      rgb(64 92 73 / 98%),
+      rgb(3 17 10 / 94%) 72%
+    );
+  box-shadow:
+    0 0 26px var(--declaration-color),
+    0 12px 30px rgb(0 0 0 / 55%),
+    inset 0 0 16px rgb(255 255 255 / 12%);
+  font-size: clamp(
+    2rem,
+    min(8vw, 12vh),
+    5rem
+  );
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-align: center;
+  text-indent: 0.12em;
+  text-shadow:
+    0 3px 3px rgb(0 0 0 / 70%),
+    0 0 12px var(--declaration-color);
+  animation:
+    declaration-overlay-pop
+    500ms ease-out both;
+}
+
+.declaration-overlay--chi {
+  --declaration-color: #55e2c2;
+}
+
+.declaration-overlay--pon {
+  --declaration-color: #ffad4f;
+}
+
+.declaration-overlay--kan {
+  --declaration-color: #77aaff;
+}
+
+.declaration-overlay--riichi {
+  --declaration-color: #ff5353;
+}
+
+.declaration-overlay--tsumo {
+  --declaration-color: #ffe46b;
+}
+
+.declaration-overlay--ron {
+  --declaration-color: #ff3f4f;
+}
+
+@keyframes declaration-overlay-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  18% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  32% {
+    transform: scale(1);
+  }
+
+  82% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
 .table-actions .win-button {
   border-color: #ffb6ad;
   color: #ffffff;
