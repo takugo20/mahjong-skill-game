@@ -79,7 +79,10 @@ const DECLARATION_LABELS:
 function getCpuStepDeclaration(
   previousState: GameState,
   step: CpuProgressStep
-): DeclarationKind | null {
+): {
+  kind: "chi" | "pon" | "kan" | "riichi";
+  targetTileIds: string[];
+} | null {
   if (
     step.phase !== "action" ||
     step.seat === 0
@@ -107,7 +110,12 @@ function getCpuStepDeclaration(
         nextLastDiscard.discard.tile.id
     )
   ) {
-    return "riichi";
+    return {
+      kind: "riichi",
+      targetTileIds: [
+        nextLastDiscard.discard.tile.id
+      ]
+    };
   }
 
   const changedMeld =
@@ -130,14 +138,38 @@ function getCpuStepDeclaration(
   }
 
   if (changedMeld.kind === "chi") {
-    return "chi";
+    return {
+      kind: "chi",
+      targetTileIds:
+        changedMeld.calledTileId
+          ? [changedMeld.calledTileId]
+          : changedMeld.tiles.map(
+              (tile) => tile.id
+            )
+    };
   }
 
   if (changedMeld.kind === "pon") {
-    return "pon";
+    return {
+      kind: "pon",
+      targetTileIds:
+        changedMeld.calledTileId
+          ? [changedMeld.calledTileId]
+          : changedMeld.tiles.map(
+              (tile) => tile.id
+            )
+    };
   }
 
-  return "kan";
+  return {
+    kind: "kan",
+    targetTileIds:
+      changedMeld.calledTileId
+        ? [changedMeld.calledTileId]
+        : changedMeld.tiles.map(
+            (tile) => tile.id
+          )
+  };
 }
 
 function getCpuWinDeclaration(
@@ -196,6 +228,8 @@ interface OpponentAreaProps {
   player: PlayerState;
   position: OpponentPosition;
   isDeclaring: boolean;
+  declarationTargetTileIds:
+    readonly string[];
 }
 
 interface MeldAreaProps {
@@ -663,7 +697,8 @@ function MeldArea({
 function OpponentArea({
   player,
   position,
-  isDeclaring
+  isDeclaring,
+  declarationTargetTileIds
 }: OpponentAreaProps) {
   return (
     <section
@@ -700,6 +735,9 @@ function OpponentArea({
         player={player}
         position={position}
         compact
+        declarationTargetTileIds={
+          declarationTargetTileIds
+        }
       />
 
       <div className="opponent-meta">
@@ -1075,17 +1113,18 @@ export function GameBoard({
       stateBeforeFirstCpuStep;
     const cpuDeclarations =
       cpuSteps.map((step) => {
-        const kind = getCpuStepDeclaration(
-          previousCpuState,
-          step
-        );
+        const declaration =
+          getCpuStepDeclaration(
+            previousCpuState,
+            step
+          );
 
         previousCpuState = step.state;
 
-        return kind === null
+        return declaration === null
           ? null
           : {
-              kind,
+              ...declaration,
               seat: step.seat
             };
       });
@@ -1103,7 +1142,7 @@ export function GameBoard({
         return;
       }
 
-            const cpuWinDeclaration =
+      const cpuWinDeclaration =
         getCpuWinDeclaration(nextState);
 
       if (cpuWinDeclaration) {
@@ -1125,7 +1164,8 @@ export function GameBoard({
       if (cpuDeclaration) {
         showDeclaration(
           cpuDeclaration.kind,
-          cpuDeclaration.seat
+          cpuDeclaration.seat,
+          cpuDeclaration.targetTileIds
         );
       }
 
@@ -1543,6 +1583,9 @@ export function GameBoard({
           isDeclaring={
             activeDeclarationSeat === 2
           }
+          declarationTargetTileIds={
+            declarationTargetTileIds
+          }
         />
 
         <OpponentArea
@@ -1551,6 +1594,9 @@ export function GameBoard({
           isDeclaring={
             activeDeclarationSeat === 3
           }
+          declarationTargetTileIds={
+            declarationTargetTileIds
+          }
         />
 
         <OpponentArea
@@ -1558,6 +1604,9 @@ export function GameBoard({
           position="right"
           isDeclaring={
             activeDeclarationSeat === 1
+          }
+          declarationTargetTileIds={
+            declarationTargetTileIds
           }
         />
 
