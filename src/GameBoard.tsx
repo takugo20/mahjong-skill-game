@@ -1663,6 +1663,67 @@ export function GameBoard({
               </article>
             </section>
           )}
+
+                {abortiveDrawResult?.reason ===
+          "fourRiichi" &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="四家立直結果"
+            >
+              <article className="win-result-card draw-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>途中流局</span>
+
+                    <strong>四家立直</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    立直
+                    {
+                      abortiveDrawResult
+                        .riichiSeats.length
+                    }
+                    人
+                  </b>
+                </header>
+
+                <div className="draw-result-summary">
+                  <span>成立</span>
+
+                  <strong>
+                    4人全員の立直が成立
+                  </strong>
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>点数移動なし</strong>
+                </div>
+
+                <p className="triple-ron-description">
+                  親は連荘し、本場を1つ増やします。
+                  {round.riichiPool > 0
+                    ? `供託${formatScore(
+                        round.riichiPool
+                      )}点は次局へ持ち越します。`
+                    : "供託点はありません。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
         
         {abortiveDrawResult?.reason ===
           "tripleRon" &&
