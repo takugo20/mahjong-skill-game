@@ -233,6 +233,64 @@ function createCpuDealerNextRoundState(): GameState {
   return state;
 }
 
+function createCpuPonProgressionState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const calledTile = createTile(
+    "honor",
+    5
+  );
+  const discardAfterCall = createTile(
+    "man",
+    9
+  );
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [calledTile],
+    melds: [],
+    discards: [],
+    drawnTileId: calledTile.id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.players[1] = {
+    ...state.round.players[1],
+    hand: [
+      createTile("honor", 5),
+      createTile("honor", 5),
+      createTile("man", 2),
+      createTile("man", 2),
+      discardAfterCall,
+      createTile("pin", 1),
+      createTile("pin", 2),
+      createTile("pin", 3),
+      createTile("pin", 4),
+      createTile("pin", 5),
+      createTile("pin", 6),
+      createTile("sou", 7),
+      createTile("sou", 8)
+    ],
+    melds: [],
+    discards: [],
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  emptyCpuHand(state, 2);
+  emptyCpuHand(state, 3);
+  state.round.liveWall = [
+    createTile("honor", 1),
+    createTile("honor", 2),
+    createTile("honor", 3),
+    createTile("honor", 4)
+  ];
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
 function advanceTime(milliseconds: number) {
   act(() => {
     vi.advanceTimersByTime(milliseconds);
@@ -650,6 +708,75 @@ describe("GameBoardのCPU進行演出", () => {
     expect(
       screen.queryByRole("status", {
         name: "あなたのリーチ"
+      })
+    ).toBeNull();
+  });
+
+    it("CPUのポンを行動ステップで中央表示する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuPonProgressionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "白"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "打牌"
+      })
+    );
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のポン"
+      })
+    ).toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のポン"
+      })
+    ).toBeNull();
+
+    advanceTime(1);
+
+    const overlay = screen.getByRole(
+      "status",
+      {
+        name: "CPU・右のポン"
+      }
+    );
+
+    expect(overlay.textContent).toBe(
+      "ポン"
+    );
+    expect(
+      overlay.classList.contains(
+        "declaration-overlay--pon"
+      )
+    ).toBe(true);
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のポン"
+      })
+    ).not.toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のポン"
       })
     ).toBeNull();
   });
