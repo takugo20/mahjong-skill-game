@@ -320,10 +320,14 @@ function createWinningInput(
       input.chankanSource !== undefined,
     haitei:
       input.winMethod === "tsumo" &&
-      input.round.liveWall.length === 0,
+      input.round.liveWall.length === 0 &&
+      source.winner.drawnTileSource ===
+        "liveWall",
     houtei:
       input.winMethod === "ron" &&
-      input.round.liveWall.length === 0,
+      input.round.liveWall.length === 0 &&
+      input.round.lastDiscard?.discard
+        .drawnTileSource === "liveWall",
     tenhou: input.tenhou,
     chiihou: input.chiihou,
     treatAsClosed:
