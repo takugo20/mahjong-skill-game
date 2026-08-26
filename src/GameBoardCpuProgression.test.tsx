@@ -321,6 +321,65 @@ function createCpuPonProgressionState(): GameState {
   return state;
 }
 
+function createCpuRiichiPresentationState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const completeCpuHand = [
+    ...createTiles("man", [2, 3, 4]),
+    ...createTiles("pin", [2, 3, 4]),
+    ...createTiles("sou", [2, 3, 4]),
+    ...createTiles("sou", [6, 7, 8]),
+    createTile("man", 5),
+    createTile("pin", 5)
+  ];
+  const cpuDrawnTile =
+    completeCpuHand[
+      completeCpuHand.length - 1
+    ];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [playerDiscard],
+    melds: [],
+    discards: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.players[1] = {
+    ...state.round.players[1],
+    hand: completeCpuHand.slice(0, -1),
+    melds: [],
+    discards: [],
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  emptyCpuHand(state, 2);
+  emptyCpuHand(state, 3);
+  state.round.liveWall = [
+    cpuDrawnTile,
+    createTile("honor", 1),
+    createTile("honor", 2),
+    createTile("honor", 3),
+    createTile("honor", 4),
+    createTile("man", 9),
+    createTile("pin", 9),
+    createTile("sou", 9)
+  ];
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
 function createPlayerTsumoPresentationState(): GameState {
   const state = createInitialGameState(
     () => 0.5
@@ -1016,6 +1075,88 @@ describe("GameBoardのCPU進行演出", () => {
         '[data-declaration-target="true"]'
       )
     ).toBeNull();
+  });
+
+    it("CPUの立直牌を演出後に横向き表示する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuRiichiPresentationState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "中"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "打牌"
+      })
+    );
+
+    advanceTime(999);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のリーチ"
+      })
+    ).toBeNull();
+
+    advanceTime(1);
+
+    const cpuRiver = screen.getByLabelText(
+      "CPU・右の河"
+    );
+
+    expect(
+      screen.getByRole("status", {
+        name: "CPU・右のリーチ"
+      }).textContent
+    ).toBe("リーチ");
+    expect(
+      cpuRiver.querySelector(
+        '[data-declaration-target="true"]'
+      )
+    ).not.toBeNull();
+    expect(
+      cpuRiver.querySelector(
+        '[data-riichi-declaration="true"]'
+      )
+    ).toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のリーチ"
+      })
+    ).not.toBeNull();
+    expect(
+      cpuRiver.querySelector(
+        '[data-riichi-declaration="true"]'
+      )
+    ).toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のリーチ"
+      })
+    ).toBeNull();
+    expect(
+      cpuRiver.querySelector(
+        '[data-declaration-target="true"]'
+      )
+    ).toBeNull();
+    expect(
+      cpuRiver.querySelector(
+        '[data-riichi-declaration="true"]'
+      )
+    ).not.toBeNull();
   });
 
     it("ツモ表示後に和了結果へ移り演出中の操作を無効にする", () => {
