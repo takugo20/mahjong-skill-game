@@ -36,6 +36,7 @@ import type {
   Meld,
   MeldCallOption,
   PlayerState,
+  RoundResponsibilityResult,
   SeatIndex,
   Tile
 } from "./lib/mahjong/types";
@@ -92,6 +93,55 @@ function formatPointChange(
   }
 
   return formatScore(change);
+}
+
+interface ResponsibilityNoticeProps {
+  responsibility:
+    RoundResponsibilityResult;
+  players: readonly PlayerState[];
+}
+
+function ResponsibilityNotice({
+  responsibility,
+  players
+}: ResponsibilityNoticeProps) {
+  const responsiblePlayer =
+    players[
+      responsibility.responsibleSeat
+    ];
+
+  if (!responsiblePlayer) {
+    return null;
+  }
+
+  const yakumanName =
+    responsibility.yakumanId ===
+    "bigFourWinds"
+      ? "大四喜"
+      : "大三元";
+
+  return (
+    <div
+      className="win-result-responsibility"
+      aria-label="責任払い"
+    >
+      <strong>責任払い</strong>
+
+      <span>
+        {yakumanName}
+        {responsibility.yakumanMultiplier ===
+          2 && "（ダブル役満）"}
+      </span>
+
+      <b>
+        責任者：
+        {getWindLabel(
+          responsiblePlayer.seatWind
+        )}
+        ・{responsiblePlayer.name}
+      </b>
+    </div>
+  );
 }
 
 function River({
@@ -1294,6 +1344,15 @@ export function GameBoard({
                   )}
               </div>
 
+              {winResult.responsibility && (
+                <ResponsibilityNotice
+                  responsibility={
+                    winResult.responsibility
+                  }
+                  players={round.players}
+                />
+              )}
+
               <div className="win-result-score">
                 <strong>
                   {winResult.yakumanMultiplier > 0
@@ -1453,6 +1512,15 @@ export function GameBoard({
                                 </span>
                               )}
                           </div>
+
+                          {ronResult.responsibility && (
+                            <ResponsibilityNotice
+                              responsibility={
+                                ronResult.responsibility
+                              }
+                              players={round.players}
+                            />
+                          )}
 
                           <div className="win-result-score">
                             <strong>
