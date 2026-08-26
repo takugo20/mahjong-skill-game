@@ -203,6 +203,7 @@ describe("プレイヤーのツモ宣言", () => {
 
     state.round.currentSeat = 0;
     state.round.phase = "discarding";
+    state.round.turnNumber = 4;
     state.round.players[0] = {
       ...state.round.players[0],
       hand,
