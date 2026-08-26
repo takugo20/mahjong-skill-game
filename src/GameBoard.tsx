@@ -5,6 +5,10 @@ import {
 } from "react";
 import { TileView } from "./components/TileView";
 import {
+  playGameSound,
+  unlockGameAudio
+} from "./lib/gameAudio";
+import {
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1058,6 +1062,8 @@ export function GameBoard({
       );
     }
 
+    playGameSound(kind);
+
     declarationSequenceRef.current += 1;
 
     setDeclarationOverlay({
@@ -1602,7 +1608,12 @@ export function GameBoard({
   }
   
   return (
-    <main className="app-shell">
+    <main
+      className="app-shell"
+      onPointerDownCapture={() => {
+        void unlockGameAudio();
+      }}
+    >
       <section
         className={
           isWinPresenting
