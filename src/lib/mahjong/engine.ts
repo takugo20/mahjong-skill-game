@@ -141,6 +141,12 @@ export interface PlayerReactionSkipProgression {
   finalState: GameState;
 }
 
+export interface PlayerRiichiProgression {
+  stateAfterDeclaration: GameState;
+  cpuSteps: CpuProgressStep[];
+  finalState: GameState;
+}
+
 type CpuProgressObserver = (
   step: CpuProgressStep
 ) => void;
@@ -3557,19 +3563,30 @@ function establishPlayerRiichi(
   };
 }
 
-export function declarePlayerRiichi(
+interface PlayerRiichiResolution {
+  stateAfterDeclaration: GameState;
+  finalState: GameState;
+}
+
+function resolvePlayerRiichi(
   state: GameState,
   tileId: string,
-  random: () => number = Math.random
-): GameState {
+  random: () => number,
+  onCpuProgress?: CpuProgressObserver
+): PlayerRiichiResolution {
   const candidateTileIds =
     getPlayerRiichiDiscardTileIds(state);
 
   if (!candidateTileIds.includes(tileId)) {
-    return {
+    const invalidState = {
       ...state,
       notice:
         "選択した牌では立直を宣言できません。"
+    };
+
+    return {
+      stateAfterDeclaration: invalidState,
+      finalState: invalidState
     };
   }
 
@@ -3586,7 +3603,10 @@ export function declarePlayerRiichi(
     discardedState.round.turnNumber ===
     state.round.turnNumber
   ) {
-    return discardedState;
+    return {
+      stateAfterDeclaration: discardedState,
+      finalState: discardedState
+    };
   }
 
   const cpuRonState =
@@ -3595,7 +3615,10 @@ export function declarePlayerRiichi(
     );
 
   if (cpuRonState) {
-    return cpuRonState;
+    return {
+      stateAfterDeclaration: discardedState,
+      finalState: cpuRonState
+    };
   }
 
   const establishedState =
@@ -3607,7 +3630,9 @@ export function declarePlayerRiichi(
   const progressedState =
     completeCpuTurns(
       establishedState,
-      random
+      random,
+      false,
+      onCpuProgress
     );
 
   if (
@@ -3615,7 +3640,7 @@ export function declarePlayerRiichi(
       "discarding" &&
     progressedState.round.currentSeat === 0
   ) {
-    return {
+    const finalState = {
       ...progressedState,
       notice:
         (
@@ -3625,9 +3650,54 @@ export function declarePlayerRiichi(
         ) +
         progressedState.notice
     };
+
+    return {
+      stateAfterDeclaration:
+        establishedState,
+      finalState
+    };
   }
 
-  return progressedState;
+  return {
+    stateAfterDeclaration:
+      establishedState,
+    finalState: progressedState
+  };
+}
+
+export function declarePlayerRiichi(
+  state: GameState,
+  tileId: string,
+  random: () => number = Math.random
+): GameState {
+  return resolvePlayerRiichi(
+    state,
+    tileId,
+    random
+  ).finalState;
+}
+
+export function createPlayerRiichiProgression(
+  state: GameState,
+  tileId: string,
+  random: () => number = Math.random
+): PlayerRiichiProgression {
+  const cpuSteps: CpuProgressStep[] = [];
+  const resolution = resolvePlayerRiichi(
+    state,
+    tileId,
+    random,
+    (step) => {
+      cpuSteps.push(step);
+    }
+  );
+
+  return {
+    stateAfterDeclaration:
+      resolution.stateAfterDeclaration,
+    cpuSteps,
+    finalState: resolution.finalState
+  };
 }
 
 interface PlayerDiscardResolution {
