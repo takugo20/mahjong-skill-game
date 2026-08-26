@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import {
   getAbortiveDrawLabel,
+  getFourRiichiDrawResult,
   getFourWindsDrawResult,
   getNineTerminalsDrawResult
 } from "./abortiveDraw";
@@ -1208,6 +1209,36 @@ function finishFourWindsIfAvailable(
 ): GameState | null {
   const result =
     getFourWindsDrawResult(
+      state.round
+    );
+
+  return result
+    ? finishRoundWithAbortiveDraw(
+        state,
+        result
+      )
+    : null;
+}
+
+function finishFourRiichiIfAvailable(
+  state: GameState
+): GameState | null {
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    state.round.phase !== "drawing" ||
+    !lastDiscard?.discard
+      .riichiDeclaration ||
+    !state.round.players[
+      lastDiscard.seat
+    ]?.riichi
+  ) {
+    return null;
+  }
+
+  const result =
+    getFourRiichiDrawResult(
       state.round
     );
 
@@ -2617,6 +2648,15 @@ function completeCpuTurns(
 
     if (cpuRonState) {
       return cpuRonState;
+    }
+
+    const fourRiichiState =
+      finishFourRiichiIfAvailable(
+        nextState
+      );
+
+    if (fourRiichiState) {
+      return fourRiichiState;
     }
 
     if (playerMeldCallOptions.length > 0) {
