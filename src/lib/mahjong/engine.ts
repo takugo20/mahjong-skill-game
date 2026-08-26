@@ -105,6 +105,14 @@ const DORA_INDICATOR_INDEXES = [
   12
 ];
 
+const FIRST_DRAW_TURN_BY_WIND:
+  Record<Wind, number> = {
+    east: 0,
+    south: 1,
+    west: 2,
+    north: 3
+  };
+
 function nextSeat(seat: SeatIndex): SeatIndex {
   return ((seat + 1) % 4) as SeatIndex;
 }
@@ -546,6 +554,32 @@ function getUraDoraIndicators(
     );
 }
 
+function isFirstUninterruptedTsumo(
+  state: GameState,
+  player: PlayerState,
+  winMethod: "tsumo" | "ron"
+): boolean {
+  return (
+    winMethod === "tsumo" &&
+    state.round.phase === "discarding" &&
+    state.round.currentSeat ===
+      player.seat &&
+    player.drawnTileId !== null &&
+    player.drawnTileSource ===
+      "liveWall" &&
+    player.discards.length === 0 &&
+    state.round.turnNumber ===
+      FIRST_DRAW_TURN_BY_WIND[
+        player.seatWind
+      ] &&
+    state.round.kanCount === 0 &&
+    state.round.players.every(
+      (roundPlayer) =>
+        roundPlayer.melds.length === 0
+    )
+  );
+}
+
 function createWinInput(
   state: GameState,
   winnerSeat: SeatIndex,
@@ -554,6 +588,12 @@ function createWinInput(
 ) {
   const player =
     state.round.players[winnerSeat];
+  const firstUninterruptedTsumo =
+    isFirstUninterruptedTsumo(
+      state,
+      player,
+      winMethod
+    );
 
   return {
     round: state.round,
@@ -565,6 +605,12 @@ function createWinInput(
       winMethod === "tsumo" &&
       player.drawnTileSource ===
         "rinshan",
+    tenhou:
+      firstUninterruptedTsumo &&
+      player.isDealer,
+    chiihou:
+      firstUninterruptedTsumo &&
+      !player.isDealer,
     chankanSource,
     doraIndicators:
       getDoraIndicators(state.round),
