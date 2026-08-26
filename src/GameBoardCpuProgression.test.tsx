@@ -387,6 +387,93 @@ function createPlayerRonPresentationState(): GameState {
   return state;
 }
 
+function createCpuWinNonWinningHand(): Tile[] {
+  return [
+    ...createTiles(
+      "man",
+      [1, 4, 5, 7, 8, 9]
+    ),
+    ...createTiles(
+      "pin",
+      [1, 4, 5, 7, 8, 9]
+    ),
+    createTile("honor", 1)
+  ];
+}
+
+function createCpuRonPresentationState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const completedHand =
+    createPlayerWinHand();
+  const winningTile = completedHand[0];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      winningTile,
+      ...createCpuWinNonWinningHand()
+    ],
+    melds: [],
+    discards: [],
+    drawnTileId: winningTile.id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.players[1] = {
+    ...state.round.players[1],
+    hand: completedHand.slice(1),
+    melds: [],
+    discards: [],
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  emptyCpuHand(state, 2);
+  emptyCpuHand(state, 3);
+  state.round.liveWall = [
+    createTile("honor", 1)
+  ];
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.lastDiscard = null;
+
+  return state;
+}
+
+function createCpuTsumoPresentationState(): GameState {
+  const state = createCpuRonPresentationState();
+  const completedHand =
+    createPlayerWinHand();
+  const winningTile = completedHand[0];
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+
+  state.round.turnNumber = 4;
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      playerDiscard,
+      ...createCpuWinNonWinningHand()
+    ],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.players[1] = {
+    ...state.round.players[1],
+    hand: completedHand.slice(1),
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.liveWall = [
+    winningTile,
+    createTile("honor", 1)
+  ];
+
+  return state;
+}
+
 function advanceTime(milliseconds: number) {
   act(() => {
     vi.advanceTimersByTime(milliseconds);
@@ -975,6 +1062,106 @@ describe("GameBoardのCPU進行演出", () => {
         name: "あなたのロン"
       })
     ).toBeNull();
+    expect(
+      screen.getByRole("dialog", {
+        name: "和了結果"
+      })
+    ).not.toBeNull();
+  });
+
+    it("CPUのロン表示後に和了結果へ移る", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuRonPresentationState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "二萬"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "打牌"
+      })
+    );
+
+    advanceTime(499);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のロン"
+      })
+    ).toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.getByRole("status", {
+        name: "CPU・右のロン"
+      }).textContent
+    ).toBe("ロン");
+    expect(
+      screen.queryByRole("dialog", {
+        name: "和了結果"
+      })
+    ).toBeNull();
+
+    advanceTime(500);
+
+    expect(
+      screen.getByRole("dialog", {
+        name: "和了結果"
+      })
+    ).not.toBeNull();
+  });
+
+  it("CPUのツモ表示後に和了結果へ移る", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuTsumoPresentationState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "中"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "打牌"
+      })
+    );
+
+    advanceTime(999);
+
+    expect(
+      screen.queryByRole("status", {
+        name: "CPU・右のツモ"
+      })
+    ).toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.getByRole("status", {
+        name: "CPU・右のツモ"
+      }).textContent
+    ).toBe("ツモ");
+    expect(
+      screen.queryByRole("dialog", {
+        name: "和了結果"
+      })
+    ).toBeNull();
+
+    advanceTime(500);
+
     expect(
       screen.getByRole("dialog", {
         name: "和了結果"
