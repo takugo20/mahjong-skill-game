@@ -6,6 +6,13 @@ import type {
 import {
   evaluateWinningHand
 } from "./winning";
+import {
+  resolveResponsibilitySettlement
+} from "./responsibilitySettlement";
+import type {
+  ResponsibilityDeclaration,
+  ResponsibilitySettlementResult
+} from "./responsibilitySettlement";
 import type {
   Wind
 } from "./types";
@@ -27,6 +34,8 @@ export interface WinningSettlementInput<
   winnerId: string;
   loserId?: string;
   winMethod: WinMethod;
+  responsibility?:
+    ResponsibilityDeclaration;
   hand: Omit<
     WinningHandEvaluationInput,
     "winMethod" | "seatWind"
@@ -50,6 +59,9 @@ export interface ValidWinningSettlement<
   loserId: string | null;
   evaluation:
     ValidWinningHandEvaluation;
+  responsibility:
+    ResponsibilitySettlementResult["responsibility"] |
+    null;
   pointChanges: PlayerPointChange[];
   playersAfter: TPlayer[];
 }
@@ -350,6 +362,48 @@ export function resolveWinningSettlement<
     };
   }
 
+  const declaredResponsibility =
+    input.responsibility;
+
+  if (
+    declaredResponsibility &&
+    evaluation.best.yakuman.some(
+      (yakuman) =>
+        yakuman.id ===
+        declaredResponsibility.yakumanId
+    )
+  ) {
+    const responsibilitySettlement =
+      resolveResponsibilitySettlement({
+        players: input.players,
+        winnerId: winner.id,
+        loserId: loser?.id,
+        winMethod: input.winMethod,
+        yakuman:
+          evaluation.best.yakuman,
+        responsibility:
+          declaredResponsibility,
+        honba: input.hand.honba ?? 0,
+        riichiPool:
+          (input.hand.riichiSticks ?? 0) *
+          1000
+      });
+
+    return {
+      valid: true,
+      winMethod: input.winMethod,
+      winnerId: winner.id,
+      loserId: loser?.id ?? null,
+      evaluation,
+      responsibility:
+        responsibilitySettlement.responsibility,
+      pointChanges:
+        responsibilitySettlement.pointChanges,
+      playersAfter:
+        responsibilitySettlement.playersAfter
+    };
+  }
+  
   const changes = createPointChangeMap(
     input.players
   );
@@ -387,6 +441,7 @@ export function resolveWinningSettlement<
     winnerId: winner.id,
     loserId: loser?.id ?? null,
     evaluation,
+    responsibility: null,
     pointChanges:
       applied.pointChanges,
     playersAfter:
