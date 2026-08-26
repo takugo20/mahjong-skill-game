@@ -31,6 +31,12 @@ import type {
   CpuSelfKanDecision
 } from "./cpuKan";
 import {
+  chooseCpuRiichi
+} from "./cpuRiichi";
+import type {
+  CpuRiichiDecision
+} from "./cpuRiichi";
+import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
 import {
@@ -2161,11 +2167,36 @@ function playCpuDiscardingTurn(
 
   const cpuPlayer =
     state.round.players[cpuSeat];
-  const selectedTile = chooseCpuDiscard(
-    cpuPlayer,
-    state.round,
-    random
-  );
+  const riichiDecision =
+    getCpuRiichiDecision(
+      state,
+      cpuSeat
+    );
+
+  if (riichiDecision) {
+    return playCpuRiichiDeclaration(
+      state,
+      cpuSeat,
+      riichiDecision
+    );
+  }
+
+  const selectedTile = cpuPlayer.riichi
+    ? cpuPlayer.hand.find(
+        (tile) =>
+          tile.id ===
+          cpuPlayer.drawnTileId
+      ) ??
+      chooseCpuDiscard(
+        cpuPlayer,
+        state.round,
+        random
+      )
+    : chooseCpuDiscard(
+        cpuPlayer,
+        state.round,
+        random
+      );
 
   return discardTile(
     state,
@@ -2252,6 +2283,201 @@ function completeCpuPendingSelfKan(
         discardedTile.discard.tile
       )}を捨てました。`
   };
+}
+
+function getVisibleTilesForCpuRiichi(
+  state: GameState
+): Tile[] {
+  return state.round.players.flatMap(
+    (player) => [
+      ...player.discards.map(
+        (discard) => discard.tile
+      ),
+      ...player.melds.flatMap(
+        (meld) => meld.tiles
+      )
+    ]
+  );
+}
+
+function getCpuRiichiDecision(
+  state: GameState,
+  cpuSeat: SeatIndex
+): CpuRiichiDecision | null {
+  if (
+    cpuSeat === 0 ||
+    state.round.currentSeat !== cpuSeat ||
+    state.round.phase !== "discarding"
+  ) {
+    return null;
+  }
+
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+  const candidateTileIds =
+    getRiichiDiscardTileIds({
+      concealedTiles: cpuPlayer.hand,
+      melds: cpuPlayer.melds,
+      score: cpuPlayer.score,
+      liveWallTileCount:
+        state.round.liveWall.length,
+      alreadyRiichi: cpuPlayer.riichi
+    });
+
+  return chooseCpuRiichi({
+    player: cpuPlayer,
+    riichiDiscardTileIds:
+      candidateTileIds,
+    doraIndicators:
+      getDoraIndicators(state.round),
+    visibleTiles:
+      getVisibleTilesForCpuRiichi(
+        state
+      )
+  });
+}
+
+function isCpuDoubleRiichiDeclaration(
+  state: GameState,
+  cpuSeat: SeatIndex,
+  declarationAlreadyDiscarded = false
+): boolean {
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+  const expectedDiscardCount =
+    declarationAlreadyDiscarded ? 1 : 0;
+  const declarationDiscardIsValid =
+    !declarationAlreadyDiscarded ||
+    (
+      state.round.lastDiscard?.seat ===
+        cpuSeat &&
+      state.round.lastDiscard.discard
+        .riichiDeclaration &&
+      cpuPlayer.discards[0]
+        ?.riichiDeclaration === true
+    );
+
+  return (
+    cpuPlayer.discards.length ===
+      expectedDiscardCount &&
+    declarationDiscardIsValid &&
+    state.round.kanCount === 0 &&
+    state.round.players.every(
+      (player) =>
+        player.melds.length === 0
+    )
+  );
+}
+
+function establishCpuRiichi(
+  state: GameState,
+  cpuSeat: SeatIndex,
+  doubleRiichi: boolean
+): GameState {
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+
+  if (
+    cpuSeat === 0 ||
+    cpuPlayer.riichi ||
+    cpuPlayer.score < RIICHI_DEPOSIT
+  ) {
+    return state;
+  }
+
+  const riichiPlayer: PlayerState = {
+    ...cpuPlayer,
+    score:
+      cpuPlayer.score - RIICHI_DEPOSIT,
+    riichi: true,
+    doubleRiichi,
+    ippatsu: true
+  };
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: replacePlayer(
+        state.round.players,
+        riichiPlayer
+      ),
+      riichiPool:
+        state.round.riichiPool +
+        RIICHI_DEPOSIT
+    },
+    notice:
+      `${cpuPlayer.name}の` +
+      `${
+        doubleRiichi
+          ? "ダブル立直"
+          : "立直"
+      }が成立しました。`
+  };
+}
+
+function playCpuRiichiDeclaration(
+  state: GameState,
+  cpuSeat: SeatIndex,
+  decision: CpuRiichiDecision
+): GameState {
+  const doubleRiichi =
+    isCpuDoubleRiichiDeclaration(
+      state,
+      cpuSeat
+    );
+  const discardedState = discardTile(
+    state,
+    decision.discardTileId,
+    true
+  );
+
+  if (
+    discardedState.round.turnNumber ===
+    state.round.turnNumber
+  ) {
+    return discardedState;
+  }
+
+  if (canPlayerRon(discardedState)) {
+    return discardedState;
+  }
+
+  const cpuRonState =
+    finishCpuRonIfAvailable(
+      discardedState
+    );
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
+
+  return establishCpuRiichi(
+    discardedState,
+    cpuSeat,
+    doubleRiichi
+  );
+}
+
+function getPendingCpuRiichiSeat(
+  state: GameState
+): SeatIndex | null {
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    state.round.phase !== "reaction" ||
+    !lastDiscard ||
+    lastDiscard.seat === 0 ||
+    !lastDiscard.discard
+      .riichiDeclaration ||
+    state.round.players[lastDiscard.seat]
+      .riichi
+  ) {
+    return null;
+  }
+
+  return lastDiscard.seat;
 }
 
 function completeCpuTurns(
@@ -2484,6 +2710,48 @@ export function skipPlayerRon(
     return completeCpuTurns(
       resumedState,
       random
+    );
+  }
+
+    const pendingCpuRiichiSeat =
+    getPendingCpuRiichiSeat(
+      skippedState
+    );
+
+  if (pendingCpuRiichiSeat !== null) {
+    const cpuRonState =
+      finishCpuRonIfAvailable(
+        skippedState
+      );
+
+    if (cpuRonState) {
+      return cpuRonState;
+    }
+
+    const doubleRiichi =
+      isCpuDoubleRiichiDeclaration(
+        skippedState,
+        pendingCpuRiichiSeat,
+        true
+      );
+    const establishedState =
+      establishCpuRiichi(
+        skippedState,
+        pendingCpuRiichiSeat,
+        doubleRiichi
+      );
+    const resumedState: GameState = {
+      ...establishedState,
+      round: {
+        ...establishedState.round,
+        phase: "drawing"
+      }
+    };
+
+    return completeCpuTurns(
+      resumedState,
+      random,
+      true
     );
   }
   
