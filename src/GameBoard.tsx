@@ -11,6 +11,7 @@ import {
   canPlayerTsumo,
   createInitialGameState,
   createPlayerDiscardProgression,
+  createPlayerReactionSkipProgression,
   declarePlayerMeldCall,
   declarePlayerNineTerminals,
   declarePlayerOpenKan,
@@ -25,7 +26,6 @@ import {
   getRoundLabel,
   getWindLabel,
   playPlayerSelfKan,
-  skipPlayerRon,
   startNextRound
 } from "./lib/mahjong/engine";
 import type {
@@ -942,11 +942,40 @@ function scheduleCpuProgression(
   }
 
   function handleSkipRon() {
-    setGameState((currentState) =>
-      skipPlayerRon(currentState)
+    if (cpuProgressingRef.current) {
+      return;
+    }
+
+    const progression =
+      createPlayerReactionSkipProgression(
+        gameState
+      );
+    const timedStates =
+      progression.cpuSteps.map(
+        (step) => step.state
+      );
+    const lastTimedState =
+      timedStates.length === 0
+        ? progression.stateAfterReaction
+        : timedStates[
+            timedStates.length - 1
+          ];
+
+    if (
+      lastTimedState !==
+      progression.finalState
+    ) {
+      timedStates.push(
+        progression.finalState
+      );
+    }
+
+    setGameState(
+      progression.stateAfterReaction
     );
 
     setSelectedTileId(null);
+    scheduleCpuProgression(timedStates);
   }
 
   function handleMeldCall(
