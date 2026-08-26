@@ -109,8 +109,8 @@ describe("荒牌流局のゲーム内精算", () => {
     );
 
     const finalDiscard = createTile(
-      "honor",
-      7
+      "man",
+      5
     );
 
     state.round.liveWall = [];
