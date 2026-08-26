@@ -681,6 +681,25 @@ function createRoundWinResult(
   const winner =
     round.players[resolution.winnerSeat];
 
+    const responsiblePlayer =
+    resolution.responsibility === null
+      ? null
+      : round.players.find(
+          (player) =>
+            player.id ===
+            resolution.responsibility
+              ?.responsiblePlayerId
+        );
+
+  if (
+    resolution.responsibility &&
+    !responsiblePlayer
+  ) {
+    throw new Error(
+      "責任払いの責任者が見つかりません。"
+    );
+  }
+  
   const yakuNames = best.isYakuman
     ? best.yakuman.map(
         (yakuman) => yakuman.name
@@ -694,6 +713,20 @@ function createRoundWinResult(
     winnerSeat: resolution.winnerSeat,
     loserSeat: resolution.loserSeat,
     winningTile: resolution.winningTile,
+    responsibility:
+      resolution.responsibility &&
+      responsiblePlayer
+        ? {
+            yakumanId:
+              resolution.responsibility
+                .yakumanId,
+            yakumanMultiplier:
+              resolution.responsibility
+                .yakumanMultiplier,
+            responsibleSeat:
+              responsiblePlayer.seat
+          }
+        : null,
     yakuNames,
     doraCount: best.dora.totalHan,
     doraIndicatorTiles:
