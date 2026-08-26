@@ -4,6 +4,12 @@ import type {
 import {
   resolveWinningSettlement
 } from "./settlement";
+import {
+  getYakumanResponsibilities
+} from "./responsibility";
+import type {
+  ResponsibilityDeclaration
+} from "./responsibilitySettlement";
 import type {
   InvalidWinningHandEvaluation,
   ValidWinningHandEvaluation,
@@ -234,6 +240,33 @@ function getRiichiStickCount(
   return round.riichiPool / 1000;
 }
 
+function getResponsibilityDeclaration(
+  round: RoundState,
+  winner: PlayerState
+): ResponsibilityDeclaration | undefined {
+  const responsibility =
+    getYakumanResponsibilities(
+      winner.melds
+    )[0];
+
+  if (!responsibility) {
+    return undefined;
+  }
+
+  const responsiblePlayer = getPlayer(
+    round,
+    responsibility.responsibleSeat,
+    "責任者"
+  );
+
+  return {
+    yakumanId:
+      responsibility.yakumanId,
+    responsiblePlayerId:
+      responsiblePlayer.id
+  };
+}
+
 function toTileType(tile: Tile): {
   suit: Tile["suit"];
   rank: number;
@@ -361,6 +394,12 @@ export function resolveRoundWin(
     source
   );
 
+  const responsibility =
+    getResponsibilityDeclaration(
+      input.round,
+      source.winner
+    );
+  
   const {
     winMethod: _winMethod,
     seatWind: _seatWind,
@@ -379,6 +418,7 @@ export function resolveRoundWin(
       winnerId: source.winner.id,
       loserId: source.loser?.id,
       winMethod: input.winMethod,
+      responsibility,
       hand
     });
 
