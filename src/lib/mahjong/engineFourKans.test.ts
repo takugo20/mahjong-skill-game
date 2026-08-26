@@ -207,7 +207,7 @@ function createPlayerOpenKanState(): {
 }
 
 describe("四槓散了のゲーム進行", () => {
-  it("プレイヤーが複数家による4回目の暗槓を成立させると途中流局にする", () => {
+  it("プレイヤーの4回目の暗槓後は嶺上ツモと打牌を行ってから途中流局にする", () => {
     const state = createInitialGameState(
       () => 0.5
     );
@@ -235,9 +235,36 @@ describe("四槓散了のゲーム進行", () => {
       );
     }
 
-    const result = playPlayerSelfKan(
+    const kanResult = playPlayerSelfKan(
       state,
       option.id
+    );
+
+    expect(kanResult.round.phase).toBe(
+      "discarding"
+    );
+    expect(
+      kanResult.round.abortiveDrawResult
+    ).toBeNull();
+    expect(
+      kanResult.round.players[0]
+        .drawnTileSource
+    ).toBe("rinshan");
+    expect(kanResult.round.kanCount).toBe(4);
+
+    const discardTile =
+      kanResult.round.players[0].hand[0];
+
+    if (!discardTile) {
+      throw new Error(
+        "4回目の槓後の打牌がありません。"
+      );
+    }
+
+    const result = playPlayerDiscard(
+      kanResult,
+      discardTile.id,
+      () => 0.5
     );
 
     expect(result.round.phase).toBe(
@@ -249,22 +276,47 @@ describe("四槓散了のゲーム進行", () => {
       reason: "fourKans",
       kanCountsBySeat: [1, 3, 0, 0]
     });
-    expect(result.round.kanCount).toBe(4);
     expect(result.round.winResult).toBeNull();
     expect(result.notice).toBe(
       "四槓散了で途中流局です。"
     );
   });
 
-  it("プレイヤーが4回目の大明槓を成立させると途中流局にする", () => {
+  it("プレイヤーの4回目の大明槓後も打牌を行ってから途中流局にする", () => {
     const {
       state,
       optionId
     } = createPlayerOpenKanState();
 
-    const result = declarePlayerOpenKan(
+    const kanResult = declarePlayerOpenKan(
       state,
       optionId
+    );
+
+    expect(kanResult.round.phase).toBe(
+      "discarding"
+    );
+    expect(
+      kanResult.round.abortiveDrawResult
+    ).toBeNull();
+    expect(
+      kanResult.round.players[0]
+        .drawnTileSource
+    ).toBe("rinshan");
+
+    const discardTile =
+      kanResult.round.players[0].hand[0];
+
+    if (!discardTile) {
+      throw new Error(
+        "4回目の槓後の打牌がありません。"
+      );
+    }
+
+    const result = playPlayerDiscard(
+      kanResult,
+      discardTile.id,
+      () => 0.5
     );
 
     expect(result.round.phase).toBe(
@@ -279,7 +331,7 @@ describe("四槓散了のゲーム進行", () => {
     expect(result.round.kanCount).toBe(4);
   });
 
-  it("CPUが4回目の大明槓を成立させると打牌前に途中流局にする", () => {
+  it("CPUが4回目の大明槓後に打牌してから途中流局にする", () => {
     const state = createInitialGameState(
       () => 0.5
     );
@@ -341,10 +393,10 @@ describe("四槓散了のゲーム進行", () => {
     });
     expect(
       result.round.players[1].discards
-    ).toEqual([]);
+    ).toHaveLength(1);
   });
 
-  it("CPUが複数家による4回目の暗槓を成立させると打牌前に途中流局にする", () => {
+  it("CPUが複数家による4回目の暗槓後に打牌してから途中流局にする", () => {
     const state = createInitialGameState(
       () => 0.5
     );
@@ -417,9 +469,9 @@ describe("四槓散了のゲーム進行", () => {
     });
     expect(
       result.round.players[1].discards
-    ).toEqual([]);
+    ).toHaveLength(1);
   });
-
+  
   it("4回すべて同じプレイヤーの槓なら流局させず続行する", () => {
     const state = createInitialGameState(
       () => 0.5
