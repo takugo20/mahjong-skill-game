@@ -348,6 +348,52 @@ button.mahjong-tile--selected:hover:not(:disabled) {
   pointer-events: none;
 }
 
+.mahjong-tile--declaration-target {
+  z-index: 74;
+}
+
+.mahjong-tile--declaration-target::before {
+  position: absolute;
+  z-index: 2;
+  inset: -5px;
+  border: 3px solid #ffe46b;
+  border-radius: 8px;
+  box-shadow:
+    0 0 18px rgb(255 228 107 / 100%),
+    inset 0 0 10px
+    rgb(255 228 107 / 55%);
+  content: "";
+  pointer-events: none;
+  animation:
+    declaration-target-pulse
+    500ms ease-out both;
+}
+
+@keyframes declaration-target-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  42% {
+    transform: scale(1);
+  }
+
+  78% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
 .mahjong-tile--compact {
   width: 25px;
   height: 35px;
