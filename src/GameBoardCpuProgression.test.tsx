@@ -583,6 +583,97 @@ describe("GameBoardのCPU進行演出", () => {
       .toHaveBeenCalledTimes(1);
   });
 
+  it("CPU進行に合わせてツモ音と打牌音を順番に再生する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuProgressionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "中"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "打牌"
+      })
+    );
+
+    expect(playGameSound)
+      .toHaveBeenCalledTimes(1);
+    expect(playGameSound)
+      .toHaveBeenNthCalledWith(
+        1,
+        "discardTile"
+      );
+
+    advanceTime(499);
+
+    expect(playGameSound)
+      .toHaveBeenCalledTimes(1);
+
+    advanceTime(1);
+
+    expect(playGameSound)
+      .toHaveBeenNthCalledWith(
+        2,
+        "drawTile"
+      );
+
+    advanceTime(500);
+
+    expect(playGameSound)
+      .toHaveBeenNthCalledWith(
+        3,
+        "discardTile"
+      );
+  });
+
+  it("リーチ宣言から500ミリ秒後に立直棒音を再生する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createRiichiProgressionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "五筒"
+      })
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "立直"
+      })
+    );
+
+    expect(
+      vi.mocked(playGameSound).mock.calls
+    ).toEqual([["riichi"]]);
+
+    advanceTime(499);
+
+    expect(
+      vi.mocked(playGameSound).mock.calls
+    ).toEqual([["riichi"]]);
+
+    advanceTime(1);
+
+    expect(
+      vi.mocked(playGameSound).mock.calls
+    ).toEqual([
+      ["riichi"],
+      ["discardTile"],
+      ["riichiStick"]
+    ]);
+  });
+
   it("0.5秒ごとにCPU3人のツモと打牌を1段階ずつ表示する", () => {
     render(
       <GameBoard
