@@ -1,3 +1,9 @@
+import {
+  createInitialAkuukanGameState
+} from "../akuukan/state";
+import type {
+  AkuukanMatchSetup
+} from "../akuukan/types";
 import type {
   Discard,
   GameState,
@@ -246,7 +252,8 @@ export function getRoundLabel(
 }
 
 export function createInitialGameState(
-  random: () => number = Math.random
+  random: () => number = Math.random,
+  akuukanSetup?: AkuukanMatchSetup
 ): GameState {
   const shuffledTiles = shuffleTiles(
     createFullTileSet(),
@@ -317,6 +324,14 @@ export function createInitialGameState(
     matchResult: null,
     playerMp: 420,
     maxMp: 900,
+    ...(akuukanSetup
+      ? {
+          akuukan:
+            createInitialAkuukanGameState(
+              akuukanSetup
+            )
+        }
+      : {}),
     notice: "東1局を開始しました。捨てる牌を選んでください。"
   };
 }
