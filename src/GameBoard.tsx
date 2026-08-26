@@ -46,6 +46,32 @@ import type {
 
 const CPU_PROGRESS_INTERVAL_MS = 500;
 
+const DECLARATION_OVERLAY_DURATION_MS = 500;
+
+type DeclarationKind =
+  | "chi"
+  | "pon"
+  | "kan"
+  | "riichi"
+  | "tsumo"
+  | "ron";
+
+interface DeclarationOverlayState {
+  id: number;
+  kind: DeclarationKind;
+  seat: SeatIndex;
+}
+
+const DECLARATION_LABELS:
+  Record<DeclarationKind, string> = {
+    chi: "チー",
+    pon: "ポン",
+    kan: "カン",
+    riichi: "リーチ",
+    tsumo: "ツモ",
+    ron: "ロン"
+  };
+
 type OpponentPosition =
   | "top"
   | "left"
@@ -592,10 +618,17 @@ export function GameBoard({
     setSelectedTileId
   ] = useState<string | null>(null);
 
-    const [
+  const [
     isCpuProgressing,
     setIsCpuProgressing
   ] = useState(false);
+
+  const [
+    declarationOverlay,
+    setDeclarationOverlay
+  ] = useState<
+    DeclarationOverlayState | null
+  >(null);
 
   const cpuProgressTimerRef = useRef<
     ReturnType<typeof setTimeout> | null
@@ -603,11 +636,23 @@ export function GameBoard({
 
   const cpuProgressingRef = useRef(false);
 
+  const declarationTimerRef = useRef<
+    ReturnType<typeof setTimeout> | null
+  >(null);
+
+  const declarationSequenceRef = useRef(0);
+
   useEffect(() => {
     return () => {
       if (cpuProgressTimerRef.current !== null) {
         clearTimeout(
           cpuProgressTimerRef.current
+        );
+      }
+
+      if (declarationTimerRef.current !== null) {
+        clearTimeout(
+          declarationTimerRef.current
         );
       }
 
@@ -790,6 +835,31 @@ export function GameBoard({
   const matchResult =
     gameState.matchResult;
 
+function showDeclaration(
+    kind: DeclarationKind,
+    seat: SeatIndex
+  ) {
+    if (declarationTimerRef.current !== null) {
+      clearTimeout(
+        declarationTimerRef.current
+      );
+    }
+
+    declarationSequenceRef.current += 1;
+
+    setDeclarationOverlay({
+      id: declarationSequenceRef.current,
+      kind,
+      seat
+    });
+
+    declarationTimerRef.current =
+      setTimeout(() => {
+        setDeclarationOverlay(null);
+        declarationTimerRef.current = null;
+      }, DECLARATION_OVERLAY_DURATION_MS);
+  }
+  
 function scheduleCpuProgression(
     states: readonly GameState[]
   ) {
@@ -910,6 +980,9 @@ function scheduleCpuProgression(
         gameState,
         selectedTileId
       );
+
+    showDeclaration("riichi", 0);
+    
     const timedStates =
       progression.cpuSteps.map(
         (step) => step.state
@@ -1004,6 +1077,15 @@ function scheduleCpuProgression(
   function handleMeldCall(
     optionId: string
   ) {
+    const option = meldCallOptions.find(
+      (candidate) =>
+        candidate.id === optionId
+    );
+
+    if (option) {
+      showDeclaration(option.kind, 0);
+    }
+
     setGameState((currentState) =>
       declarePlayerMeldCall(
         currentState,
@@ -1014,9 +1096,11 @@ function scheduleCpuProgression(
     setSelectedTileId(null);
   }
 
-    function handleOpenKan(
+  function handleOpenKan(
     optionId: string
   ) {
+    showDeclaration("kan", 0);
+    
     setGameState((currentState) =>
       declarePlayerOpenKan(
         currentState,
@@ -1030,6 +1114,8 @@ function scheduleCpuProgression(
   function handleSelfKan(
     optionId: string
   ) {
+    showDeclaration("kan", 0);
+
     setGameState((currentState) =>
       playPlayerSelfKan(
         currentState,
@@ -1494,6 +1580,33 @@ function scheduleCpuProgression(
             )}
           </fieldset>
         </section>
+        
+        {declarationOverlay && (
+          <div
+            key={declarationOverlay.id}
+            className={
+              "declaration-overlay " +
+              `declaration-overlay--${declarationOverlay.kind}`
+            }
+            role="status"
+            aria-live="assertive"
+            aria-label={
+              `${round.players[declarationOverlay.seat].name}の` +
+              DECLARATION_LABELS[
+                declarationOverlay.kind
+              ]
+            }
+          >
+            <span>
+              {
+                DECLARATION_LABELS[
+                  declarationOverlay.kind
+                ]
+              }
+            </span>
+          </div>
+        )}
+        
         {winResult && (
           <section
             className="win-result-overlay"
