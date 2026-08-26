@@ -147,6 +147,12 @@ export interface PlayerRiichiProgression {
   finalState: GameState;
 }
 
+export interface NextRoundProgression {
+  stateAfterStart: GameState;
+  cpuSteps: CpuProgressStep[];
+  finalState: GameState;
+}
+
 type CpuProgressObserver = (
   step: CpuProgressStep
 ) => void;
@@ -4073,12 +4079,21 @@ function finishMatch(
   };
 }
 
-export function startNextRound(
+interface NextRoundResolution {
+  stateAfterStart: GameState;
+  finalState: GameState;
+}
+
+function resolveNextRoundStart(
   state: GameState,
-  random: () => number = Math.random
-): GameState {
+  random: () => number,
+  onCpuProgress?: CpuProgressObserver
+): NextRoundResolution {
   if (state.round.phase !== "roundEnd") {
-    return state;
+    return {
+      stateAfterStart: state,
+      finalState: state
+    };
   }
 
   if (
@@ -4086,10 +4101,15 @@ export function startNextRound(
       (player) => player.score < 0
     )
   ) {
-    return finishMatch(
+    const finishedState = finishMatch(
       state,
       "持ち点が0点未満のプレイヤーがいるため、半荘戦が終了しました。"
     );
+
+    return {
+      stateAfterStart: finishedState,
+      finalState: finishedState
+    };
   }
 
   const currentDealerSeat =
@@ -4105,15 +4125,20 @@ export function startNextRound(
     state.round.doubleRonResult == null &&
     state.round.nagashiManganResult ==
       null;
-  
+
   if (
     !continues &&
     isHanchanFinalHand(state.round)
   ) {
-    return finishMatch(
+    const finishedState = finishMatch(
       state,
       "半荘戦が終了しました。最終得点を確認してください。"
     );
+
+    return {
+      stateAfterStart: finishedState,
+      finalState: finishedState
+    };
   }
 
   const nextDealerSeat = continues
@@ -4190,20 +4215,67 @@ export function startNextRound(
       ? drawTile(dealtState, 0)
       : completeCpuTurns(
           dealtState,
-          random
+          random,
+          false,
+          onCpuProgress
         );
 
   if (
     startedState.round.phase ===
     "roundEnd"
   ) {
-    return startedState;
+    return {
+      stateAfterStart:
+        nextDealerSeat === 0
+          ? startedState
+          : dealtState,
+      finalState: startedState
+    };
   }
 
-  return {
+  const finalState = {
     ...startedState,
     notice:
       `${getRoundLabel(startedState.round)}を開始しました。` +
       startedState.notice
+  };
+
+  return {
+    stateAfterStart:
+      nextDealerSeat === 0
+        ? finalState
+        : dealtState,
+    finalState
+  };
+}
+
+export function startNextRound(
+  state: GameState,
+  random: () => number = Math.random
+): GameState {
+  return resolveNextRoundStart(
+    state,
+    random
+  ).finalState;
+}
+
+export function createNextRoundProgression(
+  state: GameState,
+  random: () => number = Math.random
+): NextRoundProgression {
+  const cpuSteps: CpuProgressStep[] = [];
+  const resolution = resolveNextRoundStart(
+    state,
+    random,
+    (step) => {
+      cpuSteps.push(step);
+    }
+  );
+
+  return {
+    stateAfterStart:
+      resolution.stateAfterStart,
+    cpuSteps,
+    finalState: resolution.finalState
   };
 }
