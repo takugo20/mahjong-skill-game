@@ -851,16 +851,18 @@ export function GameBoard({
   
   const round = gameState.round;
   const player = round.players[0];
-  const isInteractionLocked =
-    isCpuProgressing || isWinPresenting;
-
-  const activeDeclarationSeat =
-    declarationOverlay &&
+  const isDeclarationPresenting =
+    declarationOverlay !== null &&
     declarationOverlay.kind !== "tsumo" &&
-    declarationOverlay.kind !== "ron"
+    declarationOverlay.kind !== "ron";
+  const isInteractionLocked =
+    isCpuProgressing ||
+    isWinPresenting ||
+    isDeclarationPresenting;
+  const activeDeclarationSeat =
+    isDeclarationPresenting
       ? declarationOverlay.seat
       : null;
-
   const declarationTargetTileIds =
     declarationOverlay?.targetTileIds ?? [];
   
@@ -1039,7 +1041,8 @@ export function GameBoard({
   function showDeclaration(
     kind: DeclarationKind,
     seat: SeatIndex,
-    targetTileIds: readonly string[] = []
+    targetTileIds: readonly string[] = [],
+    onComplete?: () => void
   ) {
     if (declarationTimerRef.current !== null) {
       clearTimeout(
@@ -1060,10 +1063,11 @@ export function GameBoard({
       setTimeout(() => {
         setDeclarationOverlay(null);
         declarationTimerRef.current = null;
+        onComplete?.();
       }, DECLARATION_OVERLAY_DURATION_MS);
   }
 
-    function showWinPresentation(
+  function showWinPresentation(
     kind: "tsumo" | "ron",
     seat: SeatIndex,
     resultState: GameState
@@ -1256,7 +1260,7 @@ export function GameBoard({
     );
   }
 
-  function handleRiichi() {
+    function handleRiichi() {
     if (
       !selectedTileId ||
       !selectedTileCanDeclareRiichi
@@ -1270,12 +1274,6 @@ export function GameBoard({
         selectedTileId
       );
 
-    showDeclaration(
-      "riichi",
-      0,
-      [selectedTileId]
-    );
-    
     const timedStates =
       progression.cpuSteps.map(
         (step) => step.state
@@ -1296,16 +1294,24 @@ export function GameBoard({
       );
     }
 
-    setGameState(
-      progression.stateAfterDeclaration
+    showDeclaration(
+      "riichi",
+      0,
+      [selectedTileId],
+      () => {
+        setGameState(
+          progression.stateAfterDeclaration
+        );
+
+        scheduleCpuProgression(
+          timedStates,
+          progression.cpuSteps,
+          progression.stateAfterDeclaration
+        );
+      }
     );
 
     setSelectedTileId(null);
-    scheduleCpuProgression(
-      timedStates,
-      progression.cpuSteps,
-      progression.stateAfterDeclaration
-    );
   }
   
   function handleTsumo() {
@@ -1403,19 +1409,21 @@ export function GameBoard({
         candidate.id === optionId
     );
 
-    if (option) {
-      showDeclaration(
-        option.kind,
-        0,
-        [option.calledTileId]
-      );
+    if (!option) {
+      return;
     }
 
-    setGameState((currentState) =>
+    const resultState =
       declarePlayerMeldCall(
-        currentState,
+        gameState,
         optionId
-      )
+      );
+
+    showDeclaration(
+      option.kind,
+      0,
+      [option.calledTileId],
+      () => setGameState(resultState)
     );
 
     setSelectedTileId(null);
@@ -1432,14 +1440,15 @@ export function GameBoard({
     showDeclaration(
       "kan",
       0,
-      option ? [option.calledTileId] : []
-    );
-    
-    setGameState((currentState) =>
-      declarePlayerOpenKan(
-        currentState,
-        optionId
-      )
+      option ? [option.calledTileId] : [],
+      () => {
+        setGameState(
+          declarePlayerOpenKan(
+            gameState,
+            optionId
+          )
+        );
+      }
     );
 
     setSelectedTileId(null);
@@ -1462,19 +1471,20 @@ export function GameBoard({
     showDeclaration(
       "kan",
       0,
-      targetTileIds
-    );
-
-    setGameState((currentState) =>
-      playPlayerSelfKan(
-        currentState,
-        optionId
-      )
+      targetTileIds,
+      () => {
+        setGameState(
+          playPlayerSelfKan(
+            gameState,
+            optionId
+          )
+        );
+      }
     );
 
     setSelectedTileId(null);
   }
-
+  
   function handleNextRound() {
     if (cpuProgressingRef.current) {
       return;
@@ -1793,6 +1803,8 @@ export function GameBoard({
           <div className="selection-status">
             {isWinPresenting
               ? "和了演出中…"
+              : isDeclarationPresenting
+              ? "宣言演出中…"
               : isCpuProgressing
               ? "CPU進行中…"
               : round.phase === "matchEnd"
