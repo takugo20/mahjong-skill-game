@@ -2216,6 +2216,52 @@ body {
   }
 }
 
+.declaration-seat--active {
+  z-index: 72;
+  border-radius: 14px;
+  animation:
+    declaration-seat-glow
+    500ms ease-out both;
+}
+
+@keyframes declaration-seat-glow {
+  0% {
+    background-color:
+      rgb(255 224 107 / 0%);
+    box-shadow:
+      0 0 0
+      rgb(255 224 107 / 0%);
+  }
+
+  18% {
+    background-color:
+      rgb(255 224 107 / 18%);
+    box-shadow:
+      0 0 30px
+      rgb(255 224 107 / 90%),
+      inset 0 0 20px
+      rgb(255 248 196 / 24%);
+  }
+
+  72% {
+    background-color:
+      rgb(255 224 107 / 12%);
+    box-shadow:
+      0 0 22px
+      rgb(255 224 107 / 70%),
+      inset 0 0 16px
+      rgb(255 248 196 / 18%);
+  }
+
+  100% {
+    background-color:
+      rgb(255 224 107 / 0%);
+    box-shadow:
+      0 0 0
+      rgb(255 224 107 / 0%);
+  }
+}
+
 .declaration-overlay {
   --declaration-color: #f2d56b;
 
