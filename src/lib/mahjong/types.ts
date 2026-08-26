@@ -44,6 +44,8 @@ export interface Discard {
   riichiDeclaration: boolean;
   faceDown: boolean;
   called: boolean;
+  drawnTileSource?:
+    DrawnTileSource | null;
 }
 
 export interface PlayerState {
