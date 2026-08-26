@@ -867,10 +867,14 @@ export function GameBoard({
   useEffect(() => {
     const previousState =
       previousSoundStateRef.current;
+    const previousRound =
+      previousState.round;
+    const currentRound =
+      gameState.round;
     const previousPlayers =
-      previousState.round.players;
+      previousRound.players;
     const currentPlayers =
-      gameState.round.players;
+      currentRound.players;
 
     const hasNewDrawnTile =
       currentPlayers.some(
@@ -902,6 +906,24 @@ export function GameBoard({
           !previousPlayers[seat].riichi
       );
 
+    const hadRoundDrawResult =
+      previousRound.drawResult != null ||
+      previousRound.abortiveDrawResult != null;
+    const hasRoundDrawResult =
+      currentRound.drawResult != null ||
+      currentRound.abortiveDrawResult != null;
+    const hasNewRoundDrawResult =
+      hasRoundDrawResult &&
+      !hadRoundDrawResult;
+
+    const hasNewNagashiMangan =
+      currentRound.nagashiManganResult != null &&
+      previousRound.nagashiManganResult == null;
+
+    const hasMatchEnded =
+      currentRound.phase === "matchEnd" &&
+      previousRound.phase !== "matchEnd";
+
     if (hasNewDrawnTile) {
       playGameSound("drawTile");
     }
@@ -915,6 +937,18 @@ export function GameBoard({
       declarationOverlay?.kind !== "riichi"
     ) {
       playGameSound("riichiStick");
+    }
+
+    if (hasNewRoundDrawResult) {
+      playGameSound("roundDraw");
+    }
+
+    if (hasNewNagashiMangan) {
+      playGameSound("tsumo");
+    }
+
+    if (hasMatchEnded) {
+      playGameSound("matchEnd");
     }
 
     previousSoundStateRef.current =
