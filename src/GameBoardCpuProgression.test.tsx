@@ -19,6 +19,10 @@ import {
   GameBoard
 } from "./GameBoard";
 import {
+  playGameSound,
+  unlockGameAudio
+} from "./lib/gameAudio";
+import {
   createInitialGameState
 } from "./lib/mahjong/engine";
 import type {
@@ -27,6 +31,13 @@ import type {
   Tile,
   TileSuit
 } from "./lib/mahjong/types";
+
+vi.mock("./lib/gameAudio", () => ({
+  playGameSound: vi.fn(),
+  unlockGameAudio: vi.fn(
+    () => Promise.resolve()
+  )
+}));
 
 let serialNumber = 0;
 
@@ -541,6 +552,8 @@ function advanceTime(milliseconds: number) {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.mocked(playGameSound).mockClear();
+  vi.mocked(unlockGameAudio).mockClear();
 });
 
 afterEach(() => {
@@ -550,6 +563,26 @@ afterEach(() => {
 });
 
 describe("GameBoardのCPU進行演出", () => {
+  it("最初の画面操作で音声を有効化する", () => {
+    render(
+      <GameBoard
+        initialState={
+          createCpuProgressionState()
+        }
+      />
+    );
+
+    expect(unlockGameAudio)
+      .not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(
+      screen.getByLabelText("麻雀卓")
+    );
+
+    expect(unlockGameAudio)
+      .toHaveBeenCalledTimes(1);
+  });
+
   it("0.5秒ごとにCPU3人のツモと打牌を1段階ずつ表示する", () => {
     render(
       <GameBoard
