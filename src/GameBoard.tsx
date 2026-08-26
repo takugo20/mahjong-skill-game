@@ -12,10 +12,10 @@ import {
   createInitialGameState,
   createPlayerDiscardProgression,
   createPlayerReactionSkipProgression,
+  createPlayerRiichiProgression,
   declarePlayerMeldCall,
   declarePlayerNineTerminals,
   declarePlayerOpenKan,
-  declarePlayerRiichi,
   declarePlayerRon,
   declarePlayerTsumo,
   getDoraIndicators,
@@ -905,14 +905,37 @@ function scheduleCpuProgression(
       return;
     }
 
-    setGameState((currentState) =>
-      declarePlayerRiichi(
-        currentState,
+    const progression =
+      createPlayerRiichiProgression(
+        gameState,
         selectedTileId
-      )
+      );
+    const timedStates =
+      progression.cpuSteps.map(
+        (step) => step.state
+      );
+    const lastTimedState =
+      timedStates.length === 0
+        ? progression.stateAfterDeclaration
+        : timedStates[
+            timedStates.length - 1
+          ];
+
+    if (
+      lastTimedState !==
+      progression.finalState
+    ) {
+      timedStates.push(
+        progression.finalState
+      );
+    }
+
+    setGameState(
+      progression.stateAfterDeclaration
     );
 
     setSelectedTileId(null);
+    scheduleCpuProgression(timedStates);
   }
   
   function handleTsumo() {
