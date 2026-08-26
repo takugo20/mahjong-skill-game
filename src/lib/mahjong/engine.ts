@@ -72,6 +72,9 @@ import {
   RIICHI_DEPOSIT
 } from "./riichi";
 import {
+  getRiichiClosedKanAllowedTileTypes
+} from "./riichiKan";
+import {
   evaluateRoundWin,
   resolveRoundWin
 } from "./roundWin";
@@ -2236,6 +2239,20 @@ function getCpuSelfKanDecision(
     melds: cpuPlayer.melds,
     riichi: cpuPlayer.riichi,
     drawnTileId: cpuPlayer.drawnTileId,
+    riichiClosedKanAllowedTileTypes:
+      cpuPlayer.riichi
+        ? getRiichiClosedKanAllowedTileTypes({
+            concealedTiles:
+              cpuPlayer.hand,
+            melds: cpuPlayer.melds,
+            drawnTileId:
+              cpuPlayer.drawnTileId,
+            seatWind:
+              cpuPlayer.seatWind,
+            prevailingWind:
+              state.round.prevailingWind
+          })
+        : undefined,
     kanCount: state.round.kanCount,
     rinshanDrawCount:
       state.round.rinshanDrawCount,
@@ -3089,6 +3106,20 @@ export function getPlayerSelfKanOptions(
     melds: player.melds,
     riichi: player.riichi,
     drawnTileId: player.drawnTileId,
+    riichiClosedKanAllowedTileTypes:
+      player.riichi
+        ? getRiichiClosedKanAllowedTileTypes({
+            concealedTiles:
+              player.hand,
+            melds: player.melds,
+            drawnTileId:
+              player.drawnTileId,
+            seatWind:
+              player.seatWind,
+            prevailingWind:
+              state.round.prevailingWind
+          })
+        : undefined,
     kanCount: state.round.kanCount,
     rinshanDrawCount:
       state.round.rinshanDrawCount,
