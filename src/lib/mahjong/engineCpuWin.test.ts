@@ -177,6 +177,7 @@ describe("CPUの和了", () => {
     const discardedTile =
       createTile("honor", 7);
 
+    state.round.turnNumber = 4;
     state.round.players[0] = {
       ...state.round.players[0],
       hand: [
