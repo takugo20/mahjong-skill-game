@@ -10,6 +10,7 @@ interface TileViewProps {
   compact?: boolean;
   selected?: boolean;
   highlighted?: boolean;
+  declarationTarget?: boolean;
   disabled?: boolean;
   onSelect?: (tileId: string) => void;
 }
@@ -748,6 +749,7 @@ export function TileView({
   compact = false,
   selected = false,
   highlighted = false,
+  declarationTarget = false,
   disabled = false,
   onSelect
 }: TileViewProps) {
@@ -758,6 +760,8 @@ export function TileView({
     selected && "mahjong-tile--selected",
     highlighted &&
       "mahjong-tile--highlighted",
+    declarationTarget &&
+      "mahjong-tile--declaration-target",
     tile?.red && "mahjong-tile--red",
     tile && `mahjong-tile--${tile.suit}`
   ]
@@ -790,6 +794,11 @@ export function TileView({
         className={classes}
         aria-label={label}
         aria-pressed={selected}
+        data-declaration-target={
+          declarationTarget
+            ? "true"
+            : undefined
+        }
         disabled={disabled}
         onClick={() => onSelect(tile.id)}
       >
@@ -803,6 +812,11 @@ export function TileView({
       className={classes}
       role="img"
       aria-label={label}
+      data-declaration-target={
+        declarationTarget
+          ? "true"
+          : undefined
+      }
     >
       {content}
     </span>
