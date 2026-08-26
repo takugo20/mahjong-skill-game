@@ -25,6 +25,12 @@ import type {
   CpuOpenKanCallDecision
 } from "./cpuCalls";
 import {
+  chooseCpuSelfKan
+} from "./cpuKan";
+import type {
+  CpuSelfKanDecision
+} from "./cpuKan";
+import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
 import {
@@ -2016,6 +2022,238 @@ export function declarePlayerOpenKan(
   };
 }
 
+function getCpuSelfKanDecision(
+  state: GameState,
+  cpuSeat: SeatIndex
+): CpuSelfKanDecision | null {
+  if (
+    cpuSeat === 0 ||
+    state.round.currentSeat !== cpuSeat ||
+    state.round.phase !== "discarding"
+  ) {
+    return null;
+  }
+
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+
+  if (cpuPlayer.drawnTileId === null) {
+    return null;
+  }
+
+  const options = getSelfKanOptions({
+    concealedTiles: cpuPlayer.hand,
+    melds: cpuPlayer.melds,
+    riichi: cpuPlayer.riichi,
+    drawnTileId: cpuPlayer.drawnTileId,
+    kanCount: state.round.kanCount,
+    rinshanDrawCount:
+      state.round.rinshanDrawCount,
+    liveWallTileCount:
+      state.round.liveWall.length
+  });
+
+  return chooseCpuSelfKan({
+    player: cpuPlayer,
+    options
+  });
+}
+
+function declareCpuSelfKan(
+  state: GameState,
+  decision: CpuSelfKanDecision
+): GameState {
+  const cpuSeat = state.round.currentSeat;
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+  const option = decision.option;
+
+  if (
+    cpuSeat === 0 ||
+    state.round.phase !== "discarding" ||
+    cpuPlayer.drawnTileId === null
+  ) {
+    return state;
+  }
+
+  const pendingKan: PendingKan =
+    option.kind === "closedKan"
+      ? {
+          ...option,
+          declarerSeat: cpuSeat,
+          chankanTileId:
+            option.tileIds.includes(
+              cpuPlayer.drawnTileId
+            )
+              ? cpuPlayer.drawnTileId
+              : option.tileIds[0]
+        }
+      : {
+          ...option,
+          declarerSeat: cpuSeat,
+          chankanTileId: option.tileId
+        };
+  const kanLabel =
+    option.kind === "closedKan"
+      ? "暗槓"
+      : "加槓";
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      phase: "reaction",
+      pendingKan,
+      meldCallOptions: [],
+      meldCallDiscardRestriction: null
+    },
+    notice:
+      `${cpuPlayer.name}が${kanLabel}を宣言しました。` +
+      "槍槓を確認します。"
+  };
+}
+
+function playCpuDiscardingTurn(
+  state: GameState,
+  cpuSeat: SeatIndex,
+  random: () => number
+): GameState {
+  if (
+    cpuSeat === 0 ||
+    state.round.currentSeat !== cpuSeat ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const cpuTsumoState =
+    finishCpuTsumoIfAvailable(
+      state,
+      cpuSeat
+    );
+
+  if (cpuTsumoState) {
+    return cpuTsumoState;
+  }
+
+  const selfKanDecision =
+    getCpuSelfKanDecision(
+      state,
+      cpuSeat
+    );
+
+  if (selfKanDecision) {
+    const declaredState =
+      declareCpuSelfKan(
+        state,
+        selfKanDecision
+      );
+
+    if (canPlayerRon(declaredState)) {
+      return declaredState;
+    }
+
+    return completeCpuPendingSelfKan(
+      declaredState,
+      random
+    );
+  }
+
+  const cpuPlayer =
+    state.round.players[cpuSeat];
+  const selectedTile = chooseCpuDiscard(
+    cpuPlayer,
+    state.round,
+    random
+  );
+
+  return discardTile(
+    state,
+    selectedTile.id
+  );
+}
+
+function completeCpuPendingSelfKan(
+  state: GameState,
+  random: () => number
+): GameState {
+  const pendingKan =
+    state.round.pendingKan;
+
+  if (
+    state.round.phase !== "reaction" ||
+    !pendingKan ||
+    pendingKan.declarerSeat === 0
+  ) {
+    return state;
+  }
+
+  const cpuRonState =
+    finishCpuRonIfAvailable(state);
+
+  if (cpuRonState) {
+    return cpuRonState;
+  }
+
+  const cpuPlayer =
+    state.round.players[
+      pendingKan.declarerSeat
+    ];
+  const kanLabel =
+    pendingKan.kind === "closedKan"
+      ? "暗槓"
+      : "加槓";
+  const execution = executeKan({
+    round: {
+      ...state.round,
+      phase: "discarding"
+    },
+    declarerSeat:
+      pendingKan.declarerSeat,
+    option: pendingKan
+  });
+  const kanState: GameState = {
+    ...state,
+    round: execution.round,
+    notice:
+      `${cpuPlayer.name}が${kanLabel}し、` +
+      `${getTileLabel(
+        execution.rinshanTile
+      )}を嶺上牌としてツモりました。`
+  };
+  const continuedState =
+    playCpuDiscardingTurn(
+      kanState,
+      pendingKan.declarerSeat,
+      random
+    );
+  const discardedTile =
+    continuedState.round.lastDiscard;
+  const directlyDiscarded =
+    continuedState.round.kanCount ===
+      execution.round.kanCount &&
+    discardedTile?.seat ===
+      pendingKan.declarerSeat &&
+    continuedState.round.turnNumber ===
+      execution.round.turnNumber + 1;
+
+  if (!directlyDiscarded) {
+    return continuedState;
+  }
+
+  return {
+    ...continuedState,
+    notice:
+      `${cpuPlayer.name}が${kanLabel}し、` +
+      `${getTileLabel(
+        execution.rinshanTile
+      )}を嶺上牌としてツモり、` +
+      `${getTileLabel(
+        discardedTile.discard.tile
+      )}を捨てました。`
+  };
+}
+
 function completeCpuTurns(
   state: GameState,
   random: () => number,
@@ -2137,29 +2375,27 @@ function completeCpuTurns(
       break;
     }
 
-    const cpuTsumoState =
-      finishCpuTsumoIfAvailable(
-        nextState,
-        cpuSeat
-      );
-
-    if (cpuTsumoState) {
-      return cpuTsumoState;
-    }
-
-    const cpuPlayer =
-      nextState.round.players[cpuSeat];
-
-    const selectedTile = chooseCpuDiscard(
-      cpuPlayer,
-      nextState.round,
+    nextState = playCpuDiscardingTurn(
+      nextState,
+      cpuSeat,
       random
     );
 
-    nextState = discardTile(
-      nextState,
-      selectedTile.id
-    );
+    if (nextState.round.pendingKan) {
+      return nextState;
+    }
+
+    if (
+      nextState.round.phase ===
+      "roundEnd" &&
+      (
+        nextState.round.winResult ||
+        nextState.round.doubleRonResult ||
+        nextState.round.abortiveDrawResult
+      )
+    ) {
+      return nextState;
+    }
 
     processedActionCount += 1;
     skipPlayerMeldCallReaction = false;
@@ -2219,6 +2455,38 @@ export function skipPlayerRon(
     ? "ロンを見送りました。"
     : "副露を見送りました。";
 
+    if (
+    skippedState.round.pendingKan &&
+    skippedState.round.pendingKan
+      .declarerSeat !== 0
+  ) {
+    const resumedState =
+      completeCpuPendingSelfKan(
+        skippedState,
+        random
+      );
+
+    if (
+      resumedState.round.phase ===
+        "roundEnd" &&
+      (
+        resumedState.round.winResult ||
+        resumedState.round
+          .doubleRonResult ||
+        resumedState.round.drawResult ||
+        resumedState.round
+          .abortiveDrawResult
+      )
+    ) {
+      return resumedState;
+    }
+
+    return completeCpuTurns(
+      resumedState,
+      random
+    );
+  }
+  
   if (
     skippedState.round.liveWall.length === 0
   ) {
