@@ -1,3 +1,7 @@
+import type {
+  AkuukanGameState
+} from "../akuukan/types";
+
 export type NumberSuit = "man" | "pin" | "sou";
 
 export type TileSuit = NumberSuit | "honor";
@@ -284,5 +288,6 @@ export interface GameState {
   matchResult: MatchResult | null;
   playerMp: number;
   maxMp: number;
+  akuukan?: AkuukanGameState;
   notice: string;
 }
