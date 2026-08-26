@@ -91,6 +91,70 @@ function createCpuProgressionState(): GameState {
   return state;
 }
 
+function createMeldReactionState(): GameState {
+  const state = createInitialGameState(
+    () => 0.5
+  );
+  const calledTile = createTile("man", 4);
+  const firstHandTile = createTile(
+    "man",
+    4
+  );
+  const secondHandTile = createTile(
+    "man",
+    4
+  );
+  const calledDiscard = {
+    tile: calledTile,
+    tsumogiri: false,
+    riichiDeclaration: false,
+    faceDown: false,
+    called: false
+  };
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      firstHandTile,
+      secondHandTile
+    ],
+    melds: [],
+    discards: [],
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  emptyCpuHand(state, 1);
+  emptyCpuHand(state, 2);
+  emptyCpuHand(state, 3);
+  state.round.players[1].discards = [
+    calledDiscard
+  ];
+  state.round.liveWall = [
+    createTile("pin", 2),
+    createTile("sou", 3),
+    createTile("honor", 4)
+  ];
+  state.round.currentSeat = 2;
+  state.round.phase = "reaction";
+  state.round.lastDiscard = {
+    seat: 1,
+    discard: calledDiscard
+  };
+  state.round.meldCallOptions = [{
+    id: "board-cpu-progress-pon",
+    kind: "pon",
+    callerSeat: 0,
+    discarderSeat: 1,
+    calledTileId: calledTile.id,
+    handTileIds: [
+      firstHandTile.id,
+      secondHandTile.id
+    ]
+  }];
+
+  return state;
+}
+
 function advanceTime(milliseconds: number) {
   act(() => {
     vi.advanceTimersByTime(milliseconds);
@@ -254,5 +318,68 @@ describe("GameBoardのCPU進行演出", () => {
         "disabled"
       )
     ).toBe(false);
+  });
+
+    it("副露を見送った後も残りのCPUを0.5秒ごとに進める", () => {
+    render(
+      <GameBoard
+        initialState={
+          createMeldReactionState()
+        }
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "見逃す"
+      })
+    );
+
+    expect(
+      screen.getByText("CPU進行中…")
+    ).not.toBeNull();
+    expect(
+      screen.getByLabelText(
+        "能力者CPUの手牌0枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(499);
+
+    expect(
+      screen.getByLabelText(
+        "能力者CPUの手牌0枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(1);
+
+    expect(
+      screen.getByLabelText(
+        "能力者CPUの手牌1枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(500);
+
+    expect(
+      screen.getByLabelText(
+        "能力者CPUの河"
+      ).children
+    ).toHaveLength(1);
+
+    advanceTime(500);
+
+    expect(
+      screen.getByLabelText(
+        "CPU・左の手牌1枚"
+      )
+    ).not.toBeNull();
+
+    advanceTime(1000);
+
+    expect(
+      screen.queryByText("CPU進行中…")
+    ).toBeNull();
   });
 });
