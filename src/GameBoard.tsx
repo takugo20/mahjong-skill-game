@@ -763,14 +763,6 @@ export function GameBoard({
     setSelectedTileId(null);
   }
 
-    function handleTsumo() {
-    setGameState((currentState) =>
-      declarePlayerTsumo(currentState)
-    );
-
-    setSelectedTileId(null);
-  }
-
   function handleNineTerminals() {
     setGameState((currentState) =>
       declarePlayerNineTerminals(
@@ -780,8 +772,6 @@ export function GameBoard({
 
     setSelectedTileId(null);
   }
-
-  function handleRon() {
 
   function handleRon() {
     setGameState((currentState) =>
@@ -1199,16 +1189,6 @@ export function GameBoard({
                   </button>
                 )}
 
-                                {canTsumo && (
-                  <button
-                    type="button"
-                    className="primary-button win-button"
-                    onClick={handleTsumo}
-                  >
-                    ツモ
-                  </button>
-                )}
-
                 {canNineTerminals && (
                   <button
                     type="button"
@@ -1218,7 +1198,7 @@ export function GameBoard({
                     九種九牌
                   </button>
                 )}
-
+                
                 {selfKanOptions.map(
                   (option) => (
                     <button
