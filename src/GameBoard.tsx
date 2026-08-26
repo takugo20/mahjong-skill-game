@@ -29,6 +29,9 @@ import {
   playPlayerSelfKan
 } from "./lib/mahjong/engine";
 import type {
+  CpuProgressStep
+} from "./lib/mahjong/engine";
+import type {
   SelfKanOption
 } from "./lib/mahjong/kan";
 import {
@@ -71,6 +74,70 @@ const DECLARATION_LABELS:
     tsumo: "ツモ",
     ron: "ロン"
   };
+
+function getCpuStepDeclaration(
+  previousState: GameState,
+  step: CpuProgressStep
+): DeclarationKind | null {
+  if (
+    step.phase !== "action" ||
+    step.seat === 0
+  ) {
+    return null;
+  }
+
+  const previousPlayer =
+    previousState.round.players[step.seat];
+  const nextPlayer =
+    step.state.round.players[step.seat];
+  const previousLastDiscard =
+    previousState.round.lastDiscard;
+  const nextLastDiscard =
+    step.state.round.lastDiscard;
+
+  if (
+    nextLastDiscard?.seat === step.seat &&
+    nextLastDiscard.discard
+      .riichiDeclaration &&
+    (
+      previousLastDiscard?.seat !==
+        nextLastDiscard.seat ||
+      previousLastDiscard.discard.tile.id !==
+        nextLastDiscard.discard.tile.id
+    )
+  ) {
+    return "riichi";
+  }
+
+  const changedMeld =
+    nextPlayer.melds.find(
+      (meld, meldIndex) => {
+        const previousMeld =
+          previousPlayer.melds[meldIndex];
+
+        return (
+          !previousMeld ||
+          previousMeld.kind !== meld.kind ||
+          previousMeld.tiles.length !==
+            meld.tiles.length
+        );
+      }
+    );
+
+  if (!changedMeld) {
+    return null;
+  }
+
+  if (changedMeld.kind === "chi") {
+    return "chi";
+  }
+
+  if (changedMeld.kind === "pon") {
+    return "pon";
+  }
+
+  return "kan";
+}
 
 type OpponentPosition =
   | "top"
@@ -860,8 +927,10 @@ function showDeclaration(
       }, DECLARATION_OVERLAY_DURATION_MS);
   }
   
-function scheduleCpuProgression(
-    states: readonly GameState[]
+  function scheduleCpuProgression(
+    states: readonly GameState[],
+    cpuSteps: readonly CpuProgressStep[],
+    stateBeforeFirstCpuStep: GameState
   ) {
     if (states.length === 0) {
       cpuProgressingRef.current = false;
@@ -870,6 +939,24 @@ function scheduleCpuProgression(
     }
 
     let stateIndex = 0;
+    let previousCpuState =
+      stateBeforeFirstCpuStep;
+    const cpuDeclarations =
+      cpuSteps.map((step) => {
+        const kind = getCpuStepDeclaration(
+          previousCpuState,
+          step
+        );
+
+        previousCpuState = step.state;
+
+        return kind === null
+          ? null
+          : {
+              kind,
+              seat: step.seat
+            };
+      });
 
     cpuProgressingRef.current = true;
     setIsCpuProgressing(true);
@@ -882,6 +969,16 @@ function scheduleCpuProgression(
         cpuProgressingRef.current = false;
         setIsCpuProgressing(false);
         return;
+      }
+
+      const cpuDeclaration =
+        cpuDeclarations[stateIndex];
+
+      if (cpuDeclaration) {
+        showDeclaration(
+          cpuDeclaration.kind,
+          cpuDeclaration.seat
+        );
       }
 
       setGameState(nextState);
@@ -964,7 +1061,11 @@ function scheduleCpuProgression(
     );
 
     setSelectedTileId(null);
-    scheduleCpuProgression(timedStates);
+    scheduleCpuProgression(
+      timedStates,
+      progression.cpuSteps,
+      progression.stateAfterDiscard
+    );
   }
 
   function handleRiichi() {
@@ -1008,7 +1109,11 @@ function scheduleCpuProgression(
     );
 
     setSelectedTileId(null);
-    scheduleCpuProgression(timedStates);
+    scheduleCpuProgression(
+      timedStates,
+      progression.cpuSteps,
+      progression.stateAfterDeclaration
+    );
   }
   
   function handleTsumo() {
@@ -1071,7 +1176,11 @@ function scheduleCpuProgression(
     );
 
     setSelectedTileId(null);
-    scheduleCpuProgression(timedStates);
+    scheduleCpuProgression(
+      timedStates,
+      progression.cpuSteps,
+      progression.stateAfterReaction
+    );
   }
 
   function handleMeldCall(
@@ -1160,7 +1269,11 @@ function scheduleCpuProgression(
     );
 
     setSelectedTileId(null);
-    scheduleCpuProgression(timedStates);
+    scheduleCpuProgression(
+      timedStates,
+      progression.cpuSteps,
+      progression.stateAfterStart
+    );
   }
   
   function handleRestart() {
