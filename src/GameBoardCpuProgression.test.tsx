@@ -924,7 +924,7 @@ describe("GameBoardのCPU進行演出", () => {
     ).not.toBeNull();
   });
 
-    it("CPUのポンを行動ステップで中央表示する", () => {
+  it("CPUのポンを行動ステップで中央表示する", () => {
     render(
       <GameBoard
         initialState={
@@ -975,6 +975,16 @@ describe("GameBoardのCPU進行演出", () => {
         "declaration-overlay--pon"
       )
     ).toBe(true);
+    expect(
+      screen.queryByLabelText(
+        "CPU・右の面子"
+      )
+    ).toBeNull();
+    expect(
+      document.querySelector(
+        '[data-declaration-target="true"]'
+      )
+    ).not.toBeNull();
 
     advanceTime(499);
 
@@ -983,6 +993,11 @@ describe("GameBoardのCPU進行演出", () => {
         name: "CPU・右のポン"
       })
     ).not.toBeNull();
+    expect(
+      screen.queryByLabelText(
+        "CPU・右の面子"
+      )
+    ).toBeNull();
 
     advanceTime(1);
 
@@ -990,6 +1005,16 @@ describe("GameBoardのCPU進行演出", () => {
       screen.queryByRole("status", {
         name: "CPU・右のポン"
       })
+    ).toBeNull();
+    expect(
+      screen.getByLabelText(
+        "CPU・右の面子"
+      )
+    ).not.toBeNull();
+    expect(
+      document.querySelector(
+        '[data-declaration-target="true"]'
+      )
     ).toBeNull();
   });
 
