@@ -331,6 +331,15 @@ describe("CPU副露のゲーム進行", () => {
     state.round.players[0] = {
       ...state.round.players[0],
       hand: [calledTile],
+      discards: [
+        {
+          tile: createTile("man", 5),
+          tsumogiri: false,
+          riichiDeclaration: false,
+          faceDown: false,
+          called: false
+        }
+      ],
       drawnTileId: calledTile.id
     };
     state.round.players[1] = {
