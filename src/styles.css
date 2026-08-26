@@ -2337,6 +2337,60 @@ body {
   font-weight: 800;
 }
 
+.win-result-responsibility {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin: clamp(7px, 1.4vmin, 12px) 0;
+  padding: clamp(6px, 1.2vmin, 10px);
+  border: 1px solid
+    rgb(255 151 92 / 58%);
+  border-radius: 9px;
+  background:
+    linear-gradient(
+      135deg,
+      rgb(132 31 17 / 54%),
+      rgb(106 65 8 / 42%)
+    );
+  box-shadow:
+    inset 0 0 12px
+      rgb(255 191 80 / 8%);
+}
+
+.win-result-responsibility > strong {
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #fff3d1;
+  background: #a93624;
+  font-size: clamp(
+    0.6rem,
+    1.6vmin,
+    0.78rem
+  );
+  letter-spacing: 0.06em;
+}
+
+.win-result-responsibility > span {
+  color: #ffd77a;
+  font-size: clamp(
+    0.64rem,
+    1.7vmin,
+    0.84rem
+  );
+  font-weight: 900;
+}
+
+.win-result-responsibility > b {
+  margin-left: auto;
+  color: #fff8e6;
+  font-size: clamp(
+    0.62rem,
+    1.65vmin,
+    0.82rem
+  );
+}
+
 .win-result-score {
   display: flex;
   align-items: baseline;
@@ -2576,6 +2630,19 @@ body {
 
 .double-ron-winner .win-result-yaku {
   margin: clamp(5px, 1vmin, 8px) 0;
+}
+
+.double-ron-winner
+  .win-result-responsibility {
+  gap: 4px 6px;
+  margin: clamp(5px, 1vmin, 8px) 0;
+  padding: clamp(5px, 1vmin, 7px);
+}
+
+.double-ron-winner
+  .win-result-responsibility > b {
+  width: 100%;
+  margin-left: 0;
 }
 
 .double-ron-winner .win-result-score {
