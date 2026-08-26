@@ -702,6 +702,9 @@ export function GameBoard({
   const drawResult =
     round.drawResult ?? null;
 
+  const nagashiManganResult =
+    round.nagashiManganResult ?? null;
+
   const abortiveDrawResult =
     round.abortiveDrawResult ?? null;
 
@@ -1602,7 +1605,7 @@ export function GameBoard({
             </section>
           )}
 
-                {abortiveDrawResult?.reason ===
+          {abortiveDrawResult?.reason ===
           "fourWinds" &&
           round.phase === "roundEnd" && (
             <section
@@ -1978,6 +1981,128 @@ export function GameBoard({
               </article>
             </section>
           )}
+
+         {nagashiManganResult &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="流し満貫結果"
+            >
+              <article className="win-result-card draw-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>荒牌</span>
+
+                    <strong>流し満貫</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    成立
+                    {
+                      nagashiManganResult
+                        .winnerSeats.length
+                    }
+                    人
+                  </b>
+                </header>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>満貫ツモ扱い</strong>
+                </div>
+
+                <div className="win-result-changes draw-result-changes">
+                  {nagashiManganResult.pointChanges.map(
+                    (change) => {
+                      const changedPlayer =
+                        round.players[
+                          change.seat
+                        ];
+                      const winner =
+                        nagashiManganResult
+                          .winnerSeats.includes(
+                            change.seat
+                          );
+                      const receivesRiichiPool =
+                        nagashiManganResult
+                          .riichiPoolRecipientSeat ===
+                        change.seat;
+
+                      return (
+                        <div key={change.playerId}>
+                          <b
+                            className={
+                              winner
+                                ? "draw-status draw-status--tenpai"
+                                : "draw-status draw-status--noten"
+                            }
+                          >
+                            {winner
+                              ? "成立"
+                              : "支払"}
+                          </b>
+
+                          <span>
+                            {getWindLabel(
+                              changedPlayer.seatWind
+                            )}
+                            ・{changedPlayer.name}
+                            {receivesRiichiPool
+                              ? "（供託取得）"
+                              : ""}
+                          </span>
+
+                          <strong
+                            className={
+                              change.change > 0
+                                ? "point-change--plus"
+                                : change.change < 0
+                                  ? "point-change--minus"
+                                  : ""
+                            }
+                          >
+                            {formatPointChange(
+                              change.change
+                            )}
+                          </strong>
+
+                          <small>
+                            {formatScore(
+                              change.pointsAfter
+                            )}
+                            点
+                          </small>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <p className="triple-ron-description">
+                  固定の満貫ツモとして精算し、
+                  不聴罰符は発生しません。
+                  {nagashiManganResult.winnerSeats.some(
+                    (seat) =>
+                      round.players[seat].isDealer
+                  )
+                    ? "親を含むため連荘し、本場を1つ増やします。"
+                    : "子のみの成立のため親流れとなり、本場を0に戻します。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
+        
         {matchResult &&
           round.phase === "matchEnd" && (
             <section
