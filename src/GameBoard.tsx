@@ -3,11 +3,13 @@ import {
 } from "react";
 import { TileView } from "./components/TileView";
 import {
+  canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
   canPlayerTsumo,
   createInitialGameState,
   declarePlayerMeldCall,
+  declarePlayerNineTerminals,
   declarePlayerOpenKan,
   declarePlayerRiichi,
   declarePlayerRon,
@@ -569,6 +571,11 @@ export function GameBoard({
   const canTsumo =
     canPlayerTsumo(gameState);
 
+  const canNineTerminals =
+    canPlayerDeclareNineTerminals(
+      gameState
+    );
+
   const riichiDiscardTileIds =
     getPlayerRiichiDiscardTileIds(
       gameState
@@ -755,6 +762,26 @@ export function GameBoard({
 
     setSelectedTileId(null);
   }
+
+    function handleTsumo() {
+    setGameState((currentState) =>
+      declarePlayerTsumo(currentState)
+    );
+
+    setSelectedTileId(null);
+  }
+
+  function handleNineTerminals() {
+    setGameState((currentState) =>
+      declarePlayerNineTerminals(
+        currentState
+      )
+    );
+
+    setSelectedTileId(null);
+  }
+
+  function handleRon() {
 
   function handleRon() {
     setGameState((currentState) =>
@@ -1046,7 +1073,9 @@ export function GameBoard({
                 ? reactionStatus
                 : canTsumo
                   ? "ツモ和了可能"
-                  : canClosedKan && canAddedKan
+                  : canNineTerminals
+                    ? "九種九牌を宣言可能"
+                    : canClosedKan && canAddedKan
                     ? "暗槓・加槓可能"
                     : canClosedKan
                       ? "暗槓可能"
@@ -1167,6 +1196,26 @@ export function GameBoard({
                     onClick={handleTsumo}
                   >
                     ツモ
+                  </button>
+                )}
+
+                                {canTsumo && (
+                  <button
+                    type="button"
+                    className="primary-button win-button"
+                    onClick={handleTsumo}
+                  >
+                    ツモ
+                  </button>
+                )}
+
+                {canNineTerminals && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleNineTerminals}
+                  >
+                    九種九牌
                   </button>
                 )}
 
@@ -1494,6 +1543,73 @@ export function GameBoard({
                     }
                   )}
                 </div>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
+                {abortiveDrawResult?.reason ===
+          "nineTerminals" &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="九種九牌結果"
+            >
+              <article className="win-result-card draw-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>途中流局</span>
+
+                    <strong>九種九牌</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    么九牌
+                    {abortiveDrawResult.distinctYaochuCount}
+                    種類
+                  </b>
+                </header>
+
+                <div className="draw-result-summary">
+                  <span>宣言者</span>
+
+                  <strong>
+                    {getWindLabel(
+                      round.players[
+                        abortiveDrawResult.declarerSeat
+                      ].seatWind
+                    )}
+                    ・
+                    {
+                      round.players[
+                        abortiveDrawResult.declarerSeat
+                      ].name
+                    }
+                  </strong>
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>点数移動なし</strong>
+                </div>
+
+                <p className="triple-ron-description">
+                  親は連荘し、本場を1つ増やします。
+                  {round.riichiPool > 0
+                    ? `供託${formatScore(
+                        round.riichiPool
+                      )}点は次局へ持ち越します。`
+                    : "供託点はありません。"}
+                </p>
 
                 <button
                   type="button"
