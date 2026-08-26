@@ -209,3 +209,30 @@ export interface AkuukanMatchSetup {
   equippedSkills:
     EquippedPlayerSkill[];
 }
+
+export type AkuukanEffectSourceId =
+  | `player-skill:${PlayerSkillId}`
+  | `enemy-ability:${EnemyAbilityId}`;
+
+export interface AkuukanEffectInstance {
+  instanceId: string;
+  sourceId: AkuukanEffectSourceId;
+  remainingTurns: number | null;
+}
+
+export interface AkuukanUsageState {
+  match: AkuukanEffectSourceId[];
+  round: AkuukanEffectSourceId[];
+  turn: AkuukanEffectSourceId[];
+}
+
+export interface AkuukanGameState {
+  setup: AkuukanMatchSetup;
+  disabledSources:
+    AkuukanEffectSourceId[];
+  activeEffects:
+    AkuukanEffectInstance[];
+  nextRoundEffects:
+    AkuukanEffectInstance[];
+  usedSources: AkuukanUsageState;
+}
