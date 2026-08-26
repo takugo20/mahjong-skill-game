@@ -48,6 +48,9 @@ import {
   resolveExhaustiveDrawSettlement
 } from "./drawSettlement";
 import {
+  resolveNagashiManganSettlement
+} from "./nagashiMangan";
+import {
   getFuritenStatus
 } from "./furiten";
 import {
@@ -269,6 +272,7 @@ export function createInitialGameState(
       winResult: null,
       doubleRonResult: null,
       drawResult: null,
+      nagashiManganResult: null,
       abortiveDrawResult: null
     },
     initialDealerSeat: 0,
@@ -747,6 +751,7 @@ function finishRoundWithWin(
         ),
       doubleRonResult: null,
       drawResult: null,
+      nagashiManganResult: null,
       abortiveDrawResult: null
     },
     notice
@@ -794,6 +799,7 @@ function finishRoundWithRonCandidates(
         winResult: result.winResult,
         doubleRonResult: null,
         drawResult: null,
+        nagashiManganResult: null,
         abortiveDrawResult: null
       },
       notice:
@@ -831,6 +837,7 @@ function finishRoundWithRonCandidates(
         doubleRonResult:
           result.doubleRonResult,
         drawResult: null,
+        nagashiManganResult: null,
         abortiveDrawResult: null
       },
       notice:
@@ -3662,6 +3669,7 @@ function finishMatch(
       winResult: null,
       doubleRonResult: null,
       drawResult: null,
+      nagashiManganResult: null,
       abortiveDrawResult: null
     },
     matchResult: {
@@ -3781,6 +3789,7 @@ export function startNextRound(
       winResult: null,
       doubleRonResult: null,
       drawResult: null,
+      nagashiManganResult: null,
       abortiveDrawResult: null
     },
     notice: "次局を開始します。"
