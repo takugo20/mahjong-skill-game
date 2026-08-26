@@ -1252,7 +1252,10 @@ function scheduleCpuProgression(
                           : "牌を選択"}
           </div>
 
-          <div className="control-buttons">
+          <fieldset
+            className="control-buttons"
+            disabled={isCpuProgressing}
+          >
             {round.phase === "matchEnd" ? (
               <button
                 type="button"
@@ -1408,7 +1411,7 @@ function scheduleCpuProgression(
                 </button>
               </>
             )}
-          </div>
+          </fieldset>
         </section>
         {winResult && (
           <section
