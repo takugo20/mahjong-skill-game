@@ -608,6 +608,14 @@ button.mahjong-tile--selected:hover:not(:disabled) {
 .control-buttons {
   display: flex;
   gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.control-buttons:disabled {
+  opacity: 0.55;
 }
 
 .primary-button,
