@@ -413,7 +413,10 @@ export function discardTile(
       currentPlayer.drawnTileId === discardedTile.id,
     riichiDeclaration,
     faceDown: false,
-    called: false
+    called: false,
+    drawnTileSource:
+      currentPlayer.drawnTileSource ??
+      null
   };
 
   const updatedPlayer: PlayerState = {
