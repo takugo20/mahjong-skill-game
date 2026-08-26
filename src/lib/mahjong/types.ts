@@ -163,8 +163,50 @@ export interface RoundTripleRonDrawResult {
   ];
 }
 
+export interface RoundNineTerminalsDrawResult {
+  reason: "nineTerminals";
+  declarerSeat: SeatIndex;
+  distinctYaochuCount: number;
+}
+
+export interface RoundFourWindsDrawResult {
+  reason: "fourWinds";
+  wind: Wind;
+}
+
+export interface RoundFourRiichiDrawResult {
+  reason: "fourRiichi";
+  riichiSeats: [
+    SeatIndex,
+    SeatIndex,
+    SeatIndex,
+    SeatIndex
+  ];
+}
+
+export interface RoundFourKansDrawResult {
+  reason: "fourKans";
+  kanCountsBySeat: [
+    number,
+    number,
+    number,
+    number
+  ];
+}
+
+export type RoundAbortiveDrawReason =
+  | RoundNineTerminalsDrawResult["reason"]
+  | RoundFourWindsDrawResult["reason"]
+  | RoundFourRiichiDrawResult["reason"]
+  | RoundFourKansDrawResult["reason"]
+  | RoundTripleRonDrawResult["reason"];
+
 export type RoundAbortiveDrawResult =
-  RoundTripleRonDrawResult;
+  | RoundNineTerminalsDrawResult
+  | RoundFourWindsDrawResult
+  | RoundFourRiichiDrawResult
+  | RoundFourKansDrawResult
+  | RoundTripleRonDrawResult;
 
 export interface RoundDrawResult {
   tenpaiSeats: SeatIndex[];
