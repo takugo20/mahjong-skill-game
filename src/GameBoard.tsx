@@ -139,6 +139,41 @@ function getCpuStepDeclaration(
   return "kan";
 }
 
+function getCpuWinDeclaration(
+  state: GameState
+): {
+  kind: "tsumo" | "ron";
+  seat: SeatIndex;
+} | null {
+  const winResult = state.round.winResult;
+
+  if (
+    winResult &&
+    winResult.winnerSeat !== 0
+  ) {
+    return {
+      kind: winResult.winMethod,
+      seat: winResult.winnerSeat
+    };
+  }
+
+  const cpuDoubleRonResult =
+    state.round.doubleRonResult
+      ?.winResults.find(
+        (result) =>
+          result.winnerSeat !== 0
+      );
+
+  if (!cpuDoubleRonResult) {
+    return null;
+  }
+
+  return {
+    kind: "ron",
+    seat: cpuDoubleRonResult.winnerSeat
+  };
+}
+
 type OpponentPosition =
   | "top"
   | "left"
@@ -1018,12 +1053,28 @@ function showDeclaration(
     setIsCpuProgressing(true);
 
     const showNextState = () => {
-      const nextState = states[stateIndex];
+    const nextState = states[stateIndex];
 
       if (!nextState) {
         cpuProgressTimerRef.current = null;
         cpuProgressingRef.current = false;
         setIsCpuProgressing(false);
+        return;
+      }
+
+            const cpuWinDeclaration =
+        getCpuWinDeclaration(nextState);
+
+      if (cpuWinDeclaration) {
+        cpuProgressTimerRef.current = null;
+        cpuProgressingRef.current = false;
+        setIsCpuProgressing(false);
+
+        showWinPresentation(
+          cpuWinDeclaration.kind,
+          cpuWinDeclaration.seat,
+          nextState
+        );
         return;
       }
 
