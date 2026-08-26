@@ -895,6 +895,13 @@ export function GameBoard({
             .discards.length
       );
 
+    const hasNewRiichi =
+      currentPlayers.some(
+        (currentPlayer, seat) =>
+          currentPlayer.riichi &&
+          !previousPlayers[seat].riichi
+      );
+
     if (hasNewDrawnTile) {
       playGameSound("drawTile");
     }
@@ -903,9 +910,16 @@ export function GameBoard({
       playGameSound("discardTile");
     }
 
+    if (
+      hasNewRiichi &&
+      declarationOverlay?.kind !== "riichi"
+    ) {
+      playGameSound("riichiStick");
+    }
+
     previousSoundStateRef.current =
       gameState;
-  }, [gameState]);
+  }, [gameState, declarationOverlay]);
 
   const round = gameState.round;
   const player = round.players[0];
@@ -1240,6 +1254,15 @@ export function GameBoard({
           () => {
             if (!isRiichiDeclaration) {
               setGameState(nextState);
+            }
+
+            if (
+              isRiichiDeclaration &&
+              nextState.round.players[
+                cpuDeclaration.seat
+              ].riichi
+            ) {
+              playGameSound("riichiStick");
             }
 
             stateIndex += 1;
