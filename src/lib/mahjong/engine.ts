@@ -2006,15 +2006,6 @@ function applyCpuOpenKanCall(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
-
-    const fourKansState =
-    finishFourKansIfAvailable(
-      kanState
-    );
-
-  if (fourKansState) {
-    return fourKansState;
-  }
   
   const cpuTsumoState =
     finishCpuTsumoIfAvailable(
@@ -2333,11 +2324,7 @@ export function declarePlayerOpenKan(
       )}を嶺上牌としてツモりました。`
   };
 
-  return (
-    finishFourKansIfAvailable(
-      kanState
-    ) ?? kanState
-  );
+  return kanState;
 }
 
 function getCpuSelfKanDecision(
@@ -2588,15 +2575,6 @@ function completeCpuPendingSelfKan(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
   };
-
-  const fourKansState =
-    finishFourKansIfAvailable(
-      kanState
-    );
-
-  if (fourKansState) {
-    return fourKansState;
-  }
   
   const continuedState =
     playCpuDiscardingTurn(
@@ -2878,6 +2856,15 @@ function completeCpuTurns(
 
     if (cpuRonState) {
       return cpuRonState;
+    }
+
+    const fourKansState =
+      finishFourKansIfAvailable(
+        nextState
+      );
+
+    if (fourKansState) {
+      return fourKansState;
     }
 
     const fourRiichiState =
@@ -3349,11 +3336,7 @@ export function completePlayerSelfKan(
       )}を嶺上牌としてツモりました。`
   };
 
-  return (
-    finishFourKansIfAvailable(
-      kanState
-    ) ?? kanState
-  );
+  return kanState;
 }
 
 export function playPlayerSelfKan(
@@ -3544,6 +3527,15 @@ export function playPlayerDiscard(
 
   if (cpuRonState) {
     return cpuRonState;
+  }
+
+  const fourKansState =
+    finishFourKansIfAvailable(
+      discardedState
+    );
+
+  if (fourKansState) {
+    return fourKansState;
   }
 
   if (discardedState.round.phase === "roundEnd") {
