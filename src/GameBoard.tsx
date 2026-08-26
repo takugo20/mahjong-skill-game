@@ -1601,6 +1601,69 @@ export function GameBoard({
               </article>
             </section>
           )}
+
+                {abortiveDrawResult?.reason ===
+          "fourWinds" &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="四風連打結果"
+            >
+              <article className="win-result-card draw-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>途中流局</span>
+
+                    <strong>四風連打</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    {getWindLabel(
+                      abortiveDrawResult.wind
+                    )}
+                    4枚
+                  </b>
+                </header>
+
+                <div className="draw-result-summary">
+                  <span>第1打</span>
+
+                  <strong>
+                    4人とも
+                    {getWindLabel(
+                      abortiveDrawResult.wind
+                    )}
+                  </strong>
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>点数移動なし</strong>
+                </div>
+
+                <p className="triple-ron-description">
+                  親は連荘し、本場を1つ増やします。
+                  {round.riichiPool > 0
+                    ? `供託${formatScore(
+                        round.riichiPool
+                      )}点は次局へ持ち越します。`
+                    : "供託点はありません。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
+        
         {abortiveDrawResult?.reason ===
           "tripleRon" &&
           round.phase === "roundEnd" && (
