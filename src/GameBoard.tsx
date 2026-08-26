@@ -1724,7 +1724,87 @@ export function GameBoard({
               </article>
             </section>
           )}
-        
+
+                {abortiveDrawResult?.reason ===
+          "fourKans" &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="四槓散了結果"
+            >
+              <article className="win-result-card draw-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>途中流局</span>
+
+                    <strong>四槓散了</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    槓4回
+                  </b>
+                </header>
+
+                <div className="triple-ron-players">
+                  {abortiveDrawResult.kanCountsBySeat.map(
+                    (kanCount, seat) => {
+                      if (kanCount === 0) {
+                        return null;
+                      }
+
+                      const declarer =
+                        round.players[seat];
+
+                      return (
+                        <div key={seat}>
+                          <span className="wind-badge">
+                            {getWindLabel(
+                              declarer.seatWind
+                            )}
+                          </span>
+
+                          <strong>
+                            {declarer.name}・
+                            {kanCount}回
+                          </strong>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>点数移動なし</strong>
+                </div>
+
+                <p className="triple-ron-description">
+                  {
+                    "複数家による4回目の槓が成立したため、" +
+                    "途中流局です。" +
+                    "親は連荘し、本場を1つ増やします。"
+                  }
+                  {round.riichiPool > 0
+                    ? `供託${formatScore(
+                        round.riichiPool
+                      )}点は次局へ持ち越します。`
+                    : "供託点はありません。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
+
         {abortiveDrawResult?.reason ===
           "tripleRon" &&
           round.phase === "roundEnd" && (
