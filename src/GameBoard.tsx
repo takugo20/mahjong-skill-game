@@ -192,6 +192,7 @@ interface RiverProps {
 interface OpponentAreaProps {
   player: PlayerState;
   position: OpponentPosition;
+  isDeclaring: boolean;
 }
 
 interface MeldAreaProps {
@@ -644,11 +645,22 @@ function MeldArea({
 
 function OpponentArea({
   player,
-  position
+  position,
+  isDeclaring
 }: OpponentAreaProps) {
   return (
     <section
-      className={`opponent-area opponent-area--${position}`}
+      className={
+        `opponent-area opponent-area--${position}` +
+        (
+          isDeclaring
+            ? " declaration-seat--active"
+            : ""
+        )
+      }
+      data-declaration-active={
+        isDeclaring ? "true" : undefined
+      }
       aria-label={player.name}
     >
       <div
@@ -787,6 +799,13 @@ export function GameBoard({
   const isInteractionLocked =
     isCpuProgressing || isWinPresenting;
 
+  const activeDeclarationSeat =
+    declarationOverlay &&
+    declarationOverlay.kind !== "tsumo" &&
+    declarationOverlay.kind !== "ron"
+      ? declarationOverlay.seat
+      : null;
+  
   const selectedTile = player.hand.find(
     (tile) => tile.id === selectedTileId
   );
@@ -1462,16 +1481,25 @@ function showDeclaration(
         <OpponentArea
           player={round.players[2]}
           position="top"
+          isDeclaring={
+            activeDeclarationSeat === 2
+          }
         />
 
         <OpponentArea
           player={round.players[3]}
           position="left"
+          isDeclaring={
+            activeDeclarationSeat === 3
+          }
         />
 
         <OpponentArea
           player={round.players[1]}
           position="right"
+          isDeclaring={
+            activeDeclarationSeat === 1
+          }
         />
 
         <div className="river-position river-position--top">
@@ -1553,7 +1581,18 @@ function showDeclaration(
           </div>
         </section>
 
-        <section className="human-area">
+        <section
+          className={
+            activeDeclarationSeat === 0
+              ? "human-area declaration-seat--active"
+              : "human-area"
+          }
+          data-declaration-active={
+            activeDeclarationSeat === 0
+              ? "true"
+              : undefined
+          }
+        >
           <div className="human-status-row">
             <div className="player-status">
               <div className="player-status__name">
