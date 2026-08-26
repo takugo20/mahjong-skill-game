@@ -899,9 +899,138 @@ function finishRoundWithExhaustiveDraw(
     state.round.winResult ||
     state.round.doubleRonResult ||
     state.round.drawResult ||
+    state.round.nagashiManganResult ||
     state.round.abortiveDrawResult
   ) {
     return state;
+  }
+
+  const settlementPlayers =
+    state.round.players.map(
+      (player) => ({
+        id: player.id,
+        wind: player.seatWind,
+        points: player.score,
+        discards: player.discards
+      })
+    );
+
+  const seatByPlayerId = new Map(
+    state.round.players.map(
+      (player) => [
+        player.id,
+        player.seat
+      ]
+    )
+  );
+
+  const getSeat = (
+    playerId: string
+  ): SeatIndex => {
+    const seat = seatByPlayerId.get(
+      playerId
+    );
+
+    if (seat === undefined) {
+      throw new Error(
+        "局精算の対象プレイヤーが見つかりません。"
+      );
+    }
+
+    return seat;
+  };
+
+  const applyPointChanges = (
+    pointChanges: readonly Omit<
+      RoundPointResult,
+      "seat"
+    >[]
+  ): PlayerState[] => {
+    const pointsAfterById = new Map(
+      pointChanges.map(
+        (change) => [
+          change.playerId,
+          change.pointsAfter
+        ]
+      )
+    );
+
+    return state.round.players.map(
+      (player) => ({
+        ...player,
+        score:
+          pointsAfterById.get(
+            player.id
+          ) ?? player.score
+      })
+    );
+  };
+
+  const toRoundPointChanges = (
+    pointChanges: readonly Omit<
+      RoundPointResult,
+      "seat"
+    >[]
+  ): RoundPointResult[] =>
+    pointChanges.map((change) => ({
+      ...change,
+      seat: getSeat(change.playerId)
+    }));
+
+  const nagashiSettlement =
+    resolveNagashiManganSettlement({
+      players: settlementPlayers,
+      honba: state.round.honba,
+      riichiPool:
+        state.round.riichiPool
+    });
+
+  if (nagashiSettlement) {
+    const winnerSeats =
+      nagashiSettlement.winnerIds.map(
+        getSeat
+      );
+    const winnerNames = winnerSeats.map(
+      (seat) =>
+        state.round.players[seat].name
+    );
+
+    return {
+      ...state,
+      round: {
+        ...state.round,
+        players: applyPointChanges(
+          nagashiSettlement.pointChanges
+        ),
+        phase: "roundEnd",
+        pendingKan: null,
+        riichiPool: 0,
+        winResult: null,
+        doubleRonResult: null,
+        drawResult: null,
+        nagashiManganResult: {
+          winnerSeats,
+          riichiPoolRecipientSeat:
+            nagashiSettlement
+              .riichiPoolRecipientId ===
+            null
+              ? null
+              : getSeat(
+                  nagashiSettlement
+                    .riichiPoolRecipientId
+                ),
+          pointChanges:
+            toRoundPointChanges(
+              nagashiSettlement
+                .pointChanges
+            )
+        },
+        abortiveDrawResult: null
+      },
+      notice:
+        `${winnerNames.join("・")}が` +
+        "流し満貫を成立させました。"
+    };
   }
 
   const tenpaiPlayerIds =
@@ -916,60 +1045,15 @@ function finishRoundWithExhaustiveDraw(
 
   const settlement =
     resolveExhaustiveDrawSettlement({
-      players: state.round.players.map(
-        (player) => ({
-          id: player.id,
-          wind: player.seatWind,
-          points: player.score
-        })
-      ),
+      players: settlementPlayers,
       tenpaiPlayerIds
     });
-
-  const pointsAfterById = new Map(
-    settlement.pointChanges.map(
-      (change) => [
-        change.playerId,
-        change.pointsAfter
-      ]
-    )
+  const playersAfter = applyPointChanges(
+    settlement.pointChanges
   );
-
-  const playersAfter =
-    state.round.players.map((player) => ({
-      ...player,
-      score:
-        pointsAfterById.get(player.id) ??
-        player.score
-    }));
-
-  const seatByPlayerId = new Map(
-    state.round.players.map(
-      (player) => [
-        player.id,
-        player.seat
-      ]
-    )
-  );
-
-  const pointChanges: RoundPointResult[] =
-    settlement.pointChanges.map(
-      (change) => {
-        const seat = seatByPlayerId.get(
-          change.playerId
-        );
-
-        if (seat === undefined) {
-          throw new Error(
-            "流局精算の対象プレイヤーが見つかりません。"
-          );
-        }
-
-        return {
-          ...change,
-          seat
-        };
-      }
+  const pointChanges =
+    toRoundPointChanges(
+      settlement.pointChanges
     );
 
   const tenpaiIdSet = new Set(
@@ -1000,6 +1084,7 @@ function finishRoundWithExhaustiveDraw(
             .map((player) => player.seat),
         pointChanges
       },
+      nagashiManganResult: null,
       abortiveDrawResult: null
     },
     notice
@@ -3566,6 +3651,13 @@ function dealerContinues(
       );
   }
 
+  if (round.nagashiManganResult) {
+    return round.nagashiManganResult
+      .winnerSeats.includes(
+        dealerSeat
+      );
+  }
+
   if (round.abortiveDrawResult) {
     return true;
   }
@@ -3714,8 +3806,10 @@ export function startNextRound(
 
   const isDraw =
     state.round.winResult == null &&
-    state.round.doubleRonResult == null;
-
+    state.round.doubleRonResult == null &&
+    state.round.nagashiManganResult ==
+      null;
+  
   if (
     !continues &&
     isHanchanFinalHand(state.round)
