@@ -4,7 +4,11 @@ import {
   it
 } from "vitest";
 import {
-  createInitialAkuukanGameState
+  createInitialAkuukanGameState,
+  isAkuukanSourceUsed,
+  markAkuukanSourceUsed,
+  resetAkuukanRoundUsage,
+  resetAkuukanTurnUsage
 } from "./state";
 import type {
   AkuukanMatchSetup
@@ -82,5 +86,132 @@ describe("亜空間麻雀の対局状態初期化", () => {
 
     expect(second.disabledSources).toEqual([]);
     expect(second.usedSources.turn).toEqual([]);
+  });
+});
+
+describe("亜空間麻雀の能力使用履歴", () => {
+  it("指定した範囲へ使用済み状態を記録する", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const marked = markAkuukanSourceUsed(
+      initial,
+      "round",
+      "player-skill:1-1"
+    );
+
+    expect(
+      isAkuukanSourceUsed(
+        initial,
+        "round",
+        "player-skill:1-1"
+      )
+    ).toBe(false);
+    expect(
+      isAkuukanSourceUsed(
+        marked,
+        "round",
+        "player-skill:1-1"
+      )
+    ).toBe(true);
+    expect(initial.usedSources.round).toEqual([]);
+  });
+
+  it("同じ範囲へ同じ効果元を重複記録しない", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const first = markAkuukanSourceUsed(
+      initial,
+      "turn",
+      "enemy-ability:E-1"
+    );
+    const second = markAkuukanSourceUsed(
+      first,
+      "turn",
+      "enemy-ability:E-1"
+    );
+
+    expect(second).toBe(first);
+    expect(second.usedSources.turn).toEqual([
+      "enemy-ability:E-1"
+    ]);
+  });
+
+  it("手番開始時は手番の履歴だけを消去する", () => {
+    let state =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+
+    state = markAkuukanSourceUsed(
+      state,
+      "match",
+      "player-skill:1-1"
+    );
+    state = markAkuukanSourceUsed(
+      state,
+      "round",
+      "player-skill:1-2"
+    );
+    state = markAkuukanSourceUsed(
+      state,
+      "turn",
+      "enemy-ability:E-1"
+    );
+
+    const reset = resetAkuukanTurnUsage(
+      state
+    );
+
+    expect(reset.usedSources).toEqual({
+      match: ["player-skill:1-1"],
+      round: ["player-skill:1-2"],
+      turn: []
+    });
+    expect(state.usedSources.turn).toEqual([
+      "enemy-ability:E-1"
+    ]);
+  });
+
+  it("局開始時は局と手番の履歴を消去する", () => {
+    let state =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+
+    state = markAkuukanSourceUsed(
+      state,
+      "match",
+      "player-skill:1-1"
+    );
+    state = markAkuukanSourceUsed(
+      state,
+      "round",
+      "player-skill:1-2"
+    );
+    state = markAkuukanSourceUsed(
+      state,
+      "turn",
+      "enemy-ability:E-1"
+    );
+
+    const reset = resetAkuukanRoundUsage(
+      state
+    );
+
+    expect(reset.usedSources).toEqual({
+      match: ["player-skill:1-1"],
+      round: [],
+      turn: []
+    });
+    expect(state.usedSources.round).toEqual([
+      "player-skill:1-2"
+    ]);
+    expect(state.usedSources.turn).toEqual([
+      "enemy-ability:E-1"
+    ]);
   });
 });
