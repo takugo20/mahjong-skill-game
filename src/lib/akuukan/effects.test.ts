@@ -5,6 +5,8 @@ import {
 } from "vitest";
 import {
   getOrderedAkuukanEffects,
+  isAkuukanEffectEnabled,
+  runEnabledAkuukanEffects,
   runAkuukanEffects
 } from "./effects";
 import type {
@@ -14,8 +16,12 @@ import type {
 import {
   EFFECT_PRIORITY
 } from "./types";
+import {
+  createInitialAkuukanGameState
+} from "./state";
 import type {
   AkuukanEffectSourceId,
+  AkuukanGameState,
   EffectHook,
   EffectPriority
 } from "./types";
@@ -305,5 +311,133 @@ describe("亜空間麻雀の効果実行", () => {
       "disable-enemy",
       "allowed-effect"
     ]);
+  });
+});
+
+interface StandardEffectContext {
+  log: string[];
+  akuukan: AkuukanGameState;
+}
+
+function createStandardHandler(
+  effectId: string,
+  sourceId: AkuukanEffectSourceId,
+  priority: EffectPriority,
+  apply: (
+    context: StandardEffectContext
+  ) => StandardEffectContext
+): AkuukanEffectHandler<StandardEffectContext> {
+  return {
+    effectId,
+    sourceId,
+    hook: "afterDraw",
+    priority,
+    apply
+  };
+}
+
+describe("亜空間麻雀の標準有効判定", () => {
+  it("disabledSourcesにある効果元を無効と判定する", () => {
+    const effect = createEffect(
+      "target-effect",
+      "afterDraw",
+      EFFECT_PRIORITY.numericModification
+    );
+    const akuukan =
+      createInitialAkuukanGameState({
+        enemyId: "enemy-1",
+        equippedSkills: []
+      });
+
+    expect(
+      isAkuukanEffectEnabled(
+        effect,
+        akuukan
+      )
+    ).toBe(true);
+
+    akuukan.disabledSources.push(
+      effect.sourceId
+    );
+
+    expect(
+      isAkuukanEffectEnabled(
+        effect,
+        akuukan
+      )
+    ).toBe(false);
+  });
+
+  it("更新後の亜空間状態で後続効果を自動判定する", () => {
+    const blockedSource:
+      AkuukanEffectSourceId =
+      "enemy-ability:E-1";
+    const effects = [
+      createStandardHandler(
+        "disable-enemy",
+        "player-skill:3-5",
+        EFFECT_PRIORITY.effectInvalidation,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "disable-enemy"
+          ],
+          akuukan: {
+            ...context.akuukan,
+            disabledSources: [
+              ...context.akuukan.disabledSources,
+              blockedSource
+            ]
+          }
+        })
+      ),
+      createStandardHandler(
+        "blocked-effect",
+        blockedSource,
+        EFFECT_PRIORITY.numericModification,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "blocked-effect"
+          ]
+        })
+      ),
+      createStandardHandler(
+        "allowed-effect",
+        "player-skill:1-1",
+        EFFECT_PRIORITY.numericModification,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "allowed-effect"
+          ]
+        })
+      )
+    ];
+    const context: StandardEffectContext = {
+      log: [],
+      akuukan:
+        createInitialAkuukanGameState({
+          enemyId: "enemy-1",
+          equippedSkills: []
+        })
+    };
+
+    const result = runEnabledAkuukanEffects(
+      context,
+      effects,
+      "afterDraw"
+    );
+
+    expect(result.log).toEqual([
+      "disable-enemy",
+      "allowed-effect"
+    ]);
+    expect(
+      result.akuukan.disabledSources
+    ).toEqual([blockedSource]);
   });
 });
