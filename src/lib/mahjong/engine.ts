@@ -1,5 +1,6 @@
 import {
-  createInitialAkuukanGameState
+  createInitialAkuukanGameState,
+  resetAkuukanRoundUsage
 } from "../akuukan/state";
 import type {
   AkuukanMatchSetup
@@ -4191,6 +4192,14 @@ function resolveNextRoundStart(
 
   const dealtState: GameState = {
     ...state,
+    ...(state.akuukan
+      ? {
+          akuukan:
+            resetAkuukanRoundUsage(
+              state.akuukan
+            )
+        }
+      : {}),
     matchResult: null,
     playerMp: Math.min(
       state.maxMp,
