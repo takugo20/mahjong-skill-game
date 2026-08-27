@@ -11,6 +11,16 @@ export interface AkuukanEffectDescriptor {
   priority: EffectPriority;
 }
 
+export interface AkuukanEffectHandler<TContext>
+  extends AkuukanEffectDescriptor {
+  apply: (context: TContext) => TContext;
+}
+
+export type AkuukanEffectEligibility<TContext> = (
+  effect: AkuukanEffectHandler<TContext>,
+  context: TContext
+) => boolean;
+
 export function getOrderedAkuukanEffects<
   TEffect extends AkuukanEffectDescriptor
 >(
@@ -32,4 +42,31 @@ export function getOrderedAkuukanEffects<
         left.index - right.index
     )
     .map(({ effect }) => effect);
+}
+
+export function runAkuukanEffects<TContext>(
+  context: TContext,
+  effects: readonly AkuukanEffectHandler<TContext>[],
+  hook: EffectHook,
+  canApply: AkuukanEffectEligibility<TContext> =
+    () => true
+): TContext {
+  let currentContext = context;
+
+  for (
+    const effect of getOrderedAkuukanEffects(
+      effects,
+      hook
+    )
+  ) {
+    if (!canApply(effect, currentContext)) {
+      continue;
+    }
+
+    currentContext = effect.apply(
+      currentContext
+    );
+  }
+
+  return currentContext;
 }
