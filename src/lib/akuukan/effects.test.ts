@@ -4,15 +4,18 @@ import {
   it
 } from "vitest";
 import {
-  getOrderedAkuukanEffects
+  getOrderedAkuukanEffects,
+  runAkuukanEffects
 } from "./effects";
 import type {
-  AkuukanEffectDescriptor
+  AkuukanEffectDescriptor,
+  AkuukanEffectHandler
 } from "./effects";
 import {
   EFFECT_PRIORITY
 } from "./types";
 import type {
+  AkuukanEffectSourceId,
   EffectHook,
   EffectPriority
 } from "./types";
@@ -147,5 +150,160 @@ describe("亜空間麻雀の効果優先順位", () => {
       "third"
     ]);
     expect(ordered).not.toBe(effects);
+  });
+});
+
+interface TestEffectContext {
+  log: string[];
+  disabledSources:
+    AkuukanEffectSourceId[];
+}
+
+function createHandler(
+  effectId: string,
+  sourceId: AkuukanEffectSourceId,
+  hook: EffectHook,
+  priority: EffectPriority,
+  apply: (
+    context: TestEffectContext
+  ) => TestEffectContext
+): AkuukanEffectHandler<TestEffectContext> {
+  return {
+    effectId,
+    sourceId,
+    hook,
+    priority,
+    apply
+  };
+}
+
+describe("亜空間麻雀の効果実行", () => {
+  it("優先順位どおりに状態を受け渡す", () => {
+    const initialContext: TestEffectContext = {
+      log: [],
+      disabledSources: []
+    };
+    const effects = [
+      createHandler(
+        "after-event",
+        "player-skill:1-2",
+        "afterDraw",
+        EFFECT_PRIORITY.afterEvent,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "after-event"
+          ]
+        })
+      ),
+      createHandler(
+        "other-hook",
+        "player-skill:1-3",
+        "roundSetup",
+        EFFECT_PRIORITY.effectInvalidation,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "other-hook"
+          ]
+        })
+      ),
+      createHandler(
+        "replacement",
+        "player-skill:1-1",
+        "afterDraw",
+        EFFECT_PRIORITY.replacement,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "replacement"
+          ]
+        })
+      )
+    ];
+
+    const result = runAkuukanEffects(
+      initialContext,
+      effects,
+      "afterDraw"
+    );
+
+    expect(result.log).toEqual([
+      "replacement",
+      "after-event"
+    ]);
+    expect(initialContext.log).toEqual([]);
+  });
+
+  it("各効果の直前に有効性を再判定する", () => {
+    const blockedSource:
+      AkuukanEffectSourceId =
+      "enemy-ability:E-1";
+    const effects = [
+      createHandler(
+        "disable-enemy",
+        "player-skill:3-5",
+        "afterDraw",
+        EFFECT_PRIORITY.effectInvalidation,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "disable-enemy"
+          ],
+          disabledSources: [
+            ...context.disabledSources,
+            blockedSource
+          ]
+        })
+      ),
+      createHandler(
+        "blocked-effect",
+        blockedSource,
+        "afterDraw",
+        EFFECT_PRIORITY.numericModification,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "blocked-effect"
+          ]
+        })
+      ),
+      createHandler(
+        "allowed-effect",
+        "player-skill:1-1",
+        "afterDraw",
+        EFFECT_PRIORITY.numericModification,
+        (context) => ({
+          ...context,
+          log: [
+            ...context.log,
+            "allowed-effect"
+          ]
+        })
+      )
+    ];
+
+    const result = runAkuukanEffects(
+      {
+        log: [],
+        disabledSources: []
+      },
+      effects,
+      "afterDraw",
+      (effect, context) =>
+        !context.disabledSources.includes(
+          effect.sourceId
+        )
+    );
+
+    expect(result.log).toEqual([
+      "disable-enemy",
+      "allowed-effect"
+    ]);
   });
 });
