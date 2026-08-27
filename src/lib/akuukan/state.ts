@@ -1,7 +1,12 @@
 import type {
+  AkuukanEffectSourceId,
   AkuukanGameState,
-  AkuukanMatchSetup
+  AkuukanMatchSetup,
+  AkuukanUsageState
 } from "./types";
+
+export type AkuukanUsageScope =
+  keyof AkuukanUsageState;
 
 export function createInitialAkuukanGameState(
   setup: AkuukanMatchSetup
@@ -22,6 +27,79 @@ export function createInitialAkuukanGameState(
     nextRoundEffects: [],
     usedSources: {
       match: [],
+      round: [],
+      turn: []
+    }
+  };
+}
+
+export function isAkuukanSourceUsed(
+  state: AkuukanGameState,
+  scope: AkuukanUsageScope,
+  sourceId: AkuukanEffectSourceId
+): boolean {
+  return state.usedSources[scope].includes(
+    sourceId
+  );
+}
+
+export function markAkuukanSourceUsed(
+  state: AkuukanGameState,
+  scope: AkuukanUsageScope,
+  sourceId: AkuukanEffectSourceId
+): AkuukanGameState {
+  if (
+    isAkuukanSourceUsed(
+      state,
+      scope,
+      sourceId
+    )
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    usedSources: {
+      ...state.usedSources,
+      [scope]: [
+        ...state.usedSources[scope],
+        sourceId
+      ]
+    }
+  };
+}
+
+export function resetAkuukanTurnUsage(
+  state: AkuukanGameState
+): AkuukanGameState {
+  if (state.usedSources.turn.length === 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    usedSources: {
+      ...state.usedSources,
+      turn: []
+    }
+  };
+}
+
+export function resetAkuukanRoundUsage(
+  state: AkuukanGameState
+): AkuukanGameState {
+  if (
+    state.usedSources.round.length === 0 &&
+    state.usedSources.turn.length === 0
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    usedSources: {
+      ...state.usedSources,
       round: [],
       turn: []
     }
