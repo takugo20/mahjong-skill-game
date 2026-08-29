@@ -189,6 +189,24 @@ export function isAkuukanSourceUsed(
   );
 }
 
+export function canUseAkuukanSource(
+  state: AkuukanGameState,
+  scope: AkuukanUsageScope,
+  sourceId: AkuukanEffectSourceId
+): boolean {
+  return (
+    !isAkuukanSourceDisabled(
+      state,
+      sourceId
+    ) &&
+    !isAkuukanSourceUsed(
+      state,
+      scope,
+      sourceId
+    )
+  );
+}
+
 export function markAkuukanSourceUsed(
   state: AkuukanGameState,
   scope: AkuukanUsageScope,
