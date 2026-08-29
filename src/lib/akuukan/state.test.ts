@@ -8,8 +8,11 @@ import {
   advanceAkuukanTurnEffects,
   beginAkuukanTurn,
   createInitialAkuukanGameState,
+  disableAkuukanSource,
+  enableAkuukanSource,
   endAkuukanEffect,
   hasAkuukanEffectInstance,
+  isAkuukanSourceDisabled,
   isAkuukanSourceUsed,
   markAkuukanSourceUsed,
   reserveAkuukanNextRoundEffect,
@@ -462,5 +465,95 @@ it("指定したインスタンスだけを有効中または予約中から終�
         remainingTurns: 1
       }
     ]);
+  });
+});
+
+describe("亜空間麻雀の能力無効化", () => {
+  it("効果を残したまま能力元を無効化する", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const activated = activateAkuukanEffect(
+      initial,
+      createEffect("active-while-disabled")
+    );
+
+    const disabled = disableAkuukanSource(
+      activated,
+      "player-skill:1-1"
+    );
+
+    expect(disabled.disabledSources).toEqual([
+      "player-skill:1-1"
+    ]);
+    expect(disabled.activeEffects).toEqual(
+      activated.activeEffects
+    );
+    expect(activated.disabledSources).toEqual(
+      []
+    );
+  });
+
+  it("同じ能力元を重複して無効化しない", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const disabled = disableAkuukanSource(
+      initial,
+      "enemy-ability:E-1"
+    );
+    const duplicate = disableAkuukanSource(
+      disabled,
+      "enemy-ability:E-1"
+    );
+
+    expect(duplicate).toBe(disabled);
+    expect(
+      isAkuukanSourceDisabled(
+        duplicate,
+        "enemy-ability:E-1"
+      )
+    ).toBe(true);
+  });
+
+  it("指定した能力元だけを再有効化する", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const first = disableAkuukanSource(
+      initial,
+      "player-skill:1-1"
+    );
+    const second = disableAkuukanSource(
+      first,
+      "enemy-ability:E-1"
+    );
+    const enabled = enableAkuukanSource(
+      second,
+      "player-skill:1-1"
+    );
+
+    expect(enabled.disabledSources).toEqual([
+      "enemy-ability:E-1"
+    ]);
+    expect(
+      isAkuukanSourceDisabled(
+        enabled,
+        "player-skill:1-1"
+      )
+    ).toBe(false);
+    expect(second.disabledSources).toEqual([
+      "player-skill:1-1",
+      "enemy-ability:E-1"
+    ]);
+    expect(
+      enableAkuukanSource(
+        enabled,
+        "player-skill:1-1"
+      )
+    ).toBe(enabled);
   });
 });
