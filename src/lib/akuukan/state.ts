@@ -1,3 +1,6 @@
+import {
+  assertValidAkuukanMatchSetup
+} from "./setupValidation";
 import type {
   AkuukanEffectInstance,
   AkuukanEffectSourceId,
@@ -17,6 +20,8 @@ export interface AkuukanSourceUseResult {
 export function createInitialAkuukanGameState(
   setup: AkuukanMatchSetup
 ): AkuukanGameState {
+  assertValidAkuukanMatchSetup(setup);
+
   return {
     setup: {
       enemyId: setup.enemyId,
