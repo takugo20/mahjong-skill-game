@@ -1,4 +1,5 @@
 import type {
+  AkuukanEffectInstance,
   AkuukanEffectSourceId,
   AkuukanGameState,
   AkuukanMatchSetup,
@@ -30,6 +31,97 @@ export function createInitialAkuukanGameState(
       round: [],
       turn: []
     }
+  };
+}
+
+export function hasAkuukanEffectInstance(
+  state: AkuukanGameState,
+  instanceId: string
+): boolean {
+  return (
+    state.activeEffects.some(
+      (effect) =>
+        effect.instanceId === instanceId
+    ) ||
+    state.nextRoundEffects.some(
+      (effect) =>
+        effect.instanceId === instanceId
+    )
+  );
+}
+
+export function activateAkuukanEffect(
+  state: AkuukanGameState,
+  effect: AkuukanEffectInstance
+): AkuukanGameState {
+  if (
+    hasAkuukanEffectInstance(
+      state,
+      effect.instanceId
+    )
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeEffects: [
+      ...state.activeEffects,
+      { ...effect }
+    ]
+  };
+}
+
+export function reserveAkuukanNextRoundEffect(
+  state: AkuukanGameState,
+  effect: AkuukanEffectInstance
+): AkuukanGameState {
+  if (
+    hasAkuukanEffectInstance(
+      state,
+      effect.instanceId
+    )
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    nextRoundEffects: [
+      ...state.nextRoundEffects,
+      { ...effect }
+    ]
+  };
+}
+
+export function endAkuukanEffect(
+  state: AkuukanGameState,
+  instanceId: string
+): AkuukanGameState {
+  const activeEffects =
+    state.activeEffects.filter(
+      (effect) =>
+        effect.instanceId !== instanceId
+    );
+  const nextRoundEffects =
+    state.nextRoundEffects.filter(
+      (effect) =>
+        effect.instanceId !== instanceId
+    );
+
+  if (
+    activeEffects.length ===
+      state.activeEffects.length &&
+    nextRoundEffects.length ===
+      state.nextRoundEffects.length
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeEffects,
+    nextRoundEffects
   };
 }
 
