@@ -125,6 +125,60 @@ export function endAkuukanEffect(
   };
 }
 
+export function isAkuukanSourceDisabled(
+  state: AkuukanGameState,
+  sourceId: AkuukanEffectSourceId
+): boolean {
+  return state.disabledSources.includes(
+    sourceId
+  );
+}
+
+export function disableAkuukanSource(
+  state: AkuukanGameState,
+  sourceId: AkuukanEffectSourceId
+): AkuukanGameState {
+  if (
+    isAkuukanSourceDisabled(
+      state,
+      sourceId
+    )
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    disabledSources: [
+      ...state.disabledSources,
+      sourceId
+    ]
+  };
+}
+
+export function enableAkuukanSource(
+  state: AkuukanGameState,
+  sourceId: AkuukanEffectSourceId
+): AkuukanGameState {
+  if (
+    !isAkuukanSourceDisabled(
+      state,
+      sourceId
+    )
+  ) {
+    return state;
+  }
+
+  return {
+    ...state,
+    disabledSources:
+      state.disabledSources.filter(
+        (disabledSourceId) =>
+          disabledSourceId !== sourceId
+      )
+  };
+}
+
 export function isAkuukanSourceUsed(
   state: AkuukanGameState,
   scope: AkuukanUsageScope,
