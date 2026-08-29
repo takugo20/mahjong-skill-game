@@ -4,6 +4,8 @@ import {
   it
 } from "vitest";
 import {
+  advanceAkuukanTurnEffects,
+  beginAkuukanTurn,
   createInitialAkuukanGameState,
   isAkuukanSourceUsed,
   markAkuukanSourceUsed,
@@ -212,6 +214,84 @@ describe("亜空間麻雀の能力使用履歴", () => {
     ]);
     expect(state.usedSources.turn).toEqual([
       "enemy-ability:E-1"
+    ]);
+  });
+});
+
+describe("亜空間麻雀の継続効果", () => {
+  it("手番開始時に残り手番数を減らし、0になる効果を終了する", () => {
+    const state =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+
+    state.activeEffects = [
+      {
+        instanceId: "three-turns",
+        sourceId: "player-skill:1-1",
+        remainingTurns: 3
+      },
+      {
+        instanceId: "last-turn",
+        sourceId: "enemy-ability:E-1",
+        remainingTurns: 1
+      },
+      {
+        instanceId: "unlimited",
+        sourceId: "player-skill:1-2",
+        remainingTurns: null
+      }
+    ];
+
+    const advanced =
+      advanceAkuukanTurnEffects(state);
+
+    expect(advanced.activeEffects).toEqual([
+      {
+        instanceId: "three-turns",
+        sourceId: "player-skill:1-1",
+        remainingTurns: 2
+      },
+      {
+        instanceId: "unlimited",
+        sourceId: "player-skill:1-2",
+        remainingTurns: null
+      }
+    ]);
+    expect(state.activeEffects).toHaveLength(3);
+    expect(
+      state.activeEffects[0].remainingTurns
+    ).toBe(3);
+  });
+
+  it("手番履歴の消去と効果期限の更新を同時に行う", () => {
+    let state =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+
+    state = markAkuukanSourceUsed(
+      state,
+      "turn",
+      "enemy-ability:E-1"
+    );
+    state.activeEffects = [
+      {
+        instanceId: "two-turns",
+        sourceId: "player-skill:1-1",
+        remainingTurns: 2
+      }
+    ];
+
+    const started = beginAkuukanTurn(state);
+
+    expect(started.usedSources.turn).toEqual([]);
+    expect(started.activeEffects).toEqual([
+      {
+        instanceId: "two-turns",
+        sourceId: "player-skill:1-1",
+        remainingTurns: 1
+      }
     ]);
   });
 });
