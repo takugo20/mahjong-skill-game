@@ -9,6 +9,11 @@ import type {
 export type AkuukanUsageScope =
   keyof AkuukanUsageState;
 
+export interface AkuukanSourceUseResult {
+  state: AkuukanGameState;
+  succeeded: boolean;
+}
+
 export function createInitialAkuukanGameState(
   setup: AkuukanMatchSetup
 ): AkuukanGameState {
@@ -231,6 +236,34 @@ export function markAkuukanSourceUsed(
         sourceId
       ]
     }
+  };
+}
+
+export function tryUseAkuukanSource(
+  state: AkuukanGameState,
+  scope: AkuukanUsageScope,
+  sourceId: AkuukanEffectSourceId
+): AkuukanSourceUseResult {
+  if (
+    !canUseAkuukanSource(
+      state,
+      scope,
+      sourceId
+    )
+  ) {
+    return {
+      state,
+      succeeded: false
+    };
+  }
+
+  return {
+    state: markAkuukanSourceUsed(
+      state,
+      scope,
+      sourceId
+    ),
+    succeeded: true
   };
 }
 
