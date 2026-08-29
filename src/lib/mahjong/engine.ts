@@ -4215,7 +4215,7 @@ function resolveNextRoundStart(
     ...(state.akuukan
       ? {
           akuukan:
-            resetAkuukanRoundUsage(
+            beginAkuukanRound(
               state.akuukan
             )
         }
