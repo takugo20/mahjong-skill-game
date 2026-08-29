@@ -1,6 +1,7 @@
 import {
   createInitialAkuukanGameState,
-  resetAkuukanRoundUsage
+  resetAkuukanRoundUsage,
+  resetAkuukanTurnUsage
 } from "../akuukan/state";
 import type {
   AkuukanMatchSetup
@@ -337,6 +338,25 @@ export function createInitialGameState(
   };
 }
 
+function resetAkuukanTurnState(
+  state: GameState
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  const akuukan = resetAkuukanTurnUsage(
+    state.akuukan
+  );
+
+  return akuukan === state.akuukan
+    ? state
+    : {
+        ...state,
+        akuukan
+      };
+}
+
 export function drawTile(
   state: GameState,
   seat: SeatIndex
@@ -380,7 +400,7 @@ export function drawTile(
         )
       : state.playerMp;
 
-  return {
+  return resetAkuukanTurnState({
     ...state,
     playerMp: updatedMp,
     round: {
@@ -397,7 +417,7 @@ export function drawTile(
       seat === 0
         ? "牌をツモりました。捨てる牌を選んでください。"
         : `${currentPlayer.name}がツモりました。`
-  };
+  });
 }
 
 export function discardTile(
@@ -1970,7 +1990,7 @@ function applyCpuMeldCall(
       }
     );
 
-  const callState: GameState = {
+  const callState = resetAkuukanTurnState({
     ...state,
     round: {
       ...state.round,
@@ -1988,8 +2008,8 @@ function applyCpuMeldCall(
           calledTile,
           handTiles
         )
-    }
-  };
+    }    }
+  });
 
   const discardedState = discardTile(
     callState,
@@ -2054,7 +2074,7 @@ function applyCpuOpenKanCall(
     },
     option
   });
-  const kanState: GameState = {
+  const kanState = resetAkuukanTurnState({
     ...state,
     round: execution.round,
     notice:
@@ -2062,7 +2082,7 @@ function applyCpuOpenKanCall(
       `${getTileLabel(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
-  };
+  });
   
   const cpuTsumoState =
     finishCpuTsumoIfAvailable(
@@ -2291,7 +2311,7 @@ export function declarePlayerMeldCall(
       ? "ポン"
       : "チー";
 
-  return {
+  return resetAkuukanTurnState({
     ...callState,
     round: {
       ...callState.round,
@@ -2313,7 +2333,7 @@ export function declarePlayerMeldCall(
     notice:
       `${actionLabel}しました。` +
       "捨てる牌を選んでください。"
-  };
+  });
 }
 
 export function declarePlayerOpenKan(
@@ -2371,7 +2391,7 @@ export function declarePlayerOpenKan(
     round: callState.round,
     option
   });
-  const kanState: GameState = {
+  const kanState = resetAkuukanTurnState({
     ...callState,
     round: execution.round,
     notice:
@@ -2379,7 +2399,7 @@ export function declarePlayerOpenKan(
       `${getTileLabel(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
-  };
+  });
 
   return kanState;
 }
@@ -2623,7 +2643,7 @@ function completeCpuPendingSelfKan(
       pendingKan.declarerSeat,
     option: pendingKan
   });
-  const kanState: GameState = {
+  const kanState = resetAkuukanTurnState({
     ...state,
     round: execution.round,
     notice:
@@ -2631,7 +2651,7 @@ function completeCpuPendingSelfKan(
       `${getTileLabel(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
-  };
+  });
   
   const continuedState =
     playCpuDiscardingTurn(
@@ -3491,7 +3511,7 @@ export function completePlayerSelfKan(
       ? "暗槓"
       : "加槓";
 
-  const kanState: GameState = {
+  const kanState = resetAkuukanTurnState({
     ...state,
     round: execution.round,
     notice:
@@ -3499,7 +3519,7 @@ export function completePlayerSelfKan(
       `${getTileLabel(
         execution.rinshanTile
       )}を嶺上牌としてツモりました。`
-  };
+  });
 
   return kanState;
 }
