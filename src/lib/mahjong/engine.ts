@@ -1,4 +1,11 @@
 import {
+  AKUUKAN_DRAW_MP_RECOVERY,
+  AKUUKAN_INITIAL_MP,
+  AKUUKAN_MAX_MP,
+  AKUUKAN_ROUND_MP_RECOVERY,
+  recoverAkuukanMp
+} from "../akuukan/mp";
+import {
   beginAkuukanRound,
   beginAkuukanTurn,
   createInitialAkuukanGameState
@@ -324,8 +331,8 @@ export function createInitialGameState(
     },
     initialDealerSeat: 0,
     matchResult: null,
-    playerMp: 420,
-    maxMp: 900,
+    playerMp: AKUUKAN_INITIAL_MP,
+    maxMp: AKUUKAN_MAX_MP,
     ...(akuukanSetup
       ? {
           akuukan:
@@ -394,9 +401,10 @@ export function drawTile(
   
   const updatedMp =
     seat === 0
-      ? Math.min(
-          state.maxMp,
-          state.playerMp + 30
+      ? recoverAkuukanMp(
+          state.playerMp,
+          AKUUKAN_DRAW_MP_RECOVERY,
+          state.maxMp
         )
       : state.playerMp;
 
@@ -4221,9 +4229,10 @@ function resolveNextRoundStart(
         }
       : {}),
     matchResult: null,
-    playerMp: Math.min(
-      state.maxMp,
-      state.playerMp + 390
+    playerMp: recoverAkuukanMp(
+      state.playerMp,
+      AKUUKAN_ROUND_MP_RECOVERY,
+      state.maxMp
     ),
     round: {
       prevailingWind:
