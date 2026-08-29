@@ -4,6 +4,9 @@ import type {
   EffectHook,
   EffectPriority
 } from "./types";
+import {
+  isAkuukanSourceDisabled
+} from "./state";
 
 export interface AkuukanEffectDescriptor {
   effectId: string;
@@ -80,7 +83,8 @@ export function isAkuukanEffectEnabled(
   effect: AkuukanEffectDescriptor,
   akuukan: AkuukanGameState
 ): boolean {
-  return !akuukan.disabledSources.includes(
+  return !isAkuukanSourceDisabled(
+    akuukan,
     effect.sourceId
   );
 }
