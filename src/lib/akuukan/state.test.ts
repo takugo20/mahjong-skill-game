@@ -4,15 +4,20 @@ import {
   it
 } from "vitest";
 import {
+  activateAkuukanEffect,
   advanceAkuukanTurnEffects,
   beginAkuukanTurn,
   createInitialAkuukanGameState,
+  endAkuukanEffect,
+  hasAkuukanEffectInstance,
   isAkuukanSourceUsed,
   markAkuukanSourceUsed,
+  reserveAkuukanNextRoundEffect,
   resetAkuukanRoundUsage,
   resetAkuukanTurnUsage
 } from "./state";
 import type {
+  AkuukanEffectInstance,
   AkuukanMatchSetup
 } from "./types";
 
@@ -25,6 +30,16 @@ function createSetup(): AkuukanMatchSetup {
         level: 3
       }
     ]
+  };
+}
+
+function createEffect(
+  instanceId: string
+): AkuukanEffectInstance {
+  return {
+    instanceId,
+    sourceId: "player-skill:1-1",
+    remainingTurns: 3
   };
 }
 
@@ -219,6 +234,160 @@ describe("亜空間麻雀の能力使用履歴", () => {
 });
 
 describe("亜空間麻雀の継続効果", () => {
+  it("有効効果を入力から独立した状態で登録する", () => {
+  const state =
+    createInitialAkuukanGameState(
+      createSetup()
+    );
+  const effect = createEffect("active-1");
+
+  const activated = activateAkuukanEffect(
+    state,
+    effect
+  );
+
+  effect.remainingTurns = 1;
+
+  expect(activated.activeEffects).toEqual([
+    {
+      instanceId: "active-1",
+      sourceId: "player-skill:1-1",
+      remainingTurns: 3
+    }
+  ]);
+  expect(activated.activeEffects[0]).not.toBe(
+    effect
+  );
+  expect(state.activeEffects).toEqual([]);
+});
+
+it("次局効果を入力から独立した状態で予約する", () => {
+  const state =
+    createInitialAkuukanGameState(
+      createSetup()
+    );
+  const effect = createEffect("reserved-1");
+
+  const reserved =
+    reserveAkuukanNextRoundEffect(
+      state,
+      effect
+    );
+
+  effect.remainingTurns = 1;
+
+  expect(reserved.nextRoundEffects).toEqual([
+    {
+      instanceId: "reserved-1",
+      sourceId: "player-skill:1-1",
+      remainingTurns: 3
+    }
+  ]);
+  expect(
+    reserved.nextRoundEffects[0]
+  ).not.toBe(effect);
+  expect(state.nextRoundEffects).toEqual([]);
+});
+
+it("有効中と予約中をまたいで同じインスタンスIDを重複登録しない", () => {
+  const initial =
+    createInitialAkuukanGameState(
+      createSetup()
+    );
+  const activated = activateAkuukanEffect(
+    initial,
+    createEffect("shared-id")
+  );
+  const duplicateActive =
+    activateAkuukanEffect(
+      activated,
+      createEffect("shared-id")
+    );
+  const duplicateReservation =
+    reserveAkuukanNextRoundEffect(
+      activated,
+      createEffect("shared-id")
+    );
+
+  expect(duplicateActive).toBe(activated);
+  expect(duplicateReservation).toBe(
+    activated
+  );
+  expect(
+    hasAkuukanEffectInstance(
+      activated,
+      "shared-id"
+    )
+  ).toBe(true);
+});
+
+it("同じ能力元でも異なるインスタンスIDなら登録する", () => {
+  const initial =
+    createInitialAkuukanGameState(
+      createSetup()
+    );
+  const first = activateAkuukanEffect(
+    initial,
+    createEffect("stack-1")
+  );
+  const second = activateAkuukanEffect(
+    first,
+    createEffect("stack-2")
+  );
+
+  expect(
+    second.activeEffects.map(
+      (effect) => effect.instanceId
+    )
+  ).toEqual(["stack-1", "stack-2"]);
+});
+
+it("指定したインスタンスだけを有効中または予約中から終了する", () => {
+  const initial =
+    createInitialAkuukanGameState(
+      createSetup()
+    );
+  const activated = activateAkuukanEffect(
+    initial,
+    createEffect("active-target")
+  );
+  const reserved =
+    reserveAkuukanNextRoundEffect(
+      activated,
+      createEffect("reserved-target")
+    );
+  const withoutActive = endAkuukanEffect(
+    reserved,
+    "active-target"
+  );
+  const withoutReserved = endAkuukanEffect(
+    withoutActive,
+    "reserved-target"
+  );
+
+  expect(withoutActive.activeEffects).toEqual(
+    []
+  );
+  expect(
+    withoutActive.nextRoundEffects.map(
+      (effect) => effect.instanceId
+    )
+  ).toEqual(["reserved-target"]);
+  expect(withoutReserved.nextRoundEffects).toEqual(
+    []
+  );
+  expect(
+    endAkuukanEffect(
+      withoutReserved,
+      "missing"
+    )
+  ).toBe(withoutReserved);
+  expect(reserved.activeEffects).toHaveLength(1);
+  expect(reserved.nextRoundEffects).toHaveLength(
+    1
+  );
+});
+  
   it("手番開始時に残り手番数を減らし、0になる効果を終了する", () => {
     const state =
       createInitialAkuukanGameState(
