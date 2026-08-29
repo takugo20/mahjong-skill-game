@@ -18,7 +18,8 @@ import {
   markAkuukanSourceUsed,
   reserveAkuukanNextRoundEffect,
   resetAkuukanRoundUsage,
-  resetAkuukanTurnUsage
+  resetAkuukanTurnUsage,
+  tryUseAkuukanSource
 } from "./state";
 import type {
   AkuukanEffectInstance,
@@ -647,5 +648,77 @@ describe("亜空間麻雀の能力使用可否", () => {
         "player-skill:1-1"
       )
     ).toBe(true);
+  });
+});
+
+describe("亜空間麻雀の能力使用", () => {
+  it("使用可能なら指定範囲へ使用済み記録を追加する", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+
+    const result = tryUseAkuukanSource(
+      initial,
+      "round",
+      "player-skill:1-1"
+    );
+
+    expect(result.succeeded).toBe(true);
+    expect(result.state.usedSources).toEqual({
+      match: [],
+      round: ["player-skill:1-1"],
+      turn: []
+    });
+    expect(initial.usedSources.round).toEqual(
+      []
+    );
+  });
+
+  it("無効化中なら使用済みにせず元の状態を返す", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const disabled = disableAkuukanSource(
+      initial,
+      "enemy-ability:E-1"
+    );
+
+    const result = tryUseAkuukanSource(
+      disabled,
+      "turn",
+      "enemy-ability:E-1"
+    );
+
+    expect(result.succeeded).toBe(false);
+    expect(result.state).toBe(disabled);
+    expect(
+      result.state.usedSources.turn
+    ).toEqual([]);
+  });
+
+  it("使用済みなら重複記録せず元の状態を返す", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const first = tryUseAkuukanSource(
+      initial,
+      "match",
+      "player-skill:1-1"
+    );
+    const second = tryUseAkuukanSource(
+      first.state,
+      "match",
+      "player-skill:1-1"
+    );
+
+    expect(first.succeeded).toBe(true);
+    expect(second.succeeded).toBe(false);
+    expect(second.state).toBe(first.state);
+    expect(
+      second.state.usedSources.match
+    ).toEqual(["player-skill:1-1"]);
   });
 });
