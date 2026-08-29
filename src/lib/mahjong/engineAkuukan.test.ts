@@ -7,6 +7,7 @@ import {
   markAkuukanSourceUsed
 } from "../akuukan/state";
 import type {
+  AkuukanEffectInstance,
   AkuukanMatchSetup
 } from "../akuukan/types";
 import {
@@ -121,6 +122,62 @@ describe("次局開始時の亜空間状態", () => {
     });
   });
 
+it("予約効果を既存効果の後ろへ移して予約一覧を空にする", () => {
+  let state = createInitialGameState(
+    () => 0.5,
+    createSetup()
+  );
+
+  if (!state.akuukan) {
+    throw new Error(
+      "亜空間状態が初期化されていません。"
+    );
+  }
+
+  const activeEffect:
+    AkuukanEffectInstance = {
+      instanceId: "active-effect",
+      sourceId: "player-skill:1-1",
+      remainingTurns: null
+    };
+  const reservedEffect:
+    AkuukanEffectInstance = {
+      instanceId: "reserved-effect",
+      sourceId: "player-skill:2-19",
+      remainingTurns: null
+    };
+
+  state = {
+    ...state,
+    akuukan: {
+      ...state.akuukan,
+      activeEffects: [activeEffect],
+      nextRoundEffects: [reservedEffect]
+    }
+  };
+
+  const nextState = startNextRound(
+    endRoundWithAbortiveDraw(state),
+    () => 0.5
+  );
+
+  expect(
+    nextState.akuukan?.activeEffects
+  ).toEqual([
+    activeEffect,
+    reservedEffect
+  ]);
+  expect(
+    nextState.akuukan?.nextRoundEffects
+  ).toEqual([]);
+  expect(
+    state.akuukan?.activeEffects
+  ).toEqual([activeEffect]);
+  expect(
+    state.akuukan?.nextRoundEffects
+  ).toEqual([reservedEffect]);
+});
+  
   it("通常麻雀には亜空間状態を追加しない", () => {
     const state = createInitialGameState(
       () => 0.5
