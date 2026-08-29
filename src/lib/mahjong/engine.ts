@@ -1,7 +1,7 @@
 import {
+  beginAkuukanTurn,
   createInitialAkuukanGameState,
-  resetAkuukanRoundUsage,
-  resetAkuukanTurnUsage
+  resetAkuukanRoundUsage
 } from "../akuukan/state";
 import type {
   AkuukanMatchSetup
@@ -338,14 +338,14 @@ export function createInitialGameState(
   };
 }
 
-function resetAkuukanTurnState(
+function beginAkuukanTurnState(
   state: GameState
 ): GameState {
   if (!state.akuukan) {
     return state;
   }
 
-  const akuukan = resetAkuukanTurnUsage(
+  const akuukan = beginAkuukanTurn(
     state.akuukan
   );
 
@@ -400,7 +400,7 @@ export function drawTile(
         )
       : state.playerMp;
 
-  return resetAkuukanTurnState({
+  return beginAkuukanTurnState({
     ...state,
     playerMp: updatedMp,
     round: {
@@ -1990,7 +1990,7 @@ function applyCpuMeldCall(
       }
     );
 
-  const callState = resetAkuukanTurnState({
+  const callState = beginAkuukanTurnState({
     ...state,
     round: {
       ...state.round,
@@ -2074,7 +2074,7 @@ function applyCpuOpenKanCall(
     },
     option
   });
-  const kanState = resetAkuukanTurnState({
+  const kanState = beginAkuukanTurnState({
     ...state,
     round: execution.round,
     notice:
@@ -2311,7 +2311,7 @@ export function declarePlayerMeldCall(
       ? "ポン"
       : "チー";
 
-  return resetAkuukanTurnState({
+  return beginAkuukanTurnState({
     ...callState,
     round: {
       ...callState.round,
@@ -2391,7 +2391,7 @@ export function declarePlayerOpenKan(
     round: callState.round,
     option
   });
-  const kanState = resetAkuukanTurnState({
+  const kanState = beginAkuukanTurnState({
     ...callState,
     round: execution.round,
     notice:
@@ -2643,7 +2643,7 @@ function completeCpuPendingSelfKan(
       pendingKan.declarerSeat,
     option: pendingKan
   });
-  const kanState = resetAkuukanTurnState({
+  const kanState = beginAkuukanTurnState({
     ...state,
     round: execution.round,
     notice:
@@ -3511,7 +3511,7 @@ export function completePlayerSelfKan(
       ? "暗槓"
       : "加槓";
 
-  const kanState = resetAkuukanTurnState({
+  const kanState = beginAkuukanTurnState({
     ...state,
     round: execution.round,
     notice:
