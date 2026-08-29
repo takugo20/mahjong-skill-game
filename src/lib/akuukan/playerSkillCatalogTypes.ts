@@ -64,6 +64,7 @@ export interface PlayerSkillBaseDefinition<
   readonly id: PlayerSkillId;
   readonly name: string;
   readonly evaluation: string;
+  readonly maxLevel?: SkillLevel;
   readonly description: string;
   readonly activationHooks:
     readonly EffectHook[];
@@ -93,9 +94,24 @@ export type PlayerSkillDefinition =
   | PassivePlayerSkillDefinition
   | ActivePlayerSkillDefinition;
 
+export function getPlayerSkillMaxLevel(
+  skill: PlayerSkillDefinition
+): SkillLevel {
+  return skill.maxLevel ?? 5;
+}
+
 export function getPlayerSkillLevelDefinition(
   skill: PlayerSkillDefinition,
   level: SkillLevel
 ): PlayerSkillLevelDefinition {
+  const maxLevel =
+    getPlayerSkillMaxLevel(skill);
+
+  if (level > maxLevel) {
+    throw new RangeError(
+      `スキル${skill.id}のレベル${level}は最大レベル${maxLevel}を超えています。`
+    );
+  }
+
   return skill.levels[level];
 }
