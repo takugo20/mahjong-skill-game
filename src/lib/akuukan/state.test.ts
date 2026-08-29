@@ -7,6 +7,7 @@ import {
   activateAkuukanEffect,
   advanceAkuukanTurnEffects,
   beginAkuukanTurn,
+  canUseAkuukanSource,
   createInitialAkuukanGameState,
   disableAkuukanSource,
   enableAkuukanSource,
@@ -555,5 +556,96 @@ describe("亜空間麻雀の能力無効化", () => {
         "player-skill:1-1"
       )
     ).toBe(enabled);
+  });
+});
+
+describe("亜空間麻雀の能力使用可否", () => {
+  it("有効かつ未使用なら各範囲で使用できる", () => {
+    const state =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+
+    expect(
+      canUseAkuukanSource(
+        state,
+        "match",
+        "player-skill:1-1"
+      )
+    ).toBe(true);
+    expect(
+      canUseAkuukanSource(
+        state,
+        "round",
+        "player-skill:1-1"
+      )
+    ).toBe(true);
+    expect(
+      canUseAkuukanSource(
+        state,
+        "turn",
+        "player-skill:1-1"
+      )
+    ).toBe(true);
+  });
+
+  it("未使用でも能力元が無効なら使用できない", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const disabled = disableAkuukanSource(
+      initial,
+      "enemy-ability:E-1"
+    );
+
+    expect(
+      canUseAkuukanSource(
+        disabled,
+        "round",
+        "enemy-ability:E-1"
+      )
+    ).toBe(false);
+    expect(
+      isAkuukanSourceUsed(
+        disabled,
+        "round",
+        "enemy-ability:E-1"
+      )
+    ).toBe(false);
+  });
+
+  it("使用済みの範囲だけ使用できない", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createSetup()
+      );
+    const used = markAkuukanSourceUsed(
+      initial,
+      "round",
+      "player-skill:1-1"
+    );
+
+    expect(
+      canUseAkuukanSource(
+        used,
+        "round",
+        "player-skill:1-1"
+      )
+    ).toBe(false);
+    expect(
+      canUseAkuukanSource(
+        used,
+        "match",
+        "player-skill:1-1"
+      )
+    ).toBe(true);
+    expect(
+      canUseAkuukanSource(
+        used,
+        "turn",
+        "player-skill:1-1"
+      )
+    ).toBe(true);
   });
 });
