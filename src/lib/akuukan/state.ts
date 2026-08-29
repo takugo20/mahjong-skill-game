@@ -86,6 +86,50 @@ export function resetAkuukanTurnUsage(
   };
 }
 
+export function advanceAkuukanTurnEffects(
+  state: AkuukanGameState
+): AkuukanGameState {
+  let changed = false;
+
+  const activeEffects =
+    state.activeEffects.flatMap((effect) => {
+      if (effect.remainingTurns === null) {
+        return [effect];
+      }
+
+      changed = true;
+
+      if (effect.remainingTurns <= 1) {
+        return [];
+      }
+
+      return [
+        {
+          ...effect,
+          remainingTurns:
+            effect.remainingTurns - 1
+        }
+      ];
+    });
+
+  if (!changed) {
+    return state;
+  }
+
+  return {
+    ...state,
+    activeEffects
+  };
+}
+
+export function beginAkuukanTurn(
+  state: AkuukanGameState
+): AkuukanGameState {
+  return advanceAkuukanTurnEffects(
+    resetAkuukanTurnUsage(state)
+  );
+}
+
 export function resetAkuukanRoundUsage(
   state: AkuukanGameState
 ): AkuukanGameState {
