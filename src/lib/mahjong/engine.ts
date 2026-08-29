@@ -2008,7 +2008,7 @@ function applyCpuMeldCall(
           calledTile,
           handTiles
         )
-    }    }
+    }
   });
 
   const discardedState = discardTile(
