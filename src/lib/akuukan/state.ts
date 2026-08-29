@@ -149,3 +149,24 @@ export function resetAkuukanRoundUsage(
     }
   };
 }
+
+export function beginAkuukanRound(
+  state: AkuukanGameState
+): AkuukanGameState {
+  const reset = resetAkuukanRoundUsage(
+    state
+  );
+
+  if (reset.nextRoundEffects.length === 0) {
+    return reset;
+  }
+
+  return {
+    ...reset,
+    activeEffects: [
+      ...reset.activeEffects,
+      ...reset.nextRoundEffects
+    ],
+    nextRoundEffects: []
+  };
+}
