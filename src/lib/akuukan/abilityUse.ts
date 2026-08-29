@@ -1,4 +1,8 @@
 import {
+  getPlayerSkillIdFromSourceId,
+  isAkuukanPlayerSkillEquipped
+} from "./equipment";
+import {
   trySpendAkuukanMp
 } from "./mp";
 import {
@@ -20,6 +24,7 @@ export interface AkuukanAbilityUseState {
 
 export type AkuukanAbilityUseFailureReason =
   | "invalidCost"
+  | "skillNotEquipped"
   | "sourceUnavailable"
   | "insufficientMp";
 
@@ -48,6 +53,23 @@ export function tryUseAkuukanAbility<
       state,
       succeeded: false,
       failureReason: "invalidCost"
+    };
+  }
+
+  const playerSkillId =
+    getPlayerSkillIdFromSourceId(sourceId);
+
+  if (
+    playerSkillId !== null &&
+    !isAkuukanPlayerSkillEquipped(
+      state.akuukan,
+      playerSkillId
+    )
+  ) {
+    return {
+      state,
+      succeeded: false,
+      failureReason: "skillNotEquipped"
     };
   }
 
