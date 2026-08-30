@@ -7,6 +7,11 @@ import type {
   AkuukanCallOwner
 } from "../akuukan/callLegality";
 import {
+  activateAkuukanE2DrawRestriction,
+  clearAkuukanE2DrawRestriction,
+  getAkuukanE2LiveWallDrawIndex
+} from "../akuukan/drawTileSelection";
+import {
   areAkuukanDoraIndicatorsVisible
 } from "../akuukan/informationVisibility";
 import type {
@@ -443,16 +448,29 @@ export function drawTile(
     return state;
   }
 
-  const drawnTile = round.liveWall[0];
+  const currentPlayer = round.players[seat];
+  const drawIndex = state.akuukan
+    ? getAkuukanE2LiveWallDrawIndex({
+        akuukan: state.akuukan,
+        playerId: currentPlayer.id,
+        concealedTiles: currentPlayer.hand,
+        melds: currentPlayer.melds,
+        liveWall: round.liveWall
+      })
+    : round.liveWall.length > 0
+      ? 0
+      : null;
+  const drawnTile =
+    drawIndex === null
+      ? undefined
+      : round.liveWall[drawIndex];
 
-  if (!drawnTile) {
+  if (!drawnTile || drawIndex === null) {
     return finishRoundWithExhaustiveDraw(
       state,
       "通常山が尽きたため、荒牌平局です。"
     );
   }
-
-  const currentPlayer = round.players[seat];
 
   const updatedPlayer: PlayerState = {
     ...currentPlayer,
@@ -464,7 +482,7 @@ export function drawTile(
     drawnTileId: drawnTile.id,
     drawnTileSource: "liveWall"
   };
-  
+
   const updatedMp =
     seat === 0
       ? recoverAkuukanMp(
@@ -479,7 +497,10 @@ export function drawTile(
     playerMp: updatedMp,
     round: {
       ...round,
-      liveWall: round.liveWall.slice(1),
+      liveWall: [
+        ...round.liveWall.slice(0, drawIndex),
+        ...round.liveWall.slice(drawIndex + 1)
+      ],
       players: replacePlayer(
         round.players,
         updatedPlayer
@@ -3214,8 +3235,25 @@ function establishCpuRiichi(
     ippatsu: true
   };
 
+  const akuukan = state.akuukan
+    ? activateAkuukanE2DrawRestriction({
+        akuukan: state.akuukan,
+        declarerIsSelectedEnemy:
+          cpuSeat === 2,
+        priorRiichiPlayerIds:
+          state.round.players
+            .filter(
+              (player) =>
+                player.seat !== cpuSeat &&
+                player.riichi
+            )
+            .map((player) => player.id)
+      })
+    : undefined;
+
   return {
     ...state,
+    ...(akuukan ? { akuukan } : {}),
     round: {
       ...state.round,
       players: replacePlayer(
@@ -4641,7 +4679,9 @@ function resolveNextRoundStart(
       ? {
           akuukan:
             beginAkuukanRound(
-              state.akuukan
+              clearAkuukanE2DrawRestriction(
+                state.akuukan
+              )
             )
         }
       : {}),
