@@ -73,8 +73,9 @@ import type {
   CpuSelfKanDecision
 } from "./cpuKan";
 import {
+  chooseCpuPostRiichiDiscard,
   chooseCpuRiichi
-} from "./cpuRiichi";
+} from "./cpuRiichi";;
 import type {
   CpuRiichiDecision
 } from "./cpuRiichi";
@@ -460,10 +461,14 @@ export function discardTile(
 
   const seat = round.currentSeat;
   const currentPlayer = round.players[seat];
+  const canChangeRiichiHand =
+    currentPlayer.riichi &&
+    isNotenRiichiAllowed(state, seat);
 
   if (
     currentPlayer.riichi &&
-    currentPlayer.drawnTileId !== tileId
+    currentPlayer.drawnTileId !== tileId &&
+    !canChangeRiichiHand
   ) {
     return {
       ...state,
@@ -511,7 +516,9 @@ export function discardTile(
   const discard: Discard = {
     tile: discardedTile,
     tsumogiri:
-      currentPlayer.drawnTileId === discardedTile.id,
+      currentPlayer.drawnTileId ===
+        discardedTile.id ||
+      canChangeRiichiHand,
     riichiDeclaration,
     faceDown: false,
     called: false,
@@ -2700,22 +2707,51 @@ function playCpuDiscardingTurn(
     );
   }
 
-  const selectedTile = cpuPlayer.riichi
-    ? cpuPlayer.hand.find(
-        (tile) =>
-          tile.id ===
-          cpuPlayer.drawnTileId
-      ) ??
-      chooseCpuDiscard(
-        cpuPlayer,
-        state.round,
-        random
-      )
-    : chooseCpuDiscard(
-        cpuPlayer,
-        state.round,
-        random
-      );
+  const postRiichiDiscardDecision =
+    cpuPlayer.riichi &&
+    isNotenRiichiAllowed(
+      state,
+      cpuSeat
+    )
+      ? chooseCpuPostRiichiDiscard({
+          player: cpuPlayer,
+          doraIndicators:
+            getDoraIndicators(
+              state.round
+            ),
+          visibleTiles:
+            getVisibleTilesForCpuRiichi(
+              state
+            )
+        })
+      : null;
+  const postRiichiSelectedTile =
+    postRiichiDiscardDecision
+      ? cpuPlayer.hand.find(
+          (tile) =>
+            tile.id ===
+            postRiichiDiscardDecision
+              .discardTileId
+        )
+      : undefined;
+  const selectedTile =
+    postRiichiSelectedTile ??
+    (cpuPlayer.riichi
+      ? cpuPlayer.hand.find(
+          (tile) =>
+            tile.id ===
+            cpuPlayer.drawnTileId
+        ) ??
+        chooseCpuDiscard(
+          cpuPlayer,
+          state.round,
+          random
+        )
+      : chooseCpuDiscard(
+          cpuPlayer,
+          state.round,
+          random
+        ));
 
   return discardTile(
     state,
