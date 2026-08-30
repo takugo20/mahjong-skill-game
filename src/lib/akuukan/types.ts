@@ -1,3 +1,7 @@
+import type {
+  NormalYakuId
+} from "../mahjong/yaku";
+
 export const PLAYER_SKILL_IDS = [
   "1-1",
   "1-2",
@@ -228,6 +232,8 @@ export interface AkuukanUsageState {
 
 export interface AkuukanGameState {
   setup: AkuukanMatchSetup;
+  e6LastWinningNormalYakuIds?:
+    NormalYakuId[];
   disabledSources:
     AkuukanEffectSourceId[];
   activeEffects:
