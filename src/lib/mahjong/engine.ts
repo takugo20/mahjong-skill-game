@@ -2778,7 +2778,13 @@ function getCpuSelfKanDecision(
       state.round.rinshanDrawCount,
     liveWallTileCount:
       state.round.liveWall.length
-  });
+  }).filter((option) =>
+    isCallAllowed(
+      state,
+      cpuSeat,
+      option.kind
+    )
+  );
 
   return chooseCpuSelfKan({
     player: cpuPlayer,
@@ -3885,7 +3891,13 @@ export function getPlayerSelfKanOptions(
       state.round.rinshanDrawCount,
     liveWallTileCount:
       state.round.liveWall.length
-  });
+  }).filter((option) =>
+    isCallAllowed(
+      state,
+      0,
+      option.kind
+    )
+  );
 }
 
 export function declarePlayerSelfKan(
