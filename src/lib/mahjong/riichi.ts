@@ -19,6 +19,7 @@ export interface RiichiCheckInput {
   score: number;
   liveWallTileCount: number;
   alreadyRiichi: boolean;
+  allowOpenHand?: boolean;
 }
 
 function hasDiscardTurnTileCount(
@@ -50,7 +51,10 @@ function meetsBaseRiichiConditions(
     ) &&
     input.liveWallTileCount >=
       MIN_LIVE_WALL_TILES_FOR_RIICHI &&
-    isClosedHand(input.melds) &&
+    (
+      isClosedHand(input.melds) ||
+      input.allowOpenHand === true
+    ) &&
     hasDiscardTurnTileCount(
       input.concealedTiles,
       input.melds
