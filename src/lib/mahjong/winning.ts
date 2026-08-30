@@ -92,6 +92,8 @@ export interface WinningHandCandidate {
   waitType: WaitType;
   isYakuman: boolean;
   normalYaku: NormalYakuResult[];
+  evaluatedNormalYaku:
+    NormalYakuResult[];
   yakuman: YakumanResult[];
   dora: DoraCalculationResult;
   yakuHan: number;
@@ -299,6 +301,9 @@ export function evaluateWinningHand(
       ];
 
       if (yakuman.length > 0) {
+        const evaluatedNormalYaku = [
+          ...yakuEvaluation.normalYaku
+        ];
         const yakumanMultiplier =
           getYakumanMultiplier(
             yakuman
@@ -325,6 +330,7 @@ export function evaluateWinningHand(
           waitType,
           isYakuman: true,
           normalYaku: [],
+          evaluatedNormalYaku,
           yakuman,
           dora,
           yakuHan: 0,
@@ -385,6 +391,8 @@ export function evaluateWinningHand(
         waitType,
         isYakuman: false,
         normalYaku,
+        evaluatedNormalYaku:
+          normalYaku,
         yakuman: [],
         dora,
         yakuHan,
