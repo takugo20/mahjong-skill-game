@@ -20,6 +20,7 @@ export interface RiichiCheckInput {
   liveWallTileCount: number;
   alreadyRiichi: boolean;
   allowOpenHand?: boolean;
+  riichiProhibited?: boolean;
 }
 
 function hasDiscardTurnTileCount(
@@ -43,6 +44,7 @@ function meetsBaseRiichiConditions(
   input: RiichiCheckInput
 ): boolean {
   return (
+    input.riichiProhibited !== true &&
     input.alreadyRiichi === false &&
     Number.isInteger(input.score) &&
     input.score >= RIICHI_DEPOSIT &&
