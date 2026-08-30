@@ -20,6 +20,7 @@ export interface RiichiCheckInput {
   liveWallTileCount: number;
   alreadyRiichi: boolean;
   allowOpenHand?: boolean;
+  allowNoten?: boolean;
   riichiProhibited?: boolean;
 }
 
@@ -78,6 +79,12 @@ export function getRiichiDiscardTileIds(
 ): string[] {
   if (!meetsBaseRiichiConditions(input)) {
     return [];
+  }
+
+  if (input.allowNoten === true) {
+    return input.concealedTiles.map(
+      (tile) => tile.id
+    );
   }
 
   return input.concealedTiles.flatMap(
