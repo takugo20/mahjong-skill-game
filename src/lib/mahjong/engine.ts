@@ -1,4 +1,5 @@
 import {
+  getAkuukanCallDeposit,
   isAkuukanCallAllowed
 } from "../akuukan/callLegality";
 import type {
@@ -1685,6 +1686,53 @@ function isCallAllowed(
   );
 }
 
+function applyCallDeposit(
+  state: GameState,
+  seat: SeatIndex,
+  kind: AkuukanCallKind
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  const caller =
+    state.round.players[seat];
+
+  if (!caller) {
+    return state;
+  }
+
+  const deposit = getAkuukanCallDeposit({
+    akuukan: state.akuukan,
+    owner: getAkuukanCallOwner(seat),
+    kind,
+    score: caller.score
+  });
+
+  if (deposit === 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: state.round.players.map(
+        (player): PlayerState =>
+          player.seat === seat
+            ? {
+                ...player,
+                score:
+                  player.score - deposit
+              }
+            : player
+      ),
+      riichiPool:
+        state.round.riichiPool + deposit
+    }
+  };
+}
+
 function createPlayerMeldCallOptions(
   state: GameState
 ): MeldCallOption[] {
@@ -2188,26 +2236,32 @@ function applyCpuMeldCall(
       }
     );
 
-  const callState = beginAkuukanTurnState({
-    ...state,
-    round: {
-      ...state.round,
-      players: updatedPlayers,
-      currentSeat: option.callerSeat,
-      phase: "discarding",
-      lastDiscard: {
-        seat: lastDiscard.seat,
-        discard: calledDiscard
+  const callState = beginAkuukanTurnState(
+    applyCallDeposit(
+      {
+        ...state,
+        round: {
+          ...state.round,
+          players: updatedPlayers,
+          currentSeat: option.callerSeat,
+          phase: "discarding",
+          lastDiscard: {
+            seat: lastDiscard.seat,
+            discard: calledDiscard
+          },
+          meldCallOptions: [],
+          meldCallDiscardRestriction:
+            createMeldCallDiscardRestriction(
+              option,
+              calledTile,
+              handTiles
+            )
+        }
       },
-      meldCallOptions: [],
-      meldCallDiscardRestriction:
-        createMeldCallDiscardRestriction(
-          option,
-          calledTile,
-          handTiles
-        )
-    }
-  });
+      option.callerSeat,
+      option.kind
+    )
+  );
 
   const discardedState = discardTile(
     callState,
@@ -2272,15 +2326,21 @@ function applyCpuOpenKanCall(
     },
     option
   });
-  const kanState = beginAkuukanTurnState({
-    ...state,
-    round: execution.round,
-    notice:
-      `${caller.name}が大明槓し、` +
-      `${getTileLabel(
-        execution.rinshanTile
-      )}を嶺上牌としてツモりました。`
-  });
+  const kanState = beginAkuukanTurnState(
+    applyCallDeposit(
+      {
+        ...state,
+        round: execution.round,
+        notice:
+          `${caller.name}が大明槓し、` +
+          `${getTileLabel(
+            execution.rinshanTile
+          )}を嶺上牌としてツモりました。`
+      },
+      option.callerSeat,
+      "openKan"
+    )
+  );
   
   const cpuTsumoState =
     finishCpuTsumoIfAvailable(
@@ -2509,29 +2569,35 @@ export function declarePlayerMeldCall(
       ? "ポン"
       : "チー";
 
-  return beginAkuukanTurnState({
-    ...callState,
-    round: {
-      ...callState.round,
-      players: updatedPlayers,
-      currentSeat: 0,
-      phase: "discarding",
-      lastDiscard: {
-        seat: lastDiscard.seat,
-        discard: calledDiscard
+  return beginAkuukanTurnState(
+    applyCallDeposit(
+      {
+        ...callState,
+        round: {
+          ...callState.round,
+          players: updatedPlayers,
+          currentSeat: 0,
+          phase: "discarding",
+          lastDiscard: {
+            seat: lastDiscard.seat,
+            discard: calledDiscard
+          },
+          meldCallOptions: [],
+          meldCallDiscardRestriction:
+            createMeldCallDiscardRestriction(
+              option,
+              calledTile,
+              handTiles
+            )
+        },
+        notice:
+          `${actionLabel}しました。` +
+          "捨てる牌を選んでください。"
       },
-      meldCallOptions: [],
-      meldCallDiscardRestriction:
-        createMeldCallDiscardRestriction(
-          option,
-          calledTile,
-          handTiles
-        )
-    },
-    notice:
-      `${actionLabel}しました。` +
-      "捨てる牌を選んでください。"
-  });
+      0,
+      option.kind
+    )
+  );
 }
 
 export function declarePlayerOpenKan(
@@ -2589,15 +2655,21 @@ export function declarePlayerOpenKan(
     round: callState.round,
     option
   });
-  const kanState = beginAkuukanTurnState({
-    ...callState,
-    round: execution.round,
-    notice:
-      "大明槓が成立し、" +
-      `${getTileLabel(
-        execution.rinshanTile
-      )}を嶺上牌としてツモりました。`
-  });
+  const kanState = beginAkuukanTurnState(
+    applyCallDeposit(
+      {
+        ...callState,
+        round: execution.round,
+        notice:
+          "大明槓が成立し、" +
+          `${getTileLabel(
+            execution.rinshanTile
+          )}を嶺上牌としてツモりました。`
+      },
+      0,
+      "openKan"
+    )
+  );
 
   return kanState;
 }
