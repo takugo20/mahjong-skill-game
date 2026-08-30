@@ -8,6 +8,7 @@ import {
 } from "./winning";
 import type {
   ValidWinningHandEvaluation,
+  WinningCandidateYakuEvaluator,
   WinningHandEvaluationResult
 } from "./winning";
 import type {
@@ -16,6 +17,12 @@ import type {
   Tile,
   TileSuit
 } from "./types";
+import {
+  evaluateNormalYaku
+} from "./yaku";
+import {
+  evaluateYakuman
+} from "./yakuman";
 
 let serialNumber = 0;
 
@@ -65,6 +72,30 @@ function requireValid(
 
   return result;
 }
+
+const evaluateWithSevenPairsDisabled:
+  WinningCandidateYakuEvaluator = (
+    context
+  ) => {
+    const normalYaku =
+      evaluateNormalYaku(context).filter(
+        (yaku) => yaku.id !== "sevenPairs"
+      );
+    const yakuman =
+      evaluateYakuman(context);
+    const hasValidWinningShape =
+      context.decomposition.kind !==
+      "sevenPairs";
+
+    return {
+      normalYaku,
+      yakuman,
+      hasValidYaku:
+        hasValidWinningShape &&
+        (normalYaku.length > 0 ||
+          yakuman.length > 0)
+    };
+  };
 
 describe("通常和了の総合判定", () => {
   it("役・ドラ・符・点数をまとめて計算する", () => {
@@ -274,6 +305,104 @@ describe("通常和了の総合判定", () => {
     expect(result.candidates[0]).toBe(
       result.best
     );
+  });
+});
+
+describe("差し替え可能な役判定", () => {
+  it("七対子形が無効なら門前清自摸和が残っても和了不可にする", () => {
+    const hand = [
+      ...createTiles(
+        "man",
+        [1, 1, 2, 2]
+      ),
+      ...createTiles(
+        "pin",
+        [3, 3, 4, 4]
+      ),
+      ...createTiles(
+        "sou",
+        [5, 5, 6, 6]
+      ),
+      ...createTiles(
+        "honor",
+        [1, 1]
+      )
+    ];
+
+    const result = evaluateWinningHand({
+      concealedTiles: hand,
+      winningTile: {
+        suit: "honor",
+        rank: 1
+      },
+      winMethod: "tsumo",
+      seatWind: "south",
+      prevailingWind: "east",
+      candidateYakuEvaluator:
+        evaluateWithSevenPairsDisabled
+    });
+
+    expect(result).toEqual({
+      valid: false,
+      reason: "noYaku",
+      candidates: []
+    });
+  });
+
+  it("七対子形が無効でも通常形が有効なら通常形を採用する", () => {
+    const hand = [
+      ...createTiles(
+        "man",
+        [
+          1, 1,
+          2, 2,
+          3, 3
+        ]
+      ),
+      ...createTiles(
+        "pin",
+        [
+          4, 4,
+          5, 5,
+          6, 6
+        ]
+      ),
+      ...createTiles(
+        "honor",
+        [7, 7]
+      )
+    ];
+
+    const result = requireValid(
+      evaluateWinningHand({
+        concealedTiles: hand,
+        winningTile: {
+          suit: "honor",
+          rank: 7
+        },
+        winMethod: "ron",
+        seatWind: "south",
+        prevailingWind: "east",
+        candidateYakuEvaluator:
+          evaluateWithSevenPairsDisabled
+      })
+    );
+
+    expect(
+      result.candidates.every(
+        (candidate) =>
+          candidate.decomposition.kind ===
+          "standard"
+      )
+    ).toBe(true);
+    expect(
+      result.best.decomposition.kind
+    ).toBe("standard");
+    expect(
+      result.best.normalYaku.map(
+        (yaku) => yaku.id
+      )
+    ).toContain("ryanpeikou");
   });
 });
 
