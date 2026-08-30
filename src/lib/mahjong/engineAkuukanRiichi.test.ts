@@ -336,6 +336,91 @@ function createSelectedEnemyNotenRiichiTurn(
   };
 }
 
+function createSelectedEnemyPostRiichiTurn(
+  enemyId: AkuukanMatchSetup["enemyId"]
+): {
+  state: GameState;
+  playerDiscard: Tile;
+  isolatedPinNine: Tile;
+  selectedEnemyDraw: Tile;
+} {
+  const state = createInitialGameState(
+    () => 0.5,
+    {
+      enemyId,
+      equippedSkills: []
+    }
+  );
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const isolatedPinNine = createTile(
+    "pin",
+    9
+  );
+  const selectedEnemyDraw = createTile(
+    "man",
+    4
+  );
+  const handBeforeDraw = [
+    ...createTiles("man", [1, 2, 3, 5]),
+    ...createTiles("pin", [1, 2, 3]),
+    isolatedPinNine,
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1])
+  ];
+  const declarationDiscard = {
+    ...createDiscard(
+      createTile("honor", 5)
+    ),
+    riichiDeclaration: true
+  };
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [playerDiscard],
+    melds: [],
+    discards: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+
+  for (const seat of [1, 2, 3] as const) {
+    setEmptyCpu(state, seat);
+  }
+
+  state.round.players[2] = {
+    ...state.round.players[2],
+    hand: handBeforeDraw,
+    melds: [],
+    discards: [declarationDiscard],
+    riichi: true,
+    doubleRiichi: true,
+    ippatsu: true,
+    score: 24000,
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.liveWall = [
+    createTile("honor", 6),
+    selectedEnemyDraw,
+    ...createTiles(
+      "pin",
+      [7, 8, 9, 7, 8, 9]
+    )
+  ];
+
+  return {
+    state,
+    playerDiscard,
+    isolatedPinNine,
+    selectedEnemyDraw
+  };
+}
+
 describe("亜空間麻雀の副露立直", () => {
   it("2-7装備中のプレイヤーへ立直候補を返す", () => {
     const state =
@@ -556,5 +641,84 @@ describe("E-4のノーテン立直", () => {
     expect(
       result.round.players[2].riichi
     ).toBe(false);
+  });
+});
+
+describe("E-4の立直後手替わり", () => {
+  it("敵2は有効なツモ牌を残して手出しをツモ切り表示にする", () => {
+    const {
+      state,
+      playerDiscard,
+      isolatedPinNine,
+      selectedEnemyDraw
+    } =
+      createSelectedEnemyPostRiichiTurn(
+        "enemy-2"
+      );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+    const selectedEnemy =
+      result.round.players[2];
+    const latestDiscard =
+      selectedEnemy.discards[
+        selectedEnemy.discards.length - 1
+      ];
+
+    expect(latestDiscard.tile.id).toBe(
+      isolatedPinNine.id
+    );
+    expect(latestDiscard.tile.id).not.toBe(
+      selectedEnemyDraw.id
+    );
+    expect(latestDiscard.tsumogiri).toBe(
+      true
+    );
+    expect(
+      selectedEnemy.hand.some(
+        (tile) =>
+          tile.id === selectedEnemyDraw.id
+      )
+    ).toBe(true);
+  });
+
+  it("E-4を持たない立直済みCPUは従来どおりツモ切りする", () => {
+    const {
+      state,
+      playerDiscard,
+      isolatedPinNine,
+      selectedEnemyDraw
+    } =
+      createSelectedEnemyPostRiichiTurn(
+        "enemy-1"
+      );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+    const selectedEnemy =
+      result.round.players[2];
+    const latestDiscard =
+      selectedEnemy.discards[
+        selectedEnemy.discards.length - 1
+      ];
+
+    expect(latestDiscard.tile.id).toBe(
+      selectedEnemyDraw.id
+    );
+    expect(latestDiscard.tsumogiri).toBe(
+      true
+    );
+    expect(
+      selectedEnemy.hand.some(
+        (tile) =>
+          tile.id === isolatedPinNine.id
+      )
+    ).toBe(true);
   });
 });
