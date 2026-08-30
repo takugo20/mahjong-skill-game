@@ -52,6 +52,39 @@ function createRiichiHand(): Tile[] {
   ];
 }
 
+function createOneShantenHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3, 5]),
+    ...createTiles("pin", [1, 2, 3, 9]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1, 2])
+  ];
+}
+
+function createTwoShantenHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3, 5]),
+    ...createTiles("pin", [1, 2, 3, 9]),
+    ...createTiles("sou", [1, 2]),
+    ...createTiles(
+      "honor",
+      [1, 1, 2, 3]
+    )
+  ];
+}
+
+function createFarFromTenpaiHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 4, 7]),
+    ...createTiles("pin", [1, 4, 7]),
+    ...createTiles("sou", [1, 4, 7]),
+    ...createTiles(
+      "honor",
+      [1, 2, 3, 4, 5]
+    )
+  ];
+}
+
 function createCpuPlayer(
   hand: Tile[]
 ): PlayerState {
@@ -246,6 +279,139 @@ describe("CPUの立直判断", () => {
           drawnTileId: null
         })
       )
+    ).toBeNull();
+  });
+});
+
+describe("E-4のノーテン立直判断", () => {
+  it("一向聴なら90パーセントで立直する", () => {
+    const hand = createOneShantenHand();
+    const player = createCpuPlayer(hand);
+    const createInput = (
+      randomValue: number
+    ) => ({
+      player,
+      riichiDiscardTileIds:
+        hand.map((tile) => tile.id),
+      doraIndicators: [],
+      allowNotenRiichi: true,
+      random: () => randomValue
+    });
+    const result = chooseCpuRiichi(
+      createInput(0.899999)
+    );
+
+    expect(result).toMatchObject({
+      shanten: 1,
+      waitTileTypes: [],
+      remainingWinningTileCount: 0
+    });
+    expect(
+      result?.remainingImprovingTileCount
+    ).toBeGreaterThan(0);
+    expect(
+      chooseCpuRiichi(
+        createInput(0.9)
+      )
+    ).toBeNull();
+  });
+
+  it("二向聴は序盤なら50パーセントで立直する", () => {
+    const hand = createTwoShantenHand();
+    const player = createCpuPlayer(hand);
+
+    player.discards = Array.from(
+      { length: 5 },
+      () => ({
+        tile: createTile("honor", 7),
+        tsumogiri: false,
+        riichiDeclaration: false,
+        faceDown: false,
+        called: false
+      })
+    );
+
+    const createInput = (
+      randomValue: number
+    ) => ({
+      player,
+      riichiDiscardTileIds:
+        hand.map((tile) => tile.id),
+      doraIndicators: [],
+      allowNotenRiichi: true,
+      random: () => randomValue
+    });
+
+    expect(
+      chooseCpuRiichi(
+        createInput(0.499999)
+      )
+    ).toMatchObject({
+      shanten: 2
+    });
+    expect(
+      chooseCpuRiichi(
+        createInput(0.5)
+      )
+    ).toBeNull();
+  });
+
+  it("二向聴でも第7打以降は立直しない", () => {
+    const hand = createTwoShantenHand();
+    const player = createCpuPlayer(hand);
+
+    player.discards = Array.from(
+      { length: 6 },
+      () => ({
+        tile: createTile("honor", 7),
+        tsumogiri: false,
+        riichiDeclaration: false,
+        faceDown: false,
+        called: false
+      })
+    );
+
+    expect(
+      chooseCpuRiichi({
+        player,
+        riichiDiscardTileIds:
+          hand.map((tile) => tile.id),
+        doraIndicators: [],
+        allowNotenRiichi: true,
+        random: () => 0
+      })
+    ).toBeNull();
+  });
+
+  it("三向聴以上では立直しない", () => {
+    const hand =
+      createFarFromTenpaiHand();
+    const player = createCpuPlayer(hand);
+
+    expect(
+      chooseCpuRiichi({
+        player,
+        riichiDiscardTileIds:
+          hand.map((tile) => tile.id),
+        doraIndicators: [],
+        allowNotenRiichi: true,
+        random: () => 0
+      })
+    ).toBeNull();
+  });
+
+  it("E-4の許可がなければノーテン立直しない", () => {
+    const hand = createOneShantenHand();
+    const player = createCpuPlayer(hand);
+
+    expect(
+      chooseCpuRiichi({
+        player,
+        riichiDiscardTileIds:
+          hand.map((tile) => tile.id),
+        doraIndicators: [],
+        random: () => 0
+      })
     ).toBeNull();
   });
 });
