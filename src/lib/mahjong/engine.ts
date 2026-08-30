@@ -7,6 +7,9 @@ import type {
   AkuukanCallOwner
 } from "../akuukan/callLegality";
 import {
+  applyAkuukanE12AfterCall
+} from "../akuukan/callEffects";
+import {
   activateAkuukanE2DrawRestriction,
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex
@@ -1791,6 +1794,54 @@ function applyCallDeposit(
   };
 }
 
+function applyCallAfterEffects(
+  state: GameState,
+  seat: SeatIndex,
+  kind: AkuukanCallKind
+): GameState {
+  const stateAfterDeposit =
+    applyCallDeposit(
+      state,
+      seat,
+      kind
+    );
+
+  if (!stateAfterDeposit.akuukan) {
+    return stateAfterDeposit;
+  }
+
+  const caller =
+    stateAfterDeposit.round.players[seat];
+
+  if (!caller) {
+    return stateAfterDeposit;
+  }
+
+  const e12Result =
+    applyAkuukanE12AfterCall({
+      akuukan: stateAfterDeposit.akuukan,
+      callerIsSelectedEnemy:
+        getAkuukanCallOwner(seat) ===
+        "selectedEnemy",
+      kind,
+      callerId: caller.id,
+      players:
+        stateAfterDeposit.round.players
+    });
+
+  if (!e12Result) {
+    return stateAfterDeposit;
+  }
+
+  return {
+    ...stateAfterDeposit,
+    round: {
+      ...stateAfterDeposit.round,
+      players: e12Result.players
+    }
+  };
+}
+
 function createPlayerMeldCallOptions(
   state: GameState
 ): MeldCallOption[] {
@@ -2295,7 +2346,7 @@ function applyCpuMeldCall(
     );
 
   const callState = beginAkuukanTurnState(
-    applyCallDeposit(
+    applyCallAfterEffects(
       {
         ...state,
         round: {
@@ -2385,7 +2436,7 @@ function applyCpuOpenKanCall(
     option
   });
   const kanState = beginAkuukanTurnState(
-    applyCallDeposit(
+    applyCallAfterEffects(
       {
         ...state,
         round: execution.round,
@@ -2631,7 +2682,7 @@ export function declarePlayerMeldCall(
       : "チー";
 
   return beginAkuukanTurnState(
-    applyCallDeposit(
+    applyCallAfterEffects(
       {
         ...callState,
         round: {
@@ -2717,7 +2768,7 @@ export function declarePlayerOpenKan(
     option
   });
   const kanState = beginAkuukanTurnState(
-    applyCallDeposit(
+    applyCallAfterEffects(
       {
         ...callState,
         round: execution.round,
