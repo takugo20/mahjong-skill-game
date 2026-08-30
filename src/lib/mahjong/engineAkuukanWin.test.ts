@@ -9,8 +9,11 @@ import type {
 import {
   canPlayerTsumo,
   createInitialGameState,
+  declarePlayerRon,
   declarePlayerTsumo,
-  getRonCandidates
+  getRonCandidates,
+  playPlayerDiscard,
+  skipPlayerRon
 } from "./engine";
 import type {
   Discard,
@@ -345,6 +348,186 @@ describe("ゲーム本体の亜空間和了判定", () => {
       candidate?.evaluation.best.score
         .totalPoints
     ).toBe(2000);
+
+    const result = skipPlayerRon(state);
+
+    expect(result.round.winResult).toMatchObject({
+      winnerSeat: 2,
+      loserSeat: 1,
+      han: 2,
+      fu: 30,
+      totalPoints: 2000
+    });
+    expect(
+      result.akuukan
+        ?.e6LastWinningNormalYakuIds
+    ).toEqual(["pinfu"]);
+  });
+
+  it("E-6の履歴を能力者CPUを含むダブロン後に更新する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-3",
+        equippedSkills: []
+      },
+      1
+    );
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態が初期化されていません。"
+      );
+    }
+
+    state.akuukan = {
+      ...state.akuukan,
+      e6LastWinningNormalYakuIds: [
+        "tanyao"
+      ]
+    };
+    setPlayerHand(
+      state,
+      2,
+      createPinfuWaitHand()
+    );
+    setPlayerHand(
+      state,
+      3,
+      createPinfuWaitHand()
+    );
+
+    const result = skipPlayerRon(state);
+
+    expect(
+      result.round.doubleRonResult
+        ?.winResults.map(
+          (winResult) =>
+            winResult.winnerSeat
+        )
+    ).toEqual([2, 3]);
+    expect(
+      result.akuukan
+        ?.e6LastWinningNormalYakuIds
+    ).toEqual(["pinfu"]);
+  });
+
+  it("三家和ではE-6の履歴を更新しない", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-3",
+        equippedSkills: []
+      },
+      1
+    );
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態が初期化されていません。"
+      );
+    }
+
+    state.akuukan = {
+      ...state.akuukan,
+      e6LastWinningNormalYakuIds: [
+        "tanyao"
+      ]
+    };
+    setPlayerHand(
+      state,
+      0,
+      createPinfuWaitHand()
+    );
+    setPlayerHand(
+      state,
+      2,
+      createPinfuWaitHand()
+    );
+    setPlayerHand(
+      state,
+      3,
+      createPinfuWaitHand()
+    );
+
+    const result =
+      declarePlayerRon(state);
+
+    expect(
+      result.round.abortiveDrawResult
+    ).toMatchObject({
+      reason: "tripleRon"
+    });
+    expect(
+      result.akuukan
+        ?.e6LastWinningNormalYakuIds
+    ).toEqual(["tanyao"]);
+  });
+
+  it("能力者CPUの流し満貫後にE-6の通常役履歴を空にする", () => {
+    const state = createBaseState({
+      enemyId: "enemy-3",
+      equippedSkills: []
+    });
+    const finalDiscard =
+      createTile("honor", 7);
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態が初期化されていません。"
+      );
+    }
+
+    state.akuukan = {
+      ...state.akuukan,
+      e6LastWinningNormalYakuIds: [
+        "pinfu"
+      ]
+    };
+    state.round.liveWall = [];
+    setPlayerHand(
+      state,
+      0,
+      [finalDiscard]
+    );
+    state.round.players[0] = {
+      ...state.round.players[0],
+      discards: [
+        createDiscard(
+          createTile("man", 5)
+        )
+      ],
+      drawnTileId: finalDiscard.id,
+      drawnTileSource: "liveWall"
+    };
+    setPlayerHand(state, 1, []);
+    setPlayerHand(state, 2, []);
+    setPlayerHand(state, 3, []);
+    state.round.players[2].discards = [
+      createDiscard(
+        createTile("pin", 9)
+      )
+    ];
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.lastDiscard = null;
+
+    const result = playPlayerDiscard(
+      state,
+      finalDiscard.id,
+      () => 0.5
+    );
+
+    expect(
+      result.round.nagashiManganResult
+        ?.winnerSeats
+    ).toEqual([2]);
+    expect(
+      result.akuukan
+        ?.e6LastWinningNormalYakuIds
+    ).toEqual([]);
   });
 
   it("E-17を通常CPUだけに適用して能力者CPUには適用しない", () => {
