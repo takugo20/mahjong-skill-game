@@ -3,6 +3,10 @@ import {
   expect,
   it
 } from "vitest";
+import type {
+  Tile,
+  TileSuit
+} from "../mahjong/types";
 import {
   createInitialAkuukanGameState,
   disableAkuukanSource
@@ -14,9 +18,58 @@ import type {
 import {
   activateAkuukanE2DrawRestriction,
   clearAkuukanE2DrawRestriction,
+  getAkuukanE2LiveWallDrawIndex,
   getAkuukanE2RestrictedPlayerIds,
   isAkuukanE2DrawRestricted
 } from "./drawTileSelection";
+
+let serialNumber = 0;
+
+function createTile(
+  suit: TileSuit,
+  rank: number,
+  red = false
+): Tile {
+  serialNumber += 1;
+
+  return {
+    id:
+      `e2-draw-selection-` +
+      serialNumber,
+    suit,
+    rank,
+    red
+  };
+}
+
+function createTiles(
+  suit: TileSuit,
+  ranks: readonly number[]
+): Tile[] {
+  return ranks.map(
+    (rank) => createTile(suit, rank)
+  );
+}
+
+function createSingleWaitHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3]),
+    ...createTiles("pin", [1, 2, 3]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1, 1]),
+    createTile("pin", 5)
+  ];
+}
+
+function createTwoSidedWaitHand(): Tile[] {
+  return [
+    ...createTiles("pin", [1, 2, 3]),
+    ...createTiles("pin", [4, 5, 6]),
+    ...createTiles("sou", [7, 8, 9]),
+    ...createTiles("honor", [5, 5]),
+    ...createTiles("man", [2, 3])
+  ];
+}
 
 function createAkuukan(
   enemyId: EnemyId = "enemy-1"
@@ -206,5 +259,147 @@ describe("E-2のツモ制限対象記録", () => {
       )
     ).toEqual([]);
     expect(duplicateClear).toBe(cleared);
+  });
+});
+
+describe("E-2の通常山ツモ候補除外", () => {
+  it("通常山が空なら選択位置を返さない", () => {
+    const akuukan = activateE2(
+      createAkuukan(),
+      ["player-0"]
+    );
+
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan,
+        playerId: "player-0",
+        concealedTiles:
+          createSingleWaitHand(),
+        melds: [],
+        liveWall: []
+      })
+    ).toBeNull();
+  });
+
+  it("制限対象外なら和了牌が先頭でも通常どおり選ぶ", () => {
+    const akuukan = activateE2(
+      createAkuukan(),
+      ["player-0"]
+    );
+
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan,
+        playerId: "player-3",
+        concealedTiles:
+          createSingleWaitHand(),
+        melds: [],
+        liveWall: [
+          createTile("pin", 5),
+          createTile("man", 9)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("単騎待ちの通常牌と赤牌を飛ばして別の牌を選ぶ", () => {
+    const akuukan = activateE2(
+      createAkuukan(),
+      ["player-0"]
+    );
+
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan,
+        playerId: "player-0",
+        concealedTiles:
+          createSingleWaitHand(),
+        melds: [],
+        liveWall: [
+          createTile("pin", 5),
+          createTile("pin", 5, true),
+          createTile("man", 9)
+        ]
+      })
+    ).toBe(2);
+  });
+
+  it("複数の和了牌をすべて飛ばして別の牌を選ぶ", () => {
+    const akuukan = activateE2(
+      createAkuukan(),
+      ["player-0"]
+    );
+
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan,
+        playerId: "player-0",
+        concealedTiles:
+          createTwoSidedWaitHand(),
+        melds: [],
+        liveWall: [
+          createTile("man", 1),
+          createTile("man", 4),
+          createTile("honor", 7)
+        ]
+      })
+    ).toBe(2);
+  });
+
+  it("通常山の候補がすべて和了牌ならそのツモだけ不発にする", () => {
+    const akuukan = activateE2(
+      createAkuukan(),
+      ["player-0"]
+    );
+
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan,
+        playerId: "player-0",
+        concealedTiles:
+          createSingleWaitHand(),
+        melds: [],
+        liveWall: [
+          createTile("pin", 5),
+          createTile("pin", 5, true)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("聴牌していないかE-2が無効なら先頭を選ぶ", () => {
+    const activated = activateE2(
+      createAkuukan(),
+      ["player-0"]
+    );
+    const disabled = disableAkuukanSource(
+      activated,
+      "enemy-ability:E-2"
+    );
+    const liveWall = [
+      createTile("pin", 5),
+      createTile("man", 9)
+    ];
+
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan: activated,
+        playerId: "player-0",
+        concealedTiles:
+          createTiles("man", [1, 2, 4]),
+        melds: [],
+        liveWall
+      })
+    ).toBe(0);
+    expect(
+      getAkuukanE2LiveWallDrawIndex({
+        akuukan: disabled,
+        playerId: "player-0",
+        concealedTiles:
+          createSingleWaitHand(),
+        melds: [],
+        liveWall
+      })
+    ).toBe(0);
   });
 });
