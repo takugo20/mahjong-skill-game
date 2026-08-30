@@ -65,6 +65,15 @@ function createClosedRiichiHand(): Tile[] {
   ];
 }
 
+function createOneShantenHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3, 5]),
+    ...createTiles("pin", [1, 2, 3, 9]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1, 2])
+  ];
+}
+
 function createOpenMeld(): Meld {
   return {
     kind: "chi",
@@ -264,6 +273,69 @@ function createClosedCpuRiichiTurn(
   };
 }
 
+function createSelectedEnemyNotenRiichiTurn(
+  enemyId: AkuukanMatchSetup["enemyId"]
+): {
+  state: GameState;
+  playerDiscard: Tile;
+} {
+  const state = createInitialGameState(
+    () => 0.5,
+    {
+      enemyId,
+      equippedSkills: []
+    }
+  );
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const completeHand =
+    createOneShantenHand();
+  const selectedEnemyDraw =
+    completeHand[13];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [playerDiscard],
+    melds: [],
+    discards: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+
+  for (const seat of [1, 2, 3] as const) {
+    setEmptyCpu(state, seat);
+  }
+
+  state.round.players[2] = {
+    ...state.round.players[2],
+    hand: completeHand.slice(0, -1),
+    melds: [],
+    discards: [],
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.liveWall = [
+    createTile("honor", 6),
+    selectedEnemyDraw,
+    ...createTiles(
+      "pin",
+      [7, 8, 9, 7, 8, 9]
+    )
+  ];
+
+  return {
+    state,
+    playerDiscard
+  };
+}
+
 describe("亜空間麻雀の副露立直", () => {
   it("2-7装備中のプレイヤーへ立直候補を返す", () => {
     const state =
@@ -427,5 +499,62 @@ describe("亜空間麻雀の副露立直", () => {
     expect(
       result.round.players[2].riichi
     ).toBe(true);
+  });
+});
+
+describe("E-4のノーテン立直", () => {
+  it("敵2本人は一向聴からノーテン立直する", () => {
+    const {
+      state,
+      playerDiscard
+    } =
+      createSelectedEnemyNotenRiichiTurn(
+        "enemy-2"
+      );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+    const selectedEnemy =
+      result.round.players[2];
+
+    expect(selectedEnemy.riichi).toBe(
+      true
+    );
+    expect(
+      selectedEnemy.doubleRiichi
+    ).toBe(true);
+    expect(selectedEnemy.ippatsu).toBe(
+      true
+    );
+    expect(selectedEnemy.score).toBe(
+      24000
+    );
+    expect(
+      selectedEnemy.discards[0]
+        .riichiDeclaration
+    ).toBe(true);
+  });
+
+  it("E-4を持たない敵はノーテン立直しない", () => {
+    const {
+      state,
+      playerDiscard
+    } =
+      createSelectedEnemyNotenRiichiTurn(
+        "enemy-1"
+      );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+
+    expect(
+      result.round.players[2].riichi
+    ).toBe(false);
   });
 });
