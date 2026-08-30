@@ -6,6 +6,9 @@ import {
   recoverAkuukanMp
 } from "../akuukan/mp";
 import {
+  isAkuukanOpenRiichiAllowed
+} from "../akuukan/riichiLegality";
+import {
   beginAkuukanRound,
   beginAkuukanTurn,
   createInitialAkuukanGameState
@@ -21,6 +24,9 @@ import {
 import type {
   AkuukanMatchSetup
 } from "../akuukan/types";
+import type {
+  AkuukanRiichiOwner
+} from "../akuukan/riichiLegality";
 import type {
   AkuukanWinningCandidateOwner
 } from "../akuukan/winningEvaluationEngineAdapter";
@@ -2811,6 +2817,31 @@ function getVisibleTilesForCpuRiichi(
   );
 }
 
+function getAkuukanRiichiOwner(
+  seat: SeatIndex
+): AkuukanRiichiOwner {
+  if (seat === 0) {
+    return "player";
+  }
+
+  return seat === 2
+    ? "selectedEnemy"
+    : "normalOpponent";
+}
+
+function isOpenRiichiAllowed(
+  state: GameState,
+  seat: SeatIndex
+): boolean {
+  return state.akuukan
+    ? isAkuukanOpenRiichiAllowed({
+        akuukan: state.akuukan,
+        owner:
+          getAkuukanRiichiOwner(seat)
+      })
+    : false;
+}
+
 function getCpuRiichiDecision(
   state: GameState,
   cpuSeat: SeatIndex
@@ -2832,7 +2863,12 @@ function getCpuRiichiDecision(
       score: cpuPlayer.score,
       liveWallTileCount:
         state.round.liveWall.length,
-      alreadyRiichi: cpuPlayer.riichi
+      alreadyRiichi: cpuPlayer.riichi,
+      allowOpenHand:
+        isOpenRiichiAllowed(
+          state,
+          cpuSeat
+        )
     });
 
   return chooseCpuRiichi({
@@ -3488,7 +3524,9 @@ export function getPlayerRiichiDiscardTileIds(
     score: player.score,
     liveWallTileCount:
       state.round.liveWall.length,
-    alreadyRiichi: player.riichi
+    alreadyRiichi: player.riichi,
+    allowOpenHand:
+      isOpenRiichiAllowed(state, 0)
   });
 }
 
