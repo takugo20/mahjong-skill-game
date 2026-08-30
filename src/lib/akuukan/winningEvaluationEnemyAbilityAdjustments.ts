@@ -26,6 +26,9 @@ import {
   AKUUKAN_NORMAL_YAKU_DEFINITIONS,
   AKUUKAN_YAKUMAN_DEFINITIONS
 } from "./winningEvaluationDefinitions";
+import {
+  getAkuukanE6LastWinningNormalYakuIds
+} from "./winningEvaluationEnemyAbilityHistory";
 
 const CLOSED_ONLY_NORMAL_YAKU =
   AKUUKAN_NORMAL_YAKU_DEFINITIONS.filter(
@@ -99,6 +102,46 @@ export function createAkuukanEnemyAbilityWinningYakuAdjustments(
   const openReductionCancellations:
     AkuukanNormalYakuSourceAdjustment[] =
       [];
+  const fixedHanChanges:
+    AkuukanNormalYakuHanAdjustment[] = [];
+
+  if (
+    input.winnerIsSelectedEnemy &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-6"
+    )
+  ) {
+    const sourceId =
+      getEnemyAbilitySourceId("E-6");
+    const previousYakuIds = new Set(
+      getAkuukanE6LastWinningNormalYakuIds(
+        input.akuukan
+      )
+    );
+
+    for (
+      const candidate of
+        input.candidates
+          .normalYakuCandidates
+    ) {
+      const referenceHan =
+        getAkuukanNormalYakuReferenceHan(
+          candidate
+        );
+
+      if (
+        previousYakuIds.has(candidate.id) &&
+        referenceHan > 0
+      ) {
+        fixedHanChanges.push({
+          yakuId: candidate.id,
+          sourceId,
+          han: referenceHan * 2
+        });
+      }
+    }
+  }
 
   if (
     input.winnerIsSelectedEnemy &&
@@ -227,6 +270,9 @@ export function createAkuukanEnemyAbilityWinningYakuAdjustments(
       : {}),
     ...(openReductionCancellations.length > 0
       ? { openReductionCancellations }
+      : {}),
+    ...(fixedHanChanges.length > 0
+      ? { fixedHanChanges }
       : {})
   };
 }
