@@ -7,11 +7,14 @@ import {
   createInitialGameState,
   declarePlayerMeldCall,
   declarePlayerOpenKan,
+  getPlayerMeldCallOptions,
   getPlayerOpenKanCallOptions,
+  getPlayerSelfKanOptions,
   playPlayerDiscard
 } from "./engine";
 import type {
   GameState,
+  Meld,
   SeatIndex,
   Tile,
   TileSuit
@@ -42,11 +45,17 @@ function createTiles(
   );
 }
 
-function createState(): GameState {
+type CallTestEnemyId =
+  | "enemy-2"
+  | "enemy-4";
+
+function createState(
+  enemyId: CallTestEnemyId = "enemy-2"
+): GameState {
   return createInitialGameState(
     () => 0.5,
     {
-      enemyId: "enemy-2",
+      enemyId,
       equippedSkills: []
     }
   );
@@ -98,12 +107,13 @@ function setShortLiveWall(
 
 function prepareCpuPon(
   callerSeat: SeatIndex,
-  score: number
+  score: number,
+  enemyId: CallTestEnemyId = "enemy-2"
 ): {
   state: GameState;
   calledTile: Tile;
 } {
-  const state = createState();
+  const state = createState(enemyId);
   const calledTile = createTile(
     "honor",
     5
@@ -139,12 +149,14 @@ function prepareCpuPon(
 }
 
 function prepareCpuOpenKan(
-  score: number
+  score: number,
+  callerSeat: 1 | 2 | 3 = 1,
+  enemyId: CallTestEnemyId = "enemy-2"
 ): {
   state: GameState;
   calledTile: Tile;
 } {
-  const state = createState();
+  const state = createState(enemyId);
   const calledTile = createTile(
     "honor",
     5
@@ -157,8 +169,8 @@ function prepareCpuOpenKan(
     drawnTileSource: "liveWall"
   };
   setEmptyCpuHands(state);
-  state.round.players[1] = {
-    ...state.round.players[1],
+  state.round.players[callerSeat] = {
+    ...state.round.players[callerSeat],
     score,
     hand: [
       ...createTiles(
@@ -185,9 +197,10 @@ function prepareCpuOpenKan(
 }
 
 function createPlayerOpenKanState(
-  score: number
+  score: number,
+  enemyId: CallTestEnemyId = "enemy-2"
 ): GameState {
-  const state = createState();
+  const state = createState(enemyId);
   const calledTile = createTile(
     "man",
     2
@@ -241,6 +254,224 @@ function createPlayerOpenKanState(
   }];
 
   return state;
+}
+
+function preparePlayerCallFromCpuDiscard(
+  enemyId: CallTestEnemyId
+): {
+  state: GameState;
+  playerDiscard: Tile;
+} {
+  const state = createState(enemyId);
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const calledTile = createTile(
+    "honor",
+    5
+  );
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      ...createTiles(
+        "honor",
+        [5, 5, 5]
+      ),
+      createTile("man", 9),
+      playerDiscard
+    ],
+    melds: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+  setEmptyCpuHands(state);
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.liveWall = [
+    calledTile,
+    createTile("honor", 1),
+    createTile("honor", 2),
+    createTile("honor", 3),
+    createTile("honor", 4),
+    createTile("man", 1),
+    createTile("pin", 9),
+    createTile("sou", 1),
+    createTile("sou", 9)
+  ];
+
+  return {
+    state,
+    playerDiscard
+  };
+}
+
+function createPlayerSelfKanState(): {
+  state: GameState;
+  addedTile: Tile;
+} {
+  const state = createState("enemy-4");
+  const ponTiles = createTiles(
+    "honor",
+    [6, 6, 6]
+  );
+  const addedTile = createTile(
+    "honor",
+    6
+  );
+  const closedKanTiles = createTiles(
+    "man",
+    [5, 5, 5, 5]
+  );
+  const otherTiles = createTiles(
+    "pin",
+    [1, 2, 3, 4, 6, 7]
+  );
+  const pon: Meld = {
+    kind: "pon",
+    tiles: ponTiles,
+    calledFrom: 3,
+    calledTileId: ponTiles[0].id
+  };
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      addedTile,
+      ...closedKanTiles,
+      ...otherTiles
+    ],
+    melds: [pon],
+    drawnTileId:
+      otherTiles[otherTiles.length - 1].id,
+    drawnTileSource: "liveWall"
+  };
+
+  return {
+    state,
+    addedTile
+  };
+}
+
+function prepareCpuClosedKan(
+  callerSeat: 1 | 2
+): {
+  state: GameState;
+  playerDiscard: Tile;
+} {
+  const state = createState("enemy-4");
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const kanTiles = createTiles(
+    "man",
+    [5, 5, 5, 5]
+  );
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [playerDiscard],
+    melds: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+  setEmptyCpuHands(state);
+  state.round.players[callerSeat] = {
+    ...state.round.players[callerSeat],
+    hand: [
+      ...kanTiles,
+      ...createTiles(
+        "pin",
+        [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      )
+    ],
+    melds: [],
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.liveWall = [
+    ...(callerSeat === 2
+      ? [createTile("honor", 2)]
+      : []),
+    createTile("honor", 1),
+    createTile("honor", 3),
+    createTile("honor", 4),
+    createTile("man", 1),
+    createTile("pin", 9),
+    createTile("sou", 1),
+    createTile("sou", 9),
+    createTile("honor", 5)
+  ];
+  state.round.deadWall[0] =
+    createTile("honor", 6);
+
+  return {
+    state,
+    playerDiscard
+  };
+}
+
+function prepareCpuAddedKan(): {
+  state: GameState;
+  playerDiscard: Tile;
+} {
+  const state = createState("enemy-4");
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const ponTiles = createTiles(
+    "honor",
+    [6, 6, 6]
+  );
+  const addedTile = createTile(
+    "honor",
+    6
+  );
+  const pon: Meld = {
+    kind: "pon",
+    tiles: ponTiles,
+    calledFrom: 3,
+    calledTileId: ponTiles[0].id
+  };
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [playerDiscard],
+    melds: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+  setEmptyCpuHands(state);
+  state.round.players[1] = {
+    ...state.round.players[1],
+    hand: createTiles(
+      "sou",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 1]
+    ),
+    melds: [pon],
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.liveWall = [
+    addedTile,
+    createTile("honor", 1),
+    createTile("honor", 2),
+    createTile("honor", 3),
+    createTile("honor", 4),
+    createTile("man", 1),
+    createTile("pin", 9),
+    createTile("sou", 9)
+  ];
+  state.round.deadWall[0] =
+    createTile("honor", 5);
+
+  return {
+    state,
+    playerDiscard
+  };
 }
 
 describe("E-3の副露候補制限", () => {
@@ -436,5 +667,187 @@ describe("E-3の副露候補制限", () => {
     expect(
       result.round.players[1].melds
     ).toHaveLength(0);
+  });
+});
+
+describe("E-8のエンジン統合", () => {
+  it("プレイヤーのポン・大明槓候補を表示しない", () => {
+    const normal =
+      preparePlayerCallFromCpuDiscard(
+        "enemy-2"
+      );
+    const restricted =
+      preparePlayerCallFromCpuDiscard(
+        "enemy-4"
+      );
+
+    const normalResult = playPlayerDiscard(
+      normal.state,
+      normal.playerDiscard.id,
+      () => 0.5
+    );
+    const restrictedResult =
+      playPlayerDiscard(
+        restricted.state,
+        restricted.playerDiscard.id,
+        () => 0.5
+      );
+
+    const normalMeldOptions =
+      getPlayerMeldCallOptions(
+        normalResult
+      );
+
+    expect(
+      normalMeldOptions.length
+    ).toBeGreaterThan(0);
+    expect(
+      normalMeldOptions.every(
+        (option) =>
+          option.kind === "pon"
+      )
+    ).toBe(true);
+    expect(
+      getPlayerOpenKanCallOptions(
+        normalResult
+      )
+    ).toHaveLength(1);
+    expect(
+      getPlayerMeldCallOptions(
+        restrictedResult
+      )
+    ).toEqual([]);
+    expect(
+      getPlayerOpenKanCallOptions(
+        restrictedResult
+      )
+    ).toEqual([]);
+  });
+
+  it("通常CPUのポン・大明槓を禁止し敵4本人には許可する", () => {
+    const normalPon = prepareCpuPon(
+      1,
+      25000,
+      "enemy-4"
+    );
+    const enemyPon = prepareCpuPon(
+      2,
+      25000,
+      "enemy-4"
+    );
+    const normalOpenKan =
+      prepareCpuOpenKan(
+        25000,
+        1,
+        "enemy-4"
+      );
+    const enemyOpenKan =
+      prepareCpuOpenKan(
+        25000,
+        2,
+        "enemy-4"
+      );
+
+    const normalPonResult =
+      playPlayerDiscard(
+        normalPon.state,
+        normalPon.calledTile.id,
+        () => 0.5
+      );
+    const enemyPonResult =
+      playPlayerDiscard(
+        enemyPon.state,
+        enemyPon.calledTile.id,
+        () => 0.5
+      );
+    const normalOpenKanResult =
+      playPlayerDiscard(
+        normalOpenKan.state,
+        normalOpenKan.calledTile.id,
+        () => 0.5
+      );
+    const enemyOpenKanResult =
+      playPlayerDiscard(
+        enemyOpenKan.state,
+        enemyOpenKan.calledTile.id,
+        () => 0.5
+      );
+
+    expect(
+      normalPonResult.round.players[1]
+        .melds
+    ).toHaveLength(0);
+    expect(
+      enemyPonResult.round.players[2]
+        .melds[0]
+    ).toMatchObject({ kind: "pon" });
+    expect(
+      normalOpenKanResult.round.players[1]
+        .melds
+    ).toHaveLength(0);
+    expect(
+      enemyOpenKanResult.round.players[2]
+        .melds[0]
+    ).toMatchObject({ kind: "openKan" });
+  });
+
+  it("プレイヤーの暗槓だけを禁止して加槓候補を残す", () => {
+    const { state, addedTile } =
+      createPlayerSelfKanState();
+    const options =
+      getPlayerSelfKanOptions(state);
+
+    expect(options).toHaveLength(1);
+    expect(options[0]).toMatchObject({
+      kind: "addedKan",
+      tileId: addedTile.id
+    });
+    expect(
+      options.some(
+        (option) =>
+          option.kind === "closedKan"
+      )
+    ).toBe(false);
+  });
+
+  it("通常CPUの暗槓だけを禁止して加槓と敵4本人の暗槓を許可する", () => {
+    const normalClosedKan =
+      prepareCpuClosedKan(1);
+    const enemyClosedKan =
+      prepareCpuClosedKan(2);
+    const normalAddedKan =
+      prepareCpuAddedKan();
+
+    const normalClosedKanResult =
+      playPlayerDiscard(
+        normalClosedKan.state,
+        normalClosedKan.playerDiscard.id,
+        () => 0.5
+      );
+    const enemyClosedKanResult =
+      playPlayerDiscard(
+        enemyClosedKan.state,
+        enemyClosedKan.playerDiscard.id,
+        () => 0.5
+      );
+    const normalAddedKanResult =
+      playPlayerDiscard(
+        normalAddedKan.state,
+        normalAddedKan.playerDiscard.id,
+        () => 0.5
+      );
+
+    expect(
+      normalClosedKanResult.round.players[1]
+        .melds
+    ).toHaveLength(0);
+    expect(
+      enemyClosedKanResult.round.players[2]
+        .melds[0]
+    ).toMatchObject({ kind: "closedKan" });
+    expect(
+      normalAddedKanResult.round.players[1]
+        .melds[0]
+    ).toMatchObject({ kind: "addedKan" });
   });
 });
