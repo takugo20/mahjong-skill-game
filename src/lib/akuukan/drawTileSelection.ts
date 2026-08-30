@@ -1,3 +1,10 @@
+import {
+  getWinningTileTypes
+} from "../mahjong/hand";
+import type {
+  Meld,
+  Tile
+} from "../mahjong/types";
 import type {
   AkuukanGameState
 } from "./types";
@@ -72,6 +79,67 @@ export function isAkuukanE2DrawRestricted(
       input.akuukan
     ).includes(input.playerId)
   );
+}
+
+export interface AkuukanE2LiveWallDrawInput {
+  readonly akuukan: AkuukanGameState;
+  readonly playerId: string;
+  readonly concealedTiles: readonly Tile[];
+  readonly melds: readonly Meld[];
+  readonly liveWall: readonly Tile[];
+}
+
+function isSameTileType(
+  tile: Tile,
+  tileType: Pick<Tile, "suit" | "rank">
+): boolean {
+  return (
+    tile.suit === tileType.suit &&
+    tile.rank === tileType.rank
+  );
+}
+
+export function getAkuukanE2LiveWallDrawIndex(
+  input: AkuukanE2LiveWallDrawInput
+): number | null {
+  if (input.liveWall.length === 0) {
+    return null;
+  }
+
+  if (
+    !isAkuukanE2DrawRestricted({
+      akuukan: input.akuukan,
+      playerId: input.playerId
+    })
+  ) {
+    return 0;
+  }
+
+  const winningTileTypes =
+    getWinningTileTypes(
+      input.concealedTiles,
+      input.melds
+    );
+
+  if (winningTileTypes.length === 0) {
+    return 0;
+  }
+
+  const allowedTileIndex =
+    input.liveWall.findIndex(
+      (tile) =>
+        !winningTileTypes.some(
+          (winningTileType) =>
+            isSameTileType(
+              tile,
+              winningTileType
+            )
+        )
+    );
+
+  return allowedTileIndex >= 0
+    ? allowedTileIndex
+    : 0;
 }
 
 export function clearAkuukanE2DrawRestriction(
