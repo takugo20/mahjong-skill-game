@@ -29,7 +29,172 @@ function createState(
   });
 }
 
-describe("敵能力の役変更生成", () => {
+describe("敵能力の役変更生成", () => {   
+  it("E-6は前回と同じ役を標準翻数の2倍に固定する", () => {
+    const candidates =
+      createAkuukanWinningYakuCandidates({
+        structuralNormalYakuIds: [
+          "riichi",
+          "sanshokuDoujun",
+          "toitoi"
+        ],
+        structuralYakumanIds: [],
+        isClosed: true
+      });
+    const akuukan: AkuukanGameState = {
+      ...createState("enemy-3"),
+      e6LastWinningNormalYakuIds: [
+        "riichi",
+        "sanshokuDoujun",
+        "pinfu"
+      ]
+    };
+
+    expect(
+      createAkuukanEnemyAbilityWinningYakuAdjustments({
+        akuukan,
+        candidates,
+        winnerIsSelectedEnemy: true
+      }).fixedHanChanges
+    ).toEqual([
+      {
+        yakuId: "riichi",
+        sourceId: "enemy-ability:E-6",
+        han: 2
+      },
+      {
+        yakuId: "sanshokuDoujun",
+        sourceId: "enemy-ability:E-6",
+        han: 4
+      }
+    ]);
+  });
+
+  it("E-6は副露時の標準翻数を2倍にする", () => {
+    const candidates =
+      createAkuukanWinningYakuCandidates({
+        structuralNormalYakuIds: [
+          "sanshokuDoujun",
+          "honitsu"
+        ],
+        structuralYakumanIds: [],
+        isClosed: false
+      });
+    const akuukan: AkuukanGameState = {
+      ...createState("enemy-3"),
+      e6LastWinningNormalYakuIds: [
+        "sanshokuDoujun",
+        "honitsu"
+      ]
+    };
+
+    expect(
+      createAkuukanEnemyAbilityWinningYakuAdjustments({
+        akuukan,
+        candidates,
+        winnerIsSelectedEnemy: true
+      }).fixedHanChanges
+    ).toEqual([
+      {
+        yakuId: "sanshokuDoujun",
+        sourceId: "enemy-ability:E-6",
+        han: 2
+      },
+      {
+        yakuId: "honitsu",
+        sourceId: "enemy-ability:E-6",
+        han: 4
+      }
+    ]);
+  });
+
+  it("E-6は初回和了と特殊敵本人以外には適用しない", () => {
+    const candidates =
+      createAkuukanWinningYakuCandidates({
+        structuralNormalYakuIds: [
+          "riichi"
+        ],
+        structuralYakumanIds: [],
+        isClosed: true
+      });
+    const initial = createState("enemy-3");
+    const recorded: AkuukanGameState = {
+      ...initial,
+      e6LastWinningNormalYakuIds: [
+        "riichi"
+      ]
+    };
+
+    expect(
+      createAkuukanEnemyAbilityWinningYakuAdjustments({
+        akuukan: initial,
+        candidates,
+        winnerIsSelectedEnemy: true
+      })
+    ).toEqual({});
+    expect(
+      createAkuukanEnemyAbilityWinningYakuAdjustments({
+        akuukan: recorded,
+        candidates,
+        winnerIsSelectedEnemy: false
+      })
+    ).toEqual({});
+  });
+
+  it("E-6の2倍値を連続回数で累積させない", () => {
+    const candidates =
+      createAkuukanWinningYakuCandidates({
+        structuralNormalYakuIds: [
+          "ryanpeikou",
+          "iipeikou"
+        ],
+        structuralYakumanIds: [],
+        isClosed: true
+      });
+    const akuukan: AkuukanGameState = {
+      ...createState("enemy-3"),
+      e6LastWinningNormalYakuIds: [
+        "ryanpeikou",
+        "iipeikou"
+      ]
+    };
+    const firstAdjustments =
+      createAkuukanEnemyAbilityWinningYakuAdjustments({
+        akuukan,
+        candidates,
+        winnerIsSelectedEnemy: true
+      });
+    const first =
+      applyAkuukanWinningYakuAdjustments(
+        candidates,
+        firstAdjustments
+      );
+    const secondAdjustments =
+      createAkuukanEnemyAbilityWinningYakuAdjustments({
+        akuukan,
+        candidates: first,
+        winnerIsSelectedEnemy: true
+      });
+    const second =
+      applyAkuukanWinningYakuAdjustments(
+        first,
+        secondAdjustments
+      );
+
+    expect(
+      first.normalYakuCandidates.find(
+        (candidate) =>
+          candidate.id === "ryanpeikou"
+      )?.fixedHanChanges
+    ).toEqual([
+      {
+        sourceId: "enemy-ability:E-6",
+        han: 6
+      }
+    ]);
+    expect(second).toBe(first);
+  });
+  
   it("E-14は能力者本人だけを門前扱いにする", () => {
     const candidates =
       createAkuukanWinningYakuCandidates({
