@@ -21,6 +21,11 @@ export interface AkuukanOpenRiichiCheckInput {
   readonly owner: AkuukanRiichiOwner;
 }
 
+export interface AkuukanNotenRiichiCheckInput {
+  readonly akuukan: AkuukanGameState;
+  readonly owner: AkuukanRiichiOwner;
+}
+
 export interface AkuukanRiichiProhibitionCheckInput {
   readonly akuukan: AkuukanGameState;
   readonly owner: AkuukanRiichiOwner;
@@ -58,6 +63,18 @@ export function isAkuukanOpenRiichiAllowed(
   }
 
   return false;
+}
+
+export function isAkuukanNotenRiichiAllowed(
+  input: AkuukanNotenRiichiCheckInput
+): boolean {
+  return (
+    input.owner === "selectedEnemy" &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-4"
+    )
+  );
 }
 
 export function isAkuukanRiichiProhibited(
