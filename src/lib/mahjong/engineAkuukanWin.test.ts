@@ -271,7 +271,183 @@ function prepareRonState(
   };
 }
 
+function prepareE4SelectedEnemyTsumoState(
+  ippatsu: boolean,
+  afterHandChange: boolean
+): {
+  state: GameState;
+  playerDiscard: Tile;
+  uraIndicator: Tile;
+} {
+  const state = createBaseState({
+    enemyId: "enemy-2",
+    equippedSkills: []
+  });
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const winningTile = createTile(
+    "man",
+    6
+  );
+  const uraIndicator = createTile(
+    "man",
+    3
+  );
+  const waitingHand = [
+    ...createTiles("man", [1, 2, 3, 4, 5]),
+    ...createTiles("pin", [1, 2, 3]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1])
+  ];
+  const declarationDiscard = {
+    ...createDiscard(
+      createTile("pin", 9)
+    ),
+    riichiDeclaration: true
+  };
+  const disguisedHandChange = {
+    ...createDiscard(
+      createTile("pin", 8)
+    ),
+    tsumogiri: true
+  };
+
+  setPlayerHand(
+    state,
+    0,
+    [playerDiscard]
+  );
+  setPlayerHand(state, 1, []);
+  setPlayerHand(
+    state,
+    2,
+    waitingHand
+  );
+  setPlayerHand(state, 3, []);
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.players[2] = {
+    ...state.round.players[2],
+    score: 24000,
+    riichi: true,
+    doubleRiichi: true,
+    ippatsu,
+    discards: [
+      declarationDiscard,
+      ...(afterHandChange
+        ? [disguisedHandChange]
+        : [])
+    ]
+  };
+  state.round.deadWall = Array.from(
+    { length: 14 },
+    () => createTile("honor", 7)
+  );
+  state.round.deadWall[5] =
+    uraIndicator;
+  state.round.doraIndicatorCount = 1;
+  state.round.liveWall = [
+    createTile("honor", 6),
+    winningTile,
+    ...createTiles(
+      "pin",
+      [7, 8, 9, 7, 8, 9]
+    )
+  ];
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.turnNumber = 8;
+  state.round.riichiPool = 1000;
+  state.round.lastDiscard = null;
+
+  return {
+    state,
+    playerDiscard,
+    uraIndicator
+  };
+}
+
 describe("ゲーム本体の亜空間和了判定", () => {
+  it("E-4で手替わり後に和了してもダブル立直と裏ドラを適用する", () => {
+    const {
+      state,
+      playerDiscard,
+      uraIndicator
+    } = prepareE4SelectedEnemyTsumoState(
+      false,
+      true
+    );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+
+    expect(result.round.winResult).toMatchObject({
+      winnerSeat: 2,
+      winMethod: "tsumo",
+      doraCount: 1
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toEqual(
+      expect.arrayContaining([
+        "ダブル立直",
+        "門前清自摸和"
+      ])
+    );
+    expect(
+      result.round.winResult?.yakuNames
+    ).not.toContain("一発");
+    expect(
+      result.round.winResult
+        ?.uraDoraIndicatorTiles
+    ).toEqual([uraIndicator]);
+  });
+
+  it("E-4所有者が一発期間中に和了すれば一発も適用する", () => {
+    const {
+      state,
+      playerDiscard,
+      uraIndicator
+    } = prepareE4SelectedEnemyTsumoState(
+      true,
+      false
+    );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+
+    expect(result.round.winResult).toMatchObject({
+      winnerSeat: 2,
+      winMethod: "tsumo",
+      doraCount: 1
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toEqual(
+      expect.arrayContaining([
+        "ダブル立直",
+        "一発",
+        "門前清自摸和"
+      ])
+    );
+    expect(
+      result.round.winResult
+        ?.uraDoraIndicatorTiles
+    ).toEqual([uraIndicator]);
+  });
+  
   it("七対子強化をプレイヤーの実際の得点へ反映する", () => {
     const state = preparePlayerTsumoState({
       enemyId: "enemy-1",
