@@ -202,7 +202,7 @@ function isEquippedPlayerSkillEnabled(
   );
 }
 
-function isActivePlayerSkillEffectEnabled(
+export function isActivePlayerSkillEffectEnabled(
   state: AkuukanGameState,
   skillId: PlayerSkillId
 ): boolean {
