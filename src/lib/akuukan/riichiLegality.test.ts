@@ -11,7 +11,8 @@ import type {
   AkuukanMatchSetup
 } from "./types";
 import {
-  isAkuukanOpenRiichiAllowed
+  isAkuukanOpenRiichiAllowed,
+  isAkuukanRiichiProhibited
 } from "./riichiLegality";
 
 function createAkuukan(
@@ -137,6 +138,60 @@ describe("亜空間麻雀の副露立直許可", () => {
       isAkuukanOpenRiichiAllowed({
         akuukan: enemyAkuukan,
         owner: "selectedEnemy"
+      })
+    ).toBe(false);
+  });
+
+    it("E-9は敵3本人以外の立直を禁止する", () => {
+    const akuukan = createAkuukan({
+      enemyId: "enemy-3",
+      equippedSkills: []
+    });
+
+    expect(
+      isAkuukanRiichiProhibited({
+        akuukan,
+        owner: "player"
+      })
+    ).toBe(true);
+    expect(
+      isAkuukanRiichiProhibited({
+        akuukan,
+        owner: "normalOpponent"
+      })
+    ).toBe(true);
+    expect(
+      isAkuukanRiichiProhibited({
+        akuukan,
+        owner: "selectedEnemy"
+      })
+    ).toBe(false);
+  });
+
+  it("E-9が存在しないか無効なら立直を禁止しない", () => {
+    const otherEnemy = createAkuukan({
+      enemyId: "enemy-1",
+      equippedSkills: []
+    });
+    const disabledE9 =
+      disableAkuukanSource(
+        createAkuukan({
+          enemyId: "enemy-3",
+          equippedSkills: []
+        }),
+        "enemy-ability:E-9"
+      );
+
+    expect(
+      isAkuukanRiichiProhibited({
+        akuukan: otherEnemy,
+        owner: "player"
+      })
+    ).toBe(false);
+    expect(
+      isAkuukanRiichiProhibited({
+        akuukan: disabledE9,
+        owner: "player"
       })
     ).toBe(false);
   });
