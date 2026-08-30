@@ -11,7 +11,8 @@ import {
   createInitialAkuukanGameState
 } from "../akuukan/state";
 import {
-  createAkuukanWinningCandidateYakuEvaluator
+  createAkuukanWinningCandidateYakuEvaluator,
+  shouldAkuukanWinningCandidateBeTreatedAsClosed
 } from "../akuukan/winningEvaluationEngineAdapter";
 import {
   clearAkuukanE6WinningYakuAfterNagashiMangan,
@@ -708,22 +709,30 @@ function createWinInput(
       player,
       winMethod
     );
+  const akuukanWinningInput =
+    state.akuukan
+      ? {
+          akuukan: state.akuukan,
+          owner:
+            getAkuukanWinningCandidateOwner(
+              winnerSeat
+            )
+        }
+      : null;
 
   return {
     round: state.round,
     winnerSeat,
     winMethod,
-    ...(state.akuukan
+    ...(akuukanWinningInput
       ? {
+          treatAsClosed:
+            shouldAkuukanWinningCandidateBeTreatedAsClosed(
+              akuukanWinningInput
+            ),
           candidateYakuEvaluator:
             createAkuukanWinningCandidateYakuEvaluator(
-              {
-                akuukan: state.akuukan,
-                owner:
-                  getAkuukanWinningCandidateOwner(
-                    winnerSeat
-                  )
-              }
+              akuukanWinningInput
             )
         }
       : {}),
