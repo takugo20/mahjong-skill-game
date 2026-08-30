@@ -55,6 +55,16 @@ function createOpenRiichiHand(): Tile[] {
   ];
 }
 
+function createClosedRiichiHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3]),
+    ...createTiles("pin", [1, 2, 3]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("man", [4, 5, 6]),
+    ...createTiles("honor", [1, 2])
+  ];
+}
+
 function createOpenMeld(): Meld {
   return {
     kind: "chi",
@@ -107,7 +117,7 @@ function createPlayerOpenRiichiState(
 
 function setEmptyCpu(
   state: GameState,
-  seat: 1 | 3
+  seat: 1 | 2 | 3
 ): void {
   state.round.players[seat] = {
     ...state.round.players[seat],
@@ -176,6 +186,75 @@ function createSelectedEnemyTurn(
     ...createTiles(
       "pin",
       [7, 8, 9, 7, 8, 9]
+    )
+  ];
+
+  return {
+    state,
+    playerDiscard
+  };
+}
+
+function createClosedCpuRiichiTurn(
+  enemyId: AkuukanMatchSetup["enemyId"],
+  targetSeat: 1 | 2
+): {
+  state: GameState;
+  playerDiscard: Tile;
+} {
+  const state = createInitialGameState(
+    () => 0.5,
+    {
+      enemyId,
+      equippedSkills: []
+    }
+  );
+  const playerDiscard = createTile(
+    "honor",
+    7
+  );
+  const completeHand =
+    createClosedRiichiHand();
+  const cpuDraw = completeHand[13];
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [playerDiscard],
+    melds: [],
+    discards: [],
+    drawnTileId: playerDiscard.id,
+    drawnTileSource: "liveWall"
+  };
+
+  for (const seat of [1, 2, 3] as const) {
+    setEmptyCpu(state, seat);
+  }
+
+  state.round.players[targetSeat] = {
+    ...state.round.players[targetSeat],
+    hand: completeHand.slice(0, -1),
+    melds: [],
+    discards: [
+      createDiscard(
+        createTile("honor", 5)
+      )
+    ],
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.liveWall = [
+    ...(targetSeat === 2
+      ? [createTile("honor", 6)]
+      : []),
+    cpuDraw,
+    ...createTiles(
+      "pin",
+      [7, 8, 9, 7, 8, 9, 6]
     )
   ];
 
@@ -291,5 +370,62 @@ describe("亜空間麻雀の副露立直", () => {
     expect(
       result.round.players[2].riichi
     ).toBe(false);
+  });
+
+    it("E-9は2-7装備中のプレイヤーも立直禁止にする", () => {
+    const state =
+      createPlayerOpenRiichiState({
+        enemyId: "enemy-3",
+        equippedSkills: [
+          {
+            id: "2-7",
+            level: 1
+          }
+        ]
+      });
+
+    expect(
+      getPlayerRiichiDiscardTileIds(state)
+    ).toEqual([]);
+  });
+
+  it("E-9は通常CPUの立直を禁止する", () => {
+    const {
+      state,
+      playerDiscard
+    } = createClosedCpuRiichiTurn(
+      "enemy-3",
+      1
+    );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+
+    expect(
+      result.round.players[1].riichi
+    ).toBe(false);
+  });
+
+  it("E-9を持つ敵3本人は立直できる", () => {
+    const {
+      state,
+      playerDiscard
+    } = createClosedCpuRiichiTurn(
+      "enemy-3",
+      2
+    );
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0.5
+    );
+
+    expect(
+      result.round.players[2].riichi
+    ).toBe(true);
   });
 });
