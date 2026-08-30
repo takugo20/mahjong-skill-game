@@ -6,6 +6,7 @@ import {
   recoverAkuukanMp
 } from "../akuukan/mp";
 import {
+  isAkuukanNotenRiichiAllowed,
   isAkuukanOpenRiichiAllowed,
   isAkuukanRiichiProhibited
 } from "../akuukan/riichiLegality";
@@ -2843,6 +2844,19 @@ function isOpenRiichiAllowed(
     : false;
 }
 
+function isNotenRiichiAllowed(
+  state: GameState,
+  seat: SeatIndex
+): boolean {
+  return state.akuukan
+    ? isAkuukanNotenRiichiAllowed({
+        akuukan: state.akuukan,
+        owner:
+          getAkuukanRiichiOwner(seat)
+      })
+    : false;
+}
+
 function isRiichiProhibited(
   state: GameState,
   seat: SeatIndex
@@ -2880,6 +2894,11 @@ function getCpuRiichiDecision(
       alreadyRiichi: cpuPlayer.riichi,
       allowOpenHand:
         isOpenRiichiAllowed(
+          state,
+          cpuSeat
+        ),
+      allowNoten:
+        isNotenRiichiAllowed(
           state,
           cpuSeat
         ),
@@ -3546,6 +3565,8 @@ export function getPlayerRiichiDiscardTileIds(
     alreadyRiichi: player.riichi,
     allowOpenHand:
       isOpenRiichiAllowed(state, 0),
+    allowNoten:
+      isNotenRiichiAllowed(state, 0),
     riichiProhibited:
       isRiichiProhibited(state, 0)
   });
