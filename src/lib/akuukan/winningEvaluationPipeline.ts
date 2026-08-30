@@ -11,11 +11,17 @@ import {
   createAkuukanWinningYakuCandidatesFromContext
 } from "./winningEvaluationExtraction";
 import {
+  createAkuukanPlayerSkillWinningYakuAdjustments
+} from "./winningEvaluationPlayerSkillAdjustments";
+import {
   resolveAkuukanWinningYaku
 } from "./winningEvaluationResolution";
 import type {
   AkuukanWinningYakuResolution
 } from "./winningEvaluationResolution";
+import type {
+  AkuukanGameState
+} from "./types";
 
 export interface ResolveAkuukanWinningYakuWithAdjustmentsInput {
   readonly context: YakumanContext;
@@ -41,6 +47,24 @@ export function resolveAkuukanWinningYakuWithAdjustments(
   return resolveAkuukanWinningYaku(
     adjustedCandidates
   );
+}
+
+export interface ResolveAkuukanPlayerWinningYakuInput {
+  readonly context: YakumanContext;
+  readonly akuukan: AkuukanGameState;
+}
+
+export function resolveAkuukanPlayerWinningYaku(
+  input:
+    ResolveAkuukanPlayerWinningYakuInput
+): AkuukanWinningYakuResolution {
+  return resolveAkuukanWinningYakuWithAdjustments({
+    context: input.context,
+    adjustments:
+      createAkuukanPlayerSkillWinningYakuAdjustments(
+        input.akuukan
+      )
+  });
 }
 
 export function resolveAkuukanStandardWinningYaku(
