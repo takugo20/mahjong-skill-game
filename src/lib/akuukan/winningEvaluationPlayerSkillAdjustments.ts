@@ -20,14 +20,106 @@ import type {
 } from "./types";
 import type {
   AkuukanNormalYakuHanAdjustment,
-  AkuukanWinningYakuAdjustments
+  AkuukanNormalYakuSourceAdjustment,
+  AkuukanWinningYakuAdjustments,
+  AkuukanYakumanMultiplierAdjustment
 } from "./winningEvaluationAdjustments";
+import {
+  AKUUKAN_NORMAL_YAKU_DEFINITIONS,
+  AKUUKAN_YAKUMAN_DEFINITIONS,
+  getAkuukanNormalYakuDefinition
+} from "./winningEvaluationDefinitions";
+import type {
+  AkuukanNormalYakuDefinition,
+  AkuukanYakumanDefinition
+} from "./winningEvaluationDefinitions";
+
+interface PlayerSkillYakuRule {
+  readonly skillId: PlayerSkillId;
+  readonly yakuIds:
+    readonly NormalYakuId[];
+}
 
 interface PlayerSkillHanAdditionRule {
   readonly skillId: PlayerSkillId;
   readonly yakuIds:
     readonly NormalYakuId[];
 }
+
+const MENZEN_KAIKI_SKILL_ID:
+  PlayerSkillId = "1-15";
+
+const MENZEN_KAIKI_CLOSED_ONLY_YAKU:
+  readonly AkuukanNormalYakuDefinition[] =
+    AKUUKAN_NORMAL_YAKU_DEFINITIONS.filter(
+      (definition) =>
+        definition.openHan === null
+    );
+
+const MENZEN_KAIKI_OPEN_REDUCED_YAKU:
+  readonly AkuukanNormalYakuDefinition[] =
+    AKUUKAN_NORMAL_YAKU_DEFINITIONS.filter(
+      (definition) =>
+        definition.openHan !== null &&
+        definition.openHan <
+          definition.closedHan
+    );
+
+const MENZEN_KAIKI_CLOSED_ONLY_YAKUMAN:
+  readonly AkuukanYakumanDefinition[] =
+    AKUUKAN_YAKUMAN_DEFINITIONS.filter(
+      (definition) =>
+        definition.closedOnly
+    );
+
+const PLAYER_SKILL_YAKU_GRANT_RULES:
+  readonly PlayerSkillYakuRule[] = [
+    {
+      skillId: "2-5",
+      yakuIds: [
+        "iipeikou",
+        "ryanpeikou"
+      ]
+    },
+    {
+      skillId: "2-6",
+      yakuIds: ["pinfu"]
+    },
+    {
+      skillId: "2-7",
+      yakuIds: [
+        "riichi",
+        "ippatsu",
+        "menzenTsumo"
+      ]
+    }
+  ];
+
+const PLAYER_SKILL_OPEN_REDUCTION_RULES:
+  readonly PlayerSkillYakuRule[] = [
+    {
+      skillId: "2-1",
+      yakuIds: ["sanshokuDoujun"]
+    },
+    {
+      skillId: "2-2",
+      yakuIds: ["ittsuu"]
+    },
+    {
+      skillId: "2-3",
+      yakuIds: [
+        "chanta",
+        "junchan"
+      ]
+    },
+    {
+      skillId: "2-4",
+      yakuIds: [
+        "honitsu",
+        "chinitsu"
+      ]
+    }
+  ];
 
 const PLAYER_SKILL_HAN_ADDITION_RULES:
   readonly PlayerSkillHanAdditionRule[] = [
@@ -91,6 +183,44 @@ function getPlayerSkillSourceId(
   return `player-skill:${skillId}`;
 }
 
+function isEquippedPlayerSkillEnabled(
+  state: AkuukanGameState,
+  skillId: PlayerSkillId
+): boolean {
+  const sourceId =
+    getPlayerSkillSourceId(skillId);
+
+  return (
+    getEquippedPlayerSkill(
+      state,
+      skillId
+    ) !== null &&
+    !isAkuukanSourceDisabled(
+      state,
+      sourceId
+    )
+  );
+}
+
+function isActivePlayerSkillEffectEnabled(
+  state: AkuukanGameState,
+  skillId: PlayerSkillId
+): boolean {
+  const sourceId =
+    getPlayerSkillSourceId(skillId);
+
+  return (
+    isEquippedPlayerSkillEnabled(
+      state,
+      skillId
+    ) &&
+    state.activeEffects.some(
+      (effect) =>
+        effect.sourceId === sourceId
+    )
+  );
+}
+
 function getEquippedAdditionalYakuHan(
   state: AkuukanGameState,
   rule: PlayerSkillHanAdditionRule
@@ -105,15 +235,10 @@ function getEquippedAdditionalYakuHan(
     return null;
   }
 
-  const sourceId =
-    getPlayerSkillSourceId(
-      rule.skillId
-    );
-
   if (
-    isAkuukanSourceDisabled(
+    !isEquippedPlayerSkillEnabled(
       state,
-      sourceId
+      rule.skillId
     )
   ) {
     return null;
@@ -148,8 +273,117 @@ function getEquippedAdditionalYakuHan(
 export function createAkuukanPlayerSkillWinningYakuAdjustments(
   state: AkuukanGameState
 ): AkuukanWinningYakuAdjustments {
+  const normalYakuGrants:
+    AkuukanNormalYakuHanAdjustment[] = [];
+  const yakumanGrants:
+    AkuukanYakumanMultiplierAdjustment[] =
+      [];
+  const openReductionCancellations:
+    AkuukanNormalYakuSourceAdjustment[] =
+      [];
   const hanAdditions:
     AkuukanNormalYakuHanAdjustment[] = [];
+
+  if (
+    isActivePlayerSkillEffectEnabled(
+      state,
+      MENZEN_KAIKI_SKILL_ID
+    )
+  ) {
+    const sourceId =
+      getPlayerSkillSourceId(
+        MENZEN_KAIKI_SKILL_ID
+      );
+
+    for (
+      const definition of
+        MENZEN_KAIKI_CLOSED_ONLY_YAKU
+    ) {
+      normalYakuGrants.push({
+        yakuId: definition.id,
+        sourceId,
+        han: definition.closedHan
+      });
+    }
+
+    for (
+      const definition of
+        MENZEN_KAIKI_CLOSED_ONLY_YAKUMAN
+    ) {
+      yakumanGrants.push({
+        yakumanId: definition.id,
+        sourceId,
+        multiplier:
+          definition.multiplier
+      });
+    }
+
+    for (
+      const definition of
+        MENZEN_KAIKI_OPEN_REDUCED_YAKU
+    ) {
+      openReductionCancellations.push({
+        yakuId: definition.id,
+        sourceId
+      });
+    }
+  }
+
+  for (
+    const rule of
+      PLAYER_SKILL_YAKU_GRANT_RULES
+  ) {
+    if (
+      !isEquippedPlayerSkillEnabled(
+        state,
+        rule.skillId
+      )
+    ) {
+      continue;
+    }
+
+    const sourceId =
+      getPlayerSkillSourceId(
+        rule.skillId
+      );
+
+    for (const yakuId of rule.yakuIds) {
+      normalYakuGrants.push({
+        yakuId,
+        sourceId,
+        han:
+          getAkuukanNormalYakuDefinition(
+            yakuId
+          ).closedHan
+      });
+    }
+  }
+
+  for (
+    const rule of
+      PLAYER_SKILL_OPEN_REDUCTION_RULES
+  ) {
+    if (
+      !isEquippedPlayerSkillEnabled(
+        state,
+        rule.skillId
+      )
+    ) {
+      continue;
+    }
+
+    const sourceId =
+      getPlayerSkillSourceId(
+        rule.skillId
+      );
+
+    for (const yakuId of rule.yakuIds) {
+      openReductionCancellations.push({
+        yakuId,
+        sourceId
+      });
+    }
+  }
 
   for (
     const rule of
@@ -179,7 +413,18 @@ export function createAkuukanPlayerSkillWinningYakuAdjustments(
     }
   }
 
-  return hanAdditions.length === 0
-    ? {}
-    : { hanAdditions };
+  return {
+    ...(normalYakuGrants.length > 0
+      ? { normalYakuGrants }
+      : {}),
+    ...(yakumanGrants.length > 0
+      ? { yakumanGrants }
+      : {}),
+    ...(openReductionCancellations.length > 0
+      ? { openReductionCancellations }
+      : {}),
+    ...(hanAdditions.length > 0
+      ? { hanAdditions }
+      : {})
+  };
 }
