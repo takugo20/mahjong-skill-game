@@ -1,3 +1,6 @@
+import type {
+  WinningHandDecomposition
+} from "../mahjong/hand";
 import {
   getAkuukanNormalYakuFinalHan,
   getAkuukanYakumanMultiplier,
@@ -18,6 +21,8 @@ export interface ResolveAkuukanWinningYakuInput {
     readonly AkuukanNormalYakuCandidate[];
   readonly yakumanCandidates:
     readonly AkuukanYakumanCandidate[];
+  readonly winningShapeKind?:
+    WinningHandDecomposition["kind"];
 }
 
 export interface AkuukanWinningYakuResolution {
@@ -32,8 +37,38 @@ export interface AkuukanWinningYakuResolution {
   readonly normalYakuHan: number;
   readonly scoringNormalYakuHan: number;
   readonly yakumanMultiplier: number;
+  readonly hasValidWinningShape: boolean;
   readonly hasValidYaku: boolean;
   readonly usesYakumanScoring: boolean;
+}
+
+function hasValidSpecialWinningShape(
+  kind:
+    WinningHandDecomposition["kind"] |
+    undefined,
+  activeNormalYakuCandidates:
+    readonly AkuukanNormalYakuCandidate[],
+  activeYakumanCandidates:
+    readonly AkuukanYakumanCandidate[]
+): boolean {
+  if (kind === "sevenPairs") {
+    return activeNormalYakuCandidates.some(
+      (candidate) =>
+        candidate.id === "sevenPairs"
+    );
+  }
+
+  if (kind === "thirteenOrphans") {
+    return activeYakumanCandidates.some(
+      (candidate) =>
+        candidate.id ===
+          "thirteenOrphans" ||
+        candidate.id ===
+          "thirteenOrphansThirteenSided"
+    );
+  }
+
+  return true;
 }
 
 export function resolveAkuukanWinningYaku(
@@ -77,6 +112,12 @@ export function resolveAkuukanWinningYaku(
     );
   const usesYakumanScoring =
     yakumanMultiplier > 0;
+  const hasValidWinningShape =
+    hasValidSpecialWinningShape(
+      input.winningShapeKind,
+      activeNormalYakuCandidates,
+      activeYakumanCandidates
+    );
 
   return {
     normalYakuCandidates,
@@ -89,9 +130,12 @@ export function resolveAkuukanWinningYaku(
         ? 0
         : normalYakuHan,
     yakumanMultiplier,
+    hasValidWinningShape,
     hasValidYaku:
-      activeNormalYakuCandidates.length > 0 ||
-      activeYakumanCandidates.length > 0,
+      hasValidWinningShape &&
+      (activeNormalYakuCandidates.length >
+        0 ||
+        activeYakumanCandidates.length > 0),
     usesYakumanScoring
   };
 }
