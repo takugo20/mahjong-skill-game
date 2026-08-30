@@ -47,6 +47,18 @@ import type {
   YakumanResult
 } from "./yakuman";
 
+export interface WinningCandidateYakuEvaluation {
+  readonly normalYaku:
+    readonly NormalYakuResult[];
+  readonly yakuman:
+    readonly YakumanResult[];
+  readonly hasValidYaku: boolean;
+}
+
+export type WinningCandidateYakuEvaluator = (
+  context: YakumanContext
+) => WinningCandidateYakuEvaluation;
+
 export interface WinningHandEvaluationInput {
   concealedTiles: readonly Tile[];
   melds?: readonly Meld[];
@@ -70,6 +82,8 @@ export interface WinningHandEvaluationInput {
   riichiSticks?: number;
   kiriageMangan?: boolean;
   kazoeYakuman?: boolean;
+  candidateYakuEvaluator?:
+    WinningCandidateYakuEvaluator;
 }
 
 export interface WinningHandCandidate {
@@ -149,6 +163,29 @@ function sumNormalYakuHan(
       total + result.han,
     0
   );
+}
+
+function evaluateCandidateYaku(
+  input: WinningHandEvaluationInput,
+  context: YakumanContext
+): WinningCandidateYakuEvaluation {
+  if (input.candidateYakuEvaluator) {
+    return input.candidateYakuEvaluator(
+      context
+    );
+  }
+
+  const normalYaku =
+    evaluateNormalYaku(context);
+  const yakuman = evaluateYakuman(context);
+
+  return {
+    normalYaku,
+    yakuman,
+    hasValidYaku:
+      normalYaku.length > 0 ||
+      yakuman.length > 0
+  };
 }
 
 function compareCandidates(
@@ -247,8 +284,19 @@ export function evaluateWinningHand(
         waitType
       );
 
-      const yakuman =
-        evaluateYakuman(context);
+      const yakuEvaluation =
+        evaluateCandidateYaku(
+          input,
+          context
+        );
+
+      if (!yakuEvaluation.hasValidYaku) {
+        continue;
+      }
+
+      const yakuman = [
+        ...yakuEvaluation.yakuman
+      ];
 
       if (yakuman.length > 0) {
         const yakumanMultiplier =
@@ -293,10 +341,9 @@ export function evaluateWinningHand(
       const normalContext:
         NormalYakuContext = context;
 
-      const normalYaku =
-        evaluateNormalYaku(
-          normalContext
-        );
+      const normalYaku = [
+        ...yakuEvaluation.normalYaku
+      ];
 
       const yakuHan =
         sumNormalYakuHan(
