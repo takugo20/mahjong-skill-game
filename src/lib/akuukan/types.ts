@@ -230,8 +230,14 @@ export interface AkuukanUsageState {
   turn: AkuukanEffectSourceId[];
 }
 
+export interface AkuukanE2DrawRestrictionState {
+  restrictedPlayerIds: string[];
+}
+
 export interface AkuukanGameState {
   setup: AkuukanMatchSetup;
+  e2DrawRestriction?:
+    AkuukanE2DrawRestrictionState;
   e6LastWinningNormalYakuIds?:
     NormalYakuId[];
   disabledSources:
