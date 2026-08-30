@@ -18,6 +18,7 @@ import {
 import type {
   Discard,
   GameState,
+  Meld,
   SeatIndex,
   Tile,
   TileSuit
@@ -106,6 +107,44 @@ function createPinfuWaitHand(): Tile[] {
       [6, 7, 8]
     )
   ];
+}
+
+function createOpenSanshokuWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("sou", 1);
+
+  return {
+    hand: [
+      ...createTiles(
+        "pin",
+        [1, 2, 3]
+      ),
+      ...createTiles(
+        "sou",
+        [2, 3]
+      ),
+      ...createTiles(
+        "man",
+        [4, 5, 6]
+      ),
+      ...createTiles(
+        "honor",
+        [6, 6]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
 }
 
 function createNonWinningHand(): Tile[] {
@@ -571,5 +610,156 @@ describe("ゲーム本体の亜空間和了判定", () => {
         han: 1
       }
     ]);
+  });
+
+  it("E-14で能力者CPUの副露ロンへ門前ロン10符を加える", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-5",
+        equippedSkills: []
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenSanshokuWait();
+
+    setPlayerHand(state, 2, hand);
+    state.round.players[2].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 2
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sanshokuDoujun",
+        name: "三色同順",
+        han: 2
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.fu?.fu
+    ).toBe(40);
+    expect(
+      candidate?.evaluation.best.fu
+        ?.components
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          id: "closedRon",
+          name: "門前ロン",
+          fu: 10
+        }
+      ])
+    );
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(2600);
+  });
+
+  it("発動中の門前回帰でプレイヤーの副露ロンへ門前ロン10符を加える", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "1-15",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenSanshokuWait();
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態が初期化されていません。"
+      );
+    }
+
+    state.akuukan = {
+      ...state.akuukan,
+      activeEffects: [
+        {
+          instanceId:
+            "menzen-kaiki-active",
+          sourceId:
+            "player-skill:1-15",
+          remainingTurns: 1
+        }
+      ]
+    };
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sanshokuDoujun",
+        name: "三色同順",
+        han: 2
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.fu?.fu
+    ).toBe(40);
+    expect(
+      candidate?.evaluation.best.fu
+        ?.components
+    ).toEqual(
+      expect.arrayContaining([
+        {
+          id: "closedRon",
+          name: "門前ロン",
+          fu: 10
+        }
+      ])
+    );
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(3900);
   });
 });
