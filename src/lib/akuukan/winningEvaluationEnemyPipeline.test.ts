@@ -162,6 +162,88 @@ function createOpenRyanpeikouContext(): YakumanContext {
   };
 }
 
+function createSevenPairsContext(): YakumanContext {
+  const pairs: Array<{
+    suit: TileSuit;
+    rank: number;
+  }> = [
+    { suit: "man", rank: 1 },
+    { suit: "man", rank: 2 },
+    { suit: "pin", rank: 3 },
+    { suit: "pin", rank: 4 },
+    { suit: "sou", rank: 5 },
+    { suit: "sou", rank: 6 },
+    { suit: "honor", rank: 1 }
+  ];
+
+  return {
+    concealedTiles: pairs.flatMap(
+      (pair) => [
+        createTile(pair.suit, pair.rank),
+        createTile(pair.suit, pair.rank)
+      ]
+    ),
+    melds: [],
+    decomposition: {
+      kind: "sevenPairs",
+      pairs
+    },
+    winningTile: {
+      suit: "honor",
+      rank: 1
+    },
+    waitType: "tanki",
+    winMethod: "tsumo",
+    seatWind: "south",
+    prevailingWind: "east"
+  };
+}
+
+function createThirteenOrphansContext(): YakumanContext {
+  const tileTypes: Array<{
+    suit: TileSuit;
+    rank: number;
+  }> = [
+    { suit: "man", rank: 1 },
+    { suit: "man", rank: 9 },
+    { suit: "pin", rank: 1 },
+    { suit: "pin", rank: 9 },
+    { suit: "sou", rank: 1 },
+    { suit: "sou", rank: 9 },
+    { suit: "honor", rank: 1 },
+    { suit: "honor", rank: 2 },
+    { suit: "honor", rank: 3 },
+    { suit: "honor", rank: 4 },
+    { suit: "honor", rank: 5 },
+    { suit: "honor", rank: 6 },
+    { suit: "honor", rank: 7 },
+    { suit: "man", rank: 1 }
+  ];
+
+  return {
+    concealedTiles: tileTypes.map(
+      (tile) =>
+        createTile(tile.suit, tile.rank)
+    ),
+    melds: [],
+    decomposition: {
+      kind: "thirteenOrphans",
+      pair: {
+        suit: "man",
+        rank: 1
+      }
+    },
+    winningTile: {
+      suit: "man",
+      rank: 1
+    },
+    waitType: "kokushiThirteenSided",
+    winMethod: "tsumo",
+    seatWind: "south",
+    prevailingWind: "east"
+  };
+}
+
 const closedSequenceDecomposition:
   WinningHandDecomposition = {
     kind: "standard",
@@ -379,8 +461,80 @@ describe("敵能力対応の役決定パイプライン", () => {
           candidate.id === "ryanpeikou"
       )?.invalidatedBy
     ).toEqual(["enemy-ability:E-7"]);
+    expect(result.hasValidWinningShape).toBe(
+      true
+    );
+    expect(result.hasValidYaku).toBe(true);
   });
 
+  it("E-7で七対子が無効なら門前清自摸和が残っても和了不可にする", () => {
+    const result =
+      resolveAkuukanPlayerWinningYaku({
+        context: createSevenPairsContext(),
+        akuukan:
+          createInitialAkuukanGameState({
+            enemyId: "enemy-7",
+            equippedSkills: []
+          })
+      });
+
+    expect(
+      result.activeNormalYakuCandidates.map(
+        (candidate) => candidate.id
+      )
+    ).toEqual(["menzenTsumo"]);
+    expect(
+      result.normalYakuCandidates.find(
+        (candidate) =>
+          candidate.id === "sevenPairs"
+      )?.invalidatedBy
+    ).toEqual(["enemy-ability:E-7"]);
+    expect(result.hasValidWinningShape).toBe(
+      false
+    );
+    expect(result.hasValidYaku).toBe(false);
+  });
+
+  it("E-7で国士無双系が無効なら門前清自摸和が残っても和了不可にする", () => {
+    const result =
+      resolveAkuukanPlayerWinningYaku({
+        context:
+          createThirteenOrphansContext(),
+        akuukan:
+          createInitialAkuukanGameState({
+            enemyId: "enemy-7",
+            equippedSkills: []
+          })
+      });
+
+    expect(
+      result.activeNormalYakuCandidates.map(
+        (candidate) => candidate.id
+      )
+    ).toEqual(["menzenTsumo"]);
+    expect(
+      result.activeYakumanCandidates
+    ).toEqual([]);
+    expect(
+      result.yakumanCandidates.find(
+        (candidate) =>
+          candidate.id ===
+          "thirteenOrphansThirteenSided"
+      )?.invalidatedBy
+    ).toEqual(["enemy-ability:E-7"]);
+    expect(
+      result.yakumanCandidates.find(
+        (candidate) =>
+          candidate.id ===
+          "thirteenOrphans"
+      )?.invalidatedBy
+    ).toEqual(["enemy-ability:E-7"]);
+    expect(result.hasValidWinningShape).toBe(
+      false
+    );
+    expect(result.hasValidYaku).toBe(false);
+  });
+  
   it("E-7を通常CPUへ適用し特殊敵本人へは適用しない", () => {
     const context =
       createClosedSequenceContext();
