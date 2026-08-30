@@ -13,6 +13,10 @@ import {
 import {
   createAkuukanWinningCandidateYakuEvaluator
 } from "../akuukan/winningEvaluationEngineAdapter";
+import {
+  clearAkuukanE6WinningYakuAfterNagashiMangan,
+  recordAkuukanE6WinningYaku
+} from "../akuukan/winningEvaluationEnemyAbilityHistory";
 import type {
   AkuukanMatchSetup
 } from "../akuukan/types";
@@ -864,6 +868,36 @@ function createRoundWinResult(
   };
 }
 
+function recordAkuukanE6AfterWins(
+  state: GameState,
+  resolutions:
+    readonly ValidRoundWinResolution[]
+): GameState["akuukan"] {
+  if (!state.akuukan) {
+    return undefined;
+  }
+
+  const selectedEnemyWin =
+    resolutions.find(
+      (resolution) =>
+        resolution.winnerSeat === 2
+    );
+
+  if (!selectedEnemyWin) {
+    return state.akuukan;
+  }
+
+  return recordAkuukanE6WinningYaku({
+    akuukan: state.akuukan,
+    winnerIsSelectedEnemy: true,
+    normalYakuIds:
+      selectedEnemyWin.evaluation.best
+        .evaluatedNormalYaku.map(
+          (yaku) => yaku.id
+        )
+  });
+}
+
 function finishRoundWithWin(
   state: GameState,
   resolution:
@@ -885,9 +919,15 @@ function finishRoundWithWin(
     resolution.winMethod === "tsumo"
       ? `${winner.name}がツモ和了しました。`
       : `${winner.name}が${loser?.name ?? "他家"}からロン和了しました。`;
+  const akuukan =
+    recordAkuukanE6AfterWins(
+      state,
+      [resolution]
+    );
 
   return {
     ...state,
+    ...(akuukan ? { akuukan } : {}),
     round: {
       ...state.round,
       players: resolution.playersAfter,
@@ -924,6 +964,14 @@ function finishRoundWithRonCandidates(
     ),
     riichiPool: state.round.riichiPool
   });
+  const akuukan =
+    result.kind === "singleRon" ||
+    result.kind === "doubleRon"
+      ? recordAkuukanE6AfterWins(
+          state,
+          candidates
+        )
+      : state.akuukan;
 
   if (result.kind === "singleRon") {
     const winner =
@@ -939,6 +987,7 @@ function finishRoundWithRonCandidates(
 
     return {
       ...state,
+      ...(akuukan ? { akuukan } : {}),
       round: {
         ...state.round,
         players: result.playersAfter,
@@ -976,6 +1025,7 @@ function finishRoundWithRonCandidates(
 
     return {
       ...state,
+      ...(akuukan ? { akuukan } : {}),
       round: {
         ...state.round,
         players: result.playersAfter,
@@ -998,6 +1048,7 @@ function finishRoundWithRonCandidates(
 
   return {
     ...state,
+    ...(akuukan ? { akuukan } : {}),
     round: {
       ...state.round,
       players: result.playersAfter,
@@ -1144,9 +1195,19 @@ function finishRoundWithExhaustiveDraw(
       (seat) =>
         state.round.players[seat].name
     );
+    const akuukan = state.akuukan
+      ? clearAkuukanE6WinningYakuAfterNagashiMangan(
+          {
+            akuukan: state.akuukan,
+            winnerIsSelectedEnemy:
+              winnerSeats.includes(2)
+          }
+        )
+      : undefined;
 
     return {
       ...state,
+      ...(akuukan ? { akuukan } : {}),
       round: {
         ...state.round,
         players: applyPointChanges(
