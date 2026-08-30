@@ -10,9 +10,15 @@ import {
   beginAkuukanTurn,
   createInitialAkuukanGameState
 } from "../akuukan/state";
+import {
+  createAkuukanWinningCandidateYakuEvaluator
+} from "../akuukan/winningEvaluationEngineAdapter";
 import type {
   AkuukanMatchSetup
 } from "../akuukan/types";
+import type {
+  AkuukanWinningCandidateOwner
+} from "../akuukan/winningEvaluationEngineAdapter";
 import type {
   Discard,
   GameState,
@@ -672,6 +678,18 @@ function isFirstUninterruptedTsumo(
   );
 }
 
+function getAkuukanWinningCandidateOwner(
+  winnerSeat: SeatIndex
+): AkuukanWinningCandidateOwner {
+  if (winnerSeat === 0) {
+    return "player";
+  }
+
+  return winnerSeat === 2
+    ? "selectedEnemy"
+    : "normalOpponent";
+}
+
 function createWinInput(
   state: GameState,
   winnerSeat: SeatIndex,
@@ -691,6 +709,20 @@ function createWinInput(
     round: state.round,
     winnerSeat,
     winMethod,
+    ...(state.akuukan
+      ? {
+          candidateYakuEvaluator:
+            createAkuukanWinningCandidateYakuEvaluator(
+              {
+                akuukan: state.akuukan,
+                owner:
+                  getAkuukanWinningCandidateOwner(
+                    winnerSeat
+                  )
+              }
+            )
+        }
+      : {}),
     doubleRiichi:
       player.doubleRiichi === true,
     rinshan:
