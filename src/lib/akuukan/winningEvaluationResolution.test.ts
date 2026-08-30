@@ -15,11 +15,178 @@ import {
   cancelAkuukanNormalYakuOpenReduction,
   grantAkuukanNormalYaku,
   grantAkuukanYakuman,
+  invalidateAkuukanNormalYaku,
   invalidateAkuukanYakuman,
   setAkuukanNormalYakuFixedHan
 } from "./winningEvaluationUpdates";
 
 describe("亜空間麻雀の有効役集計", () => {
+  it("七対子が無効なら他の役が残っても七対子形を無効にする", () => {
+    const menzenTsumo =
+      createAkuukanNormalYakuCandidate({
+        id: "menzenTsumo",
+        name: "門前清自摸和",
+        closedHan: 1,
+        standardHan: 1,
+        standardEligible: true
+      });
+    const sevenPairs =
+      invalidateAkuukanNormalYaku(
+        createAkuukanNormalYakuCandidate({
+          id: "sevenPairs",
+          name: "七対子",
+          closedHan: 2,
+          standardHan: 2,
+          standardEligible: true
+        }),
+        "enemy-ability:E-7"
+      );
+    const result =
+      resolveAkuukanWinningYaku({
+        normalYakuCandidates: [
+          menzenTsumo,
+          sevenPairs
+        ],
+        yakumanCandidates: [],
+        winningShapeKind: "sevenPairs"
+      });
+
+    expect(
+      result.activeNormalYakuCandidates
+    ).toEqual([menzenTsumo]);
+    expect(result.hasValidWinningShape).toBe(
+      false
+    );
+    expect(result.hasValidYaku).toBe(false);
+  });
+
+  it("国士系役満がすべて無効なら通常役が残っても国士形を無効にする", () => {
+    const menzenTsumo =
+      createAkuukanNormalYakuCandidate({
+        id: "menzenTsumo",
+        name: "門前清自摸和",
+        closedHan: 1,
+        standardHan: 1,
+        standardEligible: true
+      });
+    const thirteenOrphans =
+      invalidateAkuukanYakuman(
+        createAkuukanYakumanCandidate({
+          id: "thirteenOrphans",
+          name: "国士無双",
+          standardMultiplier: 1,
+          standardEligible: true
+        }),
+        "enemy-ability:E-7"
+      );
+    const thirteenSided =
+      invalidateAkuukanYakuman(
+        createAkuukanYakumanCandidate({
+          id:
+            "thirteenOrphansThirteenSided",
+          name: "国士無双十三面待ち",
+          standardMultiplier: 2,
+          standardEligible: true
+        }),
+        "enemy-ability:E-7"
+      );
+    const result =
+      resolveAkuukanWinningYaku({
+        normalYakuCandidates: [
+          menzenTsumo
+        ],
+        yakumanCandidates: [
+          thirteenSided,
+          thirteenOrphans
+        ],
+        winningShapeKind:
+          "thirteenOrphans"
+      });
+
+    expect(
+      result.activeNormalYakuCandidates
+    ).toEqual([menzenTsumo]);
+    expect(result.hasValidWinningShape).toBe(
+      false
+    );
+    expect(result.hasValidYaku).toBe(false);
+  });
+
+  it("国士十三面だけが無効でも通常の国士が残れば国士形を有効にする", () => {
+    const thirteenOrphans =
+      createAkuukanYakumanCandidate({
+        id: "thirteenOrphans",
+        name: "国士無双",
+        standardMultiplier: 1,
+        standardEligible: true
+      });
+    const thirteenSided =
+      invalidateAkuukanYakuman(
+        createAkuukanYakumanCandidate({
+          id:
+            "thirteenOrphansThirteenSided",
+          name: "国士無双十三面待ち",
+          standardMultiplier: 2,
+          standardEligible: true
+        }),
+        "enemy-ability:E-7"
+      );
+    const result =
+      resolveAkuukanWinningYaku({
+        normalYakuCandidates: [],
+        yakumanCandidates: [
+          thirteenSided,
+          thirteenOrphans
+        ],
+        winningShapeKind:
+          "thirteenOrphans"
+      });
+
+    expect(
+      result.activeYakumanCandidates
+    ).toEqual([thirteenOrphans]);
+    expect(result.hasValidWinningShape).toBe(
+      true
+    );
+    expect(result.hasValidYaku).toBe(true);
+  });
+
+  it("通常形では七対子候補の無効化を和了形へ波及させない", () => {
+    const ryanpeikou =
+      createAkuukanNormalYakuCandidate({
+        id: "ryanpeikou",
+        name: "二盃口",
+        closedHan: 3,
+        standardHan: 3,
+        standardEligible: true
+      });
+    const sevenPairs =
+      invalidateAkuukanNormalYaku(
+        createAkuukanNormalYakuCandidate({
+          id: "sevenPairs",
+          name: "七対子",
+          closedHan: 2,
+          standardHan: 2,
+          standardEligible: true
+        }),
+        "enemy-ability:E-7"
+      );
+    const result =
+      resolveAkuukanWinningYaku({
+        normalYakuCandidates: [
+          ryanpeikou,
+          sevenPairs
+        ],
+        yakumanCandidates: [],
+        winningShapeKind: "standard"
+      });
+
+    expect(result.hasValidWinningShape).toBe(
+      true
+    );
+    expect(result.hasValidYaku).toBe(true);
+  });
+  
   it("候補がなければ有効役なしとして初期化する", () => {
     const normalYakuCandidates = [] as const;
     const yakumanCandidates = [] as const;
