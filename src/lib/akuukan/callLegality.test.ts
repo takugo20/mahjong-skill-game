@@ -13,7 +13,10 @@ import {
 } from "./callLegality";
 
 function createAkuukan(
-  enemyId: "enemy-1" | "enemy-2"
+  enemyId:
+    | "enemy-1"
+    | "enemy-2"
+    | "enemy-4"
 ) {
   return createInitialAkuukanGameState({
     enemyId,
@@ -166,6 +169,128 @@ describe("E-3の副露可否", () => {
           score: 25000
         })
       ).toBe(0);
+    }
+  });
+});
+
+describe("E-8の副露・暗槓禁止", () => {
+  it("敵4以外の家はチー・ポン・大明槓・暗槓できない", () => {
+    const akuukan = createAkuukan(
+      "enemy-4"
+    );
+
+    for (
+      const owner of [
+        "player",
+        "normalOpponent"
+      ] as const
+    ) {
+      for (
+        const kind of [
+          "chi",
+          "pon",
+          "openKan",
+          "closedKan"
+        ] as const
+      ) {
+        expect(
+          isAkuukanCallAllowed({
+            akuukan,
+            owner,
+            kind,
+            score: 25000
+          })
+        ).toBe(false);
+      }
+    }
+  });
+
+  it("敵4本人はすべての副露・槓を宣言できる", () => {
+    const akuukan = createAkuukan(
+      "enemy-4"
+    );
+
+    for (
+      const kind of [
+        "chi",
+        "pon",
+        "openKan",
+        "closedKan",
+        "addedKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "selectedEnemy",
+          kind,
+          score: 0
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("敵4以外の家でも加槓はできる", () => {
+    const akuukan = createAkuukan(
+      "enemy-4"
+    );
+
+    for (
+      const owner of [
+        "player",
+        "normalOpponent"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner,
+          kind: "addedKan",
+          score: 0
+        })
+      ).toBe(true);
+      expect(
+        getAkuukanCallDeposit({
+          akuukan,
+          owner,
+          kind: "addedKan",
+          score: 25000
+        })
+      ).toBe(0);
+    }
+  });
+
+  it("E-8が存在しないか無効なら副露・暗槓を禁止しない", () => {
+    const otherEnemy = createAkuukan(
+      "enemy-1"
+    );
+    const disabledE8 =
+      disableAkuukanSource(
+        createAkuukan("enemy-4"),
+        "enemy-ability:E-8"
+      );
+
+    for (const akuukan of [
+      otherEnemy,
+      disabledE8
+    ]) {
+      for (
+        const kind of [
+          "chi",
+          "pon",
+          "openKan",
+          "closedKan"
+        ] as const
+      ) {
+        expect(
+          isAkuukanCallAllowed({
+            akuukan,
+            owner: "player",
+            kind,
+            score: 0
+          })
+        ).toBe(true);
+      }
     }
   });
 });
