@@ -2688,9 +2688,10 @@ function playCpuDiscardingTurn(
   const riichiDecision =
     getCpuRiichiDecision(
       state,
-      cpuSeat
+      cpuSeat,
+      random
     );
-
+  
   if (riichiDecision) {
     return playCpuRiichiDeclaration(
       state,
@@ -2872,7 +2873,8 @@ function isRiichiProhibited(
 
 function getCpuRiichiDecision(
   state: GameState,
-  cpuSeat: SeatIndex
+  cpuSeat: SeatIndex,
+  random: () => number
 ): CpuRiichiDecision | null {
   if (
     cpuSeat === 0 ||
@@ -2918,7 +2920,13 @@ function getCpuRiichiDecision(
     visibleTiles:
       getVisibleTilesForCpuRiichi(
         state
-      )
+      ),
+    allowNotenRiichi:
+      isNotenRiichiAllowed(
+        state,
+        cpuSeat
+      ),
+    random
   });
 }
 
