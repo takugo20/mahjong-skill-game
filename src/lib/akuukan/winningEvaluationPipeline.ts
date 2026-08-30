@@ -1,4 +1,7 @@
 import type {
+  WinningHandDecomposition
+} from "../mahjong/hand";
+import type {
   YakumanContext
 } from "../mahjong/yakuman";
 import {
@@ -32,6 +35,8 @@ import type {
 function resolveAkuukanWinningYakuCandidatesWithAdjustments(
   candidates:
     AkuukanWinningYakuCandidates,
+  winningShapeKind:
+    WinningHandDecomposition["kind"],
   adjustments?:
     AkuukanWinningYakuAdjustments
 ): AkuukanWinningYakuResolution {
@@ -42,9 +47,10 @@ function resolveAkuukanWinningYakuCandidatesWithAdjustments(
       )
     : candidates;
 
-  return resolveAkuukanWinningYaku(
-    adjustedCandidates
-  );
+  return resolveAkuukanWinningYaku({
+    ...adjustedCandidates,
+    winningShapeKind
+  });
 }
 
 function mergeAkuukanWinningYakuAdjustments(
@@ -130,6 +136,7 @@ function resolveAkuukanWinningYakuWithGameEffects(
 
   return resolveAkuukanWinningYakuCandidatesWithAdjustments(
     candidates,
+    input.context.decomposition.kind,
     mergeAkuukanWinningYakuAdjustments(
       input.playerSkillAdjustments,
       enemyAbilityAdjustments
@@ -153,6 +160,7 @@ export function resolveAkuukanWinningYakuWithAdjustments(
     );
   return resolveAkuukanWinningYakuCandidatesWithAdjustments(
     candidates,
+    input.context.decomposition.kind,
     input.adjustments
   );
 }
