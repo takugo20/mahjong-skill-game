@@ -17,9 +17,15 @@ import type {
   AkuukanYakumanCandidate
 } from "./winningEvaluation";
 import {
+  isEnemyAbilityEnabled
+} from "./winningEvaluationEnemyAbilityAdjustments";
+import {
   resolveAkuukanOpponentWinningYaku,
   resolveAkuukanPlayerWinningYaku
 } from "./winningEvaluationPipeline";
+import {
+  isActivePlayerSkillEffectEnabled
+} from "./winningEvaluationPlayerSkillAdjustments";
 import type {
   AkuukanWinningYakuResolution
 } from "./winningEvaluationResolution";
@@ -36,6 +42,27 @@ export interface CreateAkuukanWinningCandidateYakuEvaluatorInput {
   readonly akuukan: AkuukanGameState;
   readonly owner:
     AkuukanWinningCandidateOwner;
+}
+
+export function shouldAkuukanWinningCandidateBeTreatedAsClosed(
+  input:
+    CreateAkuukanWinningCandidateYakuEvaluatorInput
+): boolean {
+  if (input.owner === "player") {
+    return isActivePlayerSkillEffectEnabled(
+      input.akuukan,
+      "1-15"
+    );
+  }
+
+  if (input.owner === "selectedEnemy") {
+    return isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-14"
+    );
+  }
+
+  return false;
 }
 
 function toNormalYakuResult(
