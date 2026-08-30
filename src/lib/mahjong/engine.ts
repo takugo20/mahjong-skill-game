@@ -7,6 +7,12 @@ import type {
   AkuukanCallOwner
 } from "../akuukan/callLegality";
 import {
+  areAkuukanDoraIndicatorsVisible
+} from "../akuukan/informationVisibility";
+import type {
+  AkuukanInformationViewer
+} from "../akuukan/informationVisibility";
+import {
   AKUUKAN_DRAW_MP_RECOVERY,
   AKUUKAN_INITIAL_MP,
   AKUUKAN_MAX_MP,
@@ -269,6 +275,38 @@ export function getDoraIndicators(
     .slice(0, round.doraIndicatorCount)
     .map((index) => round.deadWall[index])
     .filter((tile): tile is Tile => tile !== undefined);
+}
+
+function getAkuukanInformationViewer(
+  seat: SeatIndex
+): AkuukanInformationViewer {
+  if (seat === 0) {
+    return "player";
+  }
+
+  return seat === 2
+    ? "selectedEnemy"
+    : "normalOpponent";
+}
+
+function getDoraIndicatorsForCpu(
+  state: GameState,
+  cpuSeat: SeatIndex
+): Tile[] {
+  const doraIndicators =
+    getDoraIndicators(state.round);
+
+  if (!state.akuukan) {
+    return doraIndicators;
+  }
+
+  return areAkuukanDoraIndicatorsVisible({
+    akuukan: state.akuukan,
+    viewer:
+      getAkuukanInformationViewer(cpuSeat)
+  })
+    ? doraIndicators
+    : [];
 }
 
 export function getWindLabel(wind: Wind): string {
@@ -581,7 +619,7 @@ export function discardTile(
 function calculateDiscardPriority(
   tile: Tile,
   player: PlayerState,
-  round: RoundState,
+  doraIndicators: readonly Tile[],
   random: () => number
 ): number {
   const sameTypeCount = player.hand.filter(
@@ -590,7 +628,6 @@ function calculateDiscardPriority(
       getTileTypeKey(tile)
   ).length;
 
-  const doraIndicators = getDoraIndicators(round);
   const tileIsDora = doraIndicators.some(
     (indicator) => isDora(tile, indicator)
   );
@@ -639,7 +676,7 @@ function calculateDiscardPriority(
 
 function chooseCpuDiscard(
   player: PlayerState,
-  round: RoundState,
+  doraIndicators: readonly Tile[],
   random: () => number
 ): Tile {
   const candidates = player.hand.map((tile) => ({
@@ -647,7 +684,7 @@ function chooseCpuDiscard(
     priority: calculateDiscardPriority(
       tile,
       player,
-      round,
+      doraIndicators,
       random
     )
   }));
@@ -2358,7 +2395,10 @@ function applyCpuOpenKanCall(
     ];
   const selectedTile = chooseCpuDiscard(
     updatedCaller,
-    kanState.round,
+    getDoraIndicatorsForCpu(
+      kanState,
+      option.callerSeat
+    ),
     random
   );
   const discardedState = discardTile(
@@ -2837,6 +2877,11 @@ function playCpuDiscardingTurn(
 
   const cpuPlayer =
     state.round.players[cpuSeat];
+  const cpuDoraIndicators =
+    getDoraIndicatorsForCpu(
+      state,
+      cpuSeat
+    );
   const riichiDecision =
     getCpuRiichiDecision(
       state,
@@ -2861,9 +2906,7 @@ function playCpuDiscardingTurn(
       ? chooseCpuPostRiichiDiscard({
           player: cpuPlayer,
           doraIndicators:
-            getDoraIndicators(
-              state.round
-            ),
+            cpuDoraIndicators,
           visibleTiles:
             getVisibleTilesForCpuRiichi(
               state
@@ -2889,12 +2932,12 @@ function playCpuDiscardingTurn(
         ) ??
         chooseCpuDiscard(
           cpuPlayer,
-          state.round,
+          cpuDoraIndicators,
           random
         )
       : chooseCpuDiscard(
           cpuPlayer,
-          state.round,
+          cpuDoraIndicators,
           random
         ));
 
@@ -3097,7 +3140,10 @@ function getCpuRiichiDecision(
     riichiDiscardTileIds:
       candidateTileIds,
     doraIndicators:
-      getDoraIndicators(state.round),
+      getDoraIndicatorsForCpu(
+        state,
+        cpuSeat
+      ),
     visibleTiles:
       getVisibleTilesForCpuRiichi(
         state
