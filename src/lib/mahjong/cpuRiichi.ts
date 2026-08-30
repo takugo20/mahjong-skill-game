@@ -1,4 +1,6 @@
 import {
+  calculateShanten,
+  getTileTypeFromIndex,
   getWinningTileTypes
 } from "./hand";
 import type {
@@ -8,9 +10,17 @@ import {
   isDora
 } from "./tiles";
 import type {
+  Meld,
   PlayerState,
   Tile
 } from "./types";
+
+const ONE_SHANTEN_RIICHI_PROBABILITY =
+  0.9;
+const TWO_SHANTEN_RIICHI_PROBABILITY =
+  0.5;
+const TWO_SHANTEN_EARLY_DISCARD_LIMIT =
+  5;
 
 export interface CpuRiichiDecisionInput {
   player: PlayerState;
@@ -18,12 +28,17 @@ export interface CpuRiichiDecisionInput {
     readonly string[];
   doraIndicators: readonly Tile[];
   visibleTiles?: readonly Tile[];
+  allowNotenRiichi?: boolean;
+  random?: () => number;
 }
 
 export interface CpuRiichiDecision {
   discardTileId: string;
+  shanten: number;
   waitTileTypes: TileType[];
   remainingWinningTileCount: number;
+  improvingTileTypes: TileType[];
+  remainingImprovingTileCount: number;
   discardedDoraCount: number;
 }
 
@@ -63,25 +78,31 @@ function createKnownTiles(
   return [...tileById.values()];
 }
 
-function countRemainingWinningTiles(
-  waitTileTypes: readonly TileType[],
+function countKnownTileType(
+  tileType: TileType,
   knownTiles: readonly Tile[]
 ): number {
-  return waitTileTypes.reduce(
-    (total, waitTileType) => {
-      const knownCount = knownTiles.filter(
-        (tile) =>
-          isSameTileType(
-            tile,
-            waitTileType
-          )
-      ).length;
+  return knownTiles.filter(
+    (tile) =>
+      isSameTileType(tile, tileType)
+  ).length;
+}
 
-      return (
-        total +
-        Math.max(0, 4 - knownCount)
-      );
-    },
+function countRemainingTiles(
+  tileTypes: readonly TileType[],
+  knownTiles: readonly Tile[]
+): number {
+  return tileTypes.reduce(
+    (total, tileType) =>
+      total +
+      Math.max(
+        0,
+        4 -
+          countKnownTileType(
+            tileType,
+            knownTiles
+          )
+      ),
     0
   );
 }
@@ -102,6 +123,64 @@ function countDiscardedDora(
   );
 }
 
+function getImprovingTileTypes(
+  handAfterDiscard: readonly Tile[],
+  melds: readonly Meld[],
+  shanten: number,
+  knownTiles: readonly Tile[]
+): TileType[] {
+  if (shanten === 0) {
+    return getWinningTileTypes(
+      handAfterDiscard,
+      melds
+    );
+  }
+
+  const improvingTileTypes: TileType[] =
+    [];
+
+  for (
+    let index = 0;
+    index < 34;
+    index += 1
+  ) {
+    const tileType =
+      getTileTypeFromIndex(index);
+
+    if (
+      countKnownTileType(
+        tileType,
+        knownTiles
+      ) >= 4
+    ) {
+      continue;
+    }
+
+    const candidateTile: Tile = {
+      id:
+        `cpu-riichi-improving-` +
+        index,
+      suit: tileType.suit,
+      rank: tileType.rank,
+      red: false
+    };
+    const nextShanten =
+      calculateShanten(
+        [
+          ...handAfterDiscard,
+          candidateTile
+        ],
+        melds
+      ).minimum;
+
+    if (nextShanten < shanten) {
+      improvingTileTypes.push(tileType);
+    }
+  }
+
+  return improvingTileTypes;
+}
+
 function evaluateDiscard(
   input: CpuRiichiDecisionInput,
   tile: Tile,
@@ -112,25 +191,46 @@ function evaluateDiscard(
       (candidate) =>
         candidate.id !== tile.id
     );
-  const waitTileTypes =
-    getWinningTileTypes(
-      handAfterDiscard,
-      input.player.melds
-    );
+  const shanten = calculateShanten(
+    handAfterDiscard,
+    input.player.melds
+  ).minimum;
 
-  if (waitTileTypes.length === 0) {
+  if (!Number.isFinite(shanten)) {
     return null;
   }
+
+  const waitTileTypes =
+    shanten === 0
+      ? getWinningTileTypes(
+          handAfterDiscard,
+          input.player.melds
+        )
+      : [];
+  const improvingTileTypes =
+    getImprovingTileTypes(
+      handAfterDiscard,
+      input.player.melds,
+      shanten,
+      knownTiles
+    );
+  const remainingImprovingTileCount =
+    countRemainingTiles(
+      improvingTileTypes,
+      knownTiles
+    );
 
   return {
     decision: {
       discardTileId: tile.id,
+      shanten,
       waitTileTypes,
       remainingWinningTileCount:
-        countRemainingWinningTiles(
-          waitTileTypes,
-          knownTiles
-        ),
+        shanten === 0
+          ? remainingImprovingTileCount
+          : 0,
+      improvingTileTypes,
+      remainingImprovingTileCount,
       discardedDoraCount:
         countDiscardedDora(
           tile,
@@ -141,6 +241,107 @@ function evaluateDiscard(
       tile.id ===
       input.player.drawnTileId
   };
+}
+
+function isRiichiCandidateAllowed(
+  input: CpuRiichiDecisionInput,
+  candidate: EvaluatedRiichiDiscard
+): boolean {
+  if (candidate.decision.shanten === 0) {
+    return true;
+  }
+
+  return (
+    input.allowNotenRiichi === true &&
+    candidate.decision.shanten >= 1 &&
+    candidate.decision.shanten <= 2
+  );
+}
+
+function compareRiichiCandidates(
+  left: EvaluatedRiichiDiscard,
+  right: EvaluatedRiichiDiscard
+): number {
+  const shantenDifference =
+    left.decision.shanten -
+    right.decision.shanten;
+
+  if (shantenDifference !== 0) {
+    return shantenDifference;
+  }
+
+  const remainingDifference =
+    right.decision
+      .remainingImprovingTileCount -
+    left.decision
+      .remainingImprovingTileCount;
+
+  if (remainingDifference !== 0) {
+    return remainingDifference;
+  }
+
+  const improvingTypeDifference =
+    right.decision.improvingTileTypes
+      .length -
+    left.decision.improvingTileTypes
+      .length;
+
+  if (improvingTypeDifference !== 0) {
+    return improvingTypeDifference;
+  }
+
+  const doraDifference =
+    left.decision.discardedDoraCount -
+    right.decision.discardedDoraCount;
+
+  if (doraDifference !== 0) {
+    return doraDifference;
+  }
+
+  if (
+    left.discardsDrawnTile !==
+    right.discardsDrawnTile
+  ) {
+    return left.discardsDrawnTile
+      ? -1
+      : 1;
+  }
+
+  return left.decision.discardTileId
+    .localeCompare(
+      right.decision.discardTileId
+    );
+}
+
+function shouldDeclareRiichi(
+  input: CpuRiichiDecisionInput,
+  decision: CpuRiichiDecision
+): boolean {
+  if (decision.shanten === 0) {
+    return true;
+  }
+
+  const random = input.random ?? Math.random;
+
+  if (decision.shanten === 1) {
+    return (
+      random() <
+      ONE_SHANTEN_RIICHI_PROBABILITY
+    );
+  }
+
+  if (
+    decision.shanten === 2 &&
+    input.player.discards.length <=
+      TWO_SHANTEN_EARLY_DISCARD_LIMIT
+  ) {
+    return (
+      random() <
+      TWO_SHANTEN_RIICHI_PROBABILITY
+    );
+  }
+
+  return false;
 }
 
 export function chooseCpuRiichi(
@@ -178,47 +379,25 @@ export function chooseCpuRiichi(
       ): candidate is EvaluatedRiichiDiscard =>
         candidate !== null
     )
-    .sort((left, right) => {
-      const remainingDifference =
-        right.decision
-          .remainingWinningTileCount -
-        left.decision
-          .remainingWinningTileCount;
+    .filter((candidate) =>
+      isRiichiCandidateAllowed(
+        input,
+        candidate
+      )
+    )
+    .sort(compareRiichiCandidates);
+  const decision =
+    candidates[0]?.decision ?? null;
 
-      if (remainingDifference !== 0) {
-        return remainingDifference;
-      }
+  if (
+    decision === null ||
+    !shouldDeclareRiichi(
+      input,
+      decision
+    )
+  ) {
+    return null;
+  }
 
-      const waitTypeDifference =
-        right.decision.waitTileTypes.length -
-        left.decision.waitTileTypes.length;
-
-      if (waitTypeDifference !== 0) {
-        return waitTypeDifference;
-      }
-
-      const doraDifference =
-        left.decision.discardedDoraCount -
-        right.decision.discardedDoraCount;
-
-      if (doraDifference !== 0) {
-        return doraDifference;
-      }
-
-      if (
-        left.discardsDrawnTile !==
-        right.discardsDrawnTile
-      ) {
-        return left.discardsDrawnTile
-          ? -1
-          : 1;
-      }
-
-      return left.decision.discardTileId
-        .localeCompare(
-          right.decision.discardTileId
-        );
-    });
-
-  return candidates[0]?.decision ?? null;
+  return decision;
 }
