@@ -44,9 +44,31 @@ function isAkuukanE3DepositRequired(
   );
 }
 
+function isAkuukanE8CallProhibited(
+  input: AkuukanCallCheckInput
+): boolean {
+  return (
+    input.owner !== "selectedEnemy" &&
+    (
+      input.kind === "chi" ||
+      input.kind === "pon" ||
+      input.kind === "openKan" ||
+      input.kind === "closedKan"
+    ) &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-8"
+    )
+  );
+}
+
 export function isAkuukanCallAllowed(
   input: AkuukanCallCheckInput
 ): boolean {
+  if (isAkuukanE8CallProhibited(input)) {
+    return false;
+  }
+
   return (
     !isAkuukanE3DepositRequired(input) ||
     input.score >=
