@@ -1,4 +1,11 @@
 import {
+  isAkuukanCallAllowed
+} from "../akuukan/callLegality";
+import type {
+  AkuukanCallKind,
+  AkuukanCallOwner
+} from "../akuukan/callLegality";
+import {
   AKUUKAN_DRAW_MP_RECOVERY,
   AKUUKAN_INITIAL_MP,
   AKUUKAN_MAX_MP,
@@ -1643,6 +1650,41 @@ function finishFourKansIfAvailable(
     : null;
 }
 
+function getAkuukanCallOwner(
+  seat: SeatIndex
+): AkuukanCallOwner {
+  if (seat === 0) {
+    return "player";
+  }
+
+  return seat === 2
+    ? "selectedEnemy"
+    : "normalOpponent";
+}
+
+function isCallAllowed(
+  state: GameState,
+  seat: SeatIndex,
+  kind: AkuukanCallKind
+): boolean {
+  if (!state.akuukan) {
+    return true;
+  }
+
+  const caller =
+    state.round.players[seat];
+
+  return (
+    caller !== undefined &&
+    isAkuukanCallAllowed({
+      akuukan: state.akuukan,
+      owner: getAkuukanCallOwner(seat),
+      kind,
+      score: caller.score
+    })
+  );
+}
+
 function createPlayerMeldCallOptions(
   state: GameState
 ): MeldCallOption[] {
@@ -1667,7 +1709,13 @@ function createPlayerMeldCallOptions(
     callerRiichi: player.riichi,
     liveWallTileCount:
       state.round.liveWall.length
-  });
+  }).filter((option) =>
+    isCallAllowed(
+      state,
+      0,
+      option.kind
+    )
+  );
 }
 
 export function getPlayerMeldCallOptions(
@@ -1716,6 +1764,16 @@ export function getPlayerOpenKanCallOptions(
   }
 
   const player = state.round.players[0];
+
+  if (
+    !isCallAllowed(
+      state,
+      0,
+      "openKan"
+    )
+  ) {
+    return [];
+  }
 
   return getOpenKanCallOptions({
     callerSeat: 0,
@@ -1824,7 +1882,13 @@ function getCpuCallDecisions(
           callerRiichi: player.riichi,
           liveWallTileCount:
             state.round.liveWall.length
-        });
+        }).filter((option) =>
+          isCallAllowed(
+            state,
+            player.seat,
+            option.kind
+          )
+        );
       const meldCallDecision =
         chooseCpuMeldCall({
           player,
@@ -1835,19 +1899,28 @@ function getCpuCallDecisions(
           options: meldCallOptions
         });
       const openKanCallOptions =
-        getOpenKanCallOptions({
-          callerSeat: player.seat,
-          discarderSeat: lastDiscard.seat,
-          calledTile:
-            lastDiscard.discard.tile,
-          concealedTiles: player.hand,
-          callerRiichi: player.riichi,
-          kanCount: state.round.kanCount,
-          rinshanDrawCount:
-            state.round.rinshanDrawCount,
-          liveWallTileCount:
-            state.round.liveWall.length
-        });
+        isCallAllowed(
+          state,
+          player.seat,
+          "openKan"
+        )
+          ? getOpenKanCallOptions({
+              callerSeat: player.seat,
+              discarderSeat:
+                lastDiscard.seat,
+              calledTile:
+                lastDiscard.discard.tile,
+              concealedTiles: player.hand,
+              callerRiichi: player.riichi,
+              kanCount:
+                state.round.kanCount,
+              rinshanDrawCount:
+                state.round
+                  .rinshanDrawCount,
+              liveWallTileCount:
+                state.round.liveWall.length
+            })
+          : [];
       const openKanCallDecision =
         chooseCpuOpenKanCall({
           player,
