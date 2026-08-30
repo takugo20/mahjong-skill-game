@@ -10,11 +10,18 @@ import type {
   AkuukanGameState
 } from "./types";
 import {
+  createAkuukanWinningYakuCandidates
+} from "./winningEvaluationCandidates";
+import {
   clearAkuukanE6WinningYakuAfterNagashiMangan,
   getAkuukanE6LastWinningNormalYakuIds,
   isAkuukanE6Enabled,
-  recordAkuukanE6WinningYaku
+  recordAkuukanE6WinningYaku,
+  recordAkuukanE6WinningYakuAfterWin
 } from "./winningEvaluationEnemyAbilityHistory";
+import {
+  resolveAkuukanWinningYaku
+} from "./winningEvaluationResolution";
 
 function createE6State(): AkuukanGameState {
   return createInitialAkuukanGameState({
@@ -147,6 +154,115 @@ describe("E-6の前回和了役記録", () => {
     ).toBe(initial);
   });
 
+  it("確定した有効役だけを和了結果から記録する", () => {
+    const resolution =
+      resolveAkuukanWinningYaku(
+        createAkuukanWinningYakuCandidates({
+          structuralNormalYakuIds: [
+            "doubleRiichi",
+            "riichi",
+            "ryanpeikou",
+            "iipeikou"
+          ],
+          structuralYakumanIds: [],
+          isClosed: true
+        })
+      );
+    const recorded =
+      recordAkuukanE6WinningYakuAfterWin({
+        akuukan: createE6State(),
+        winnerIsSelectedEnemy: true,
+        winIsValid: true,
+        resolution
+      });
+
+    expect(
+      getAkuukanE6LastWinningNormalYakuIds(
+        recorded
+      )
+    ).toEqual([
+      "doubleRiichi",
+      "ryanpeikou"
+    ]);
+  });
+
+  it("無効な和了または有効役なしでは記録を更新しない", () => {
+    const initial: AkuukanGameState = {
+      ...createE6State(),
+      e6LastWinningNormalYakuIds: [
+        "riichi"
+      ]
+    };
+    const validResolution =
+      resolveAkuukanWinningYaku(
+        createAkuukanWinningYakuCandidates({
+          structuralNormalYakuIds: [
+            "pinfu"
+          ],
+          structuralYakumanIds: [],
+          isClosed: true
+        })
+      );
+    const noYakuResolution =
+      resolveAkuukanWinningYaku(
+        createAkuukanWinningYakuCandidates({
+          structuralNormalYakuIds: [
+            "pinfu"
+          ],
+          structuralYakumanIds: [],
+          isClosed: false
+        })
+      );
+
+    expect(
+      recordAkuukanE6WinningYakuAfterWin({
+        akuukan: initial,
+        winnerIsSelectedEnemy: true,
+        winIsValid: false,
+        resolution: validResolution
+      })
+    ).toBe(initial);
+    expect(
+      recordAkuukanE6WinningYakuAfterWin({
+        akuukan: initial,
+        winnerIsSelectedEnemy: true,
+        winIsValid: true,
+        resolution: noYakuResolution
+      })
+    ).toBe(initial);
+  });
+
+  it("役満時も採用構成の有効な通常役を記録する", () => {
+    const resolution =
+      resolveAkuukanWinningYaku(
+        createAkuukanWinningYakuCandidates({
+          structuralNormalYakuIds: [
+            "menzenTsumo"
+          ],
+          structuralYakumanIds: [
+            "bigThreeDragons"
+          ],
+          isClosed: true
+        })
+      );
+    const recorded =
+      recordAkuukanE6WinningYakuAfterWin({
+        akuukan: createE6State(),
+        winnerIsSelectedEnemy: true,
+        winIsValid: true,
+        resolution
+      });
+
+    expect(resolution.usesYakumanScoring).toBe(
+      true
+    );
+    expect(
+      getAkuukanE6LastWinningNormalYakuIds(
+        recorded
+      )
+    ).toEqual(["menzenTsumo"]);
+  });
+  
   it("特殊敵本人の流し満貫では記録を空にする", () => {
     const initial: AkuukanGameState = {
       ...createE6State(),
