@@ -176,6 +176,27 @@ describe("立直可能判定", () => {
     }
   });
 
+    it("門前条件の例外が許可されれば副露手でも立直できる", () => {
+    const concealedTiles =
+      createOneMeldRiichiHand();
+    const input = createCheckInput({
+      concealedTiles,
+      melds: [createMeld("chi")],
+      allowOpenHand: true
+    });
+
+    expect(
+      getRiichiDiscardTileIds(input)
+    ).toEqual([
+      concealedTiles[9].id,
+      concealedTiles[10].id
+    ]);
+
+    expect(
+      canDeclareRiichi(input)
+    ).toBe(true);
+  });
+
   it("暗槓だけなら門前として立直できる", () => {
     const concealedTiles =
       createOneMeldRiichiHand();
