@@ -1,4 +1,5 @@
 import type {
+  Meld,
   PlayerState
 } from "../mahjong/types";
 import type {
@@ -136,5 +137,117 @@ export function applyAkuukanE12AfterCall(
     players,
     transfers,
     totalStolenPoints
+  };
+}
+
+export interface ApplyAkuukanE15AfterCallInput {
+  readonly akuukan: AkuukanGameState;
+  readonly callerIsSelectedEnemy: boolean;
+  readonly kind: AkuukanCallKind;
+  readonly melds: readonly Meld[];
+  readonly meldIndex: number;
+  readonly addedTileId?: string;
+}
+
+export interface AkuukanE15AfterCallResult {
+  readonly melds: Meld[];
+  readonly redTileIds: string[];
+}
+
+function isAkuukanE15TargetCall(
+  kind: AkuukanCallKind
+): boolean {
+  return (
+    kind === "chi" ||
+    kind === "pon" ||
+    kind === "openKan" ||
+    kind === "addedKan"
+  );
+}
+
+function getAkuukanE15TargetTileIds(
+  input: ApplyAkuukanE15AfterCallInput,
+  targetMeld: Meld
+): string[] | null {
+  if (input.kind !== "addedKan") {
+    return targetMeld.tiles.map(
+      (tile) => tile.id
+    );
+  }
+
+  if (
+    !input.addedTileId ||
+    !targetMeld.tiles.some(
+      (tile) =>
+        tile.id === input.addedTileId
+    )
+  ) {
+    return null;
+  }
+
+  return [input.addedTileId];
+}
+
+export function applyAkuukanE15AfterCall(
+  input: ApplyAkuukanE15AfterCallInput
+): AkuukanE15AfterCallResult | null {
+  if (
+    !input.callerIsSelectedEnemy ||
+    !isAkuukanE15TargetCall(
+      input.kind
+    ) ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-15"
+    )
+  ) {
+    return null;
+  }
+
+  const targetMeld =
+    input.melds[input.meldIndex];
+
+  if (
+    !targetMeld ||
+    targetMeld.kind !== input.kind ||
+    targetMeld.tiles.length === 0
+  ) {
+    return null;
+  }
+
+  const redTileIds =
+    getAkuukanE15TargetTileIds(
+      input,
+      targetMeld
+    );
+
+  if (!redTileIds) {
+    return null;
+  }
+
+  const redTileIdSet = new Set(
+    redTileIds
+  );
+  const melds = input.melds.map(
+    (meld, meldIndex): Meld =>
+      meldIndex === input.meldIndex
+        ? {
+            ...meld,
+            tiles: meld.tiles.map(
+              (tile) =>
+                redTileIdSet.has(tile.id)
+                  ? {
+                      ...tile,
+                      red: true
+                    }
+                  : tile
+            )
+          }
+        : meld
+  );
+
+  return {
+    melds,
+    redTileIds
   };
 }
