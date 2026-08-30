@@ -231,6 +231,34 @@ describe("立直可能判定", () => {
     ).toBe(true);
   });
 
+    it("ノーテン例外が許可されれば全ての打牌を立直候補にする", () => {
+    const hand = [
+      ...createTiles(
+        "man",
+        [1, 1, 4, 4, 7, 7]
+      ),
+      ...createTiles(
+        "pin",
+        [1, 1, 4, 4]
+      ),
+      ...createTiles("sou", [1, 4]),
+      ...createTiles("honor", [1, 2])
+    ];
+    const input = createCheckInput({
+      concealedTiles: hand,
+      allowNoten: true
+    });
+
+    expect(
+      getRiichiDiscardTileIds(input)
+    ).toEqual(
+      hand.map((tile) => tile.id)
+    );
+    expect(
+      canDeclareRiichi(input)
+    ).toBe(true);
+  });
+
   it("聴牌候補がない手牌や不正な枚数では立直できない", () => {
     const nonTenpaiHand = [
       ...createTiles(
