@@ -14,6 +14,7 @@ import type {
 import type {
   InvalidWinningHandEvaluation,
   ValidWinningHandEvaluation,
+  WinningCandidateYakuEvaluator,
   WinningHandEvaluationInput,
   WinningHandEvaluationResult
 } from "./winning";
@@ -42,6 +43,8 @@ export interface RoundWinActionInput {
   doraIndicators: readonly Tile[];
   uraDoraIndicators?: readonly Tile[];
   treatAsClosed?: boolean;
+  candidateYakuEvaluator?:
+    WinningCandidateYakuEvaluator;
   doubleRiichi?: boolean;
   rinshan?: boolean;
   chankan?: boolean;
@@ -332,6 +335,8 @@ function createWinningInput(
     chiihou: input.chiihou,
     treatAsClosed:
       input.treatAsClosed,
+    candidateYakuEvaluator:
+      input.candidateYakuEvaluator,
     kiriageMangan: true,
     honba: input.round.honba,
     riichiSticks:
