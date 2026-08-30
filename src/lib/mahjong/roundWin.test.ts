@@ -447,6 +447,125 @@ describe("局内ロン和了", () => {
   });
 });
 
+describe("差し替え役判定による精算", () => {
+  it("和了不可なら役が残っていても点数を精算しない", () => {
+    const round = createRound();
+    const completedHand =
+      createPinfuHand();
+    const winningTile =
+      completedHand[0];
+    const scoresBefore =
+      round.players.map(
+        (player) => player.score
+      );
+
+    round.currentSeat = 3;
+    round.phase = "drawing";
+    round.players[1] = {
+      ...round.players[1],
+      hand: completedHand.slice(1)
+    };
+    round.lastDiscard = {
+      seat: 2,
+      discard: createDiscard(winningTile)
+    };
+
+    const result = resolveRoundWin({
+      round,
+      winnerSeat: 1,
+      winMethod: "ron",
+      doraIndicators: [],
+      candidateYakuEvaluator: () => ({
+        normalYaku: [
+          {
+            id: "pinfu",
+            name: "平和",
+            han: 1
+          }
+        ],
+        yakuman: [],
+        hasValidYaku: false
+      })
+    });
+
+    expect(result).toEqual({
+      valid: false,
+      reason: "noYaku",
+      evaluation: {
+        valid: false,
+        reason: "noYaku",
+        candidates: []
+      }
+    });
+    expect(
+      round.players.map(
+        (player) => player.score
+      )
+    ).toEqual(scoresBefore);
+  });
+
+  it("変更後の翻数でロン点を精算する", () => {
+    const round = createRound();
+    const completedHand =
+      createPinfuHand();
+    const winningTile =
+      completedHand[0];
+
+    round.currentSeat = 3;
+    round.phase = "drawing";
+    round.players[1] = {
+      ...round.players[1],
+      hand: completedHand.slice(1)
+    };
+    round.lastDiscard = {
+      seat: 2,
+      discard: createDiscard(winningTile)
+    };
+
+    const result = resolveRoundWin({
+      round,
+      winnerSeat: 1,
+      winMethod: "ron",
+      doraIndicators: [],
+      candidateYakuEvaluator: () => ({
+        normalYaku: [
+          {
+            id: "pinfu",
+            name: "平和",
+            han: 3
+          }
+        ],
+        yakuman: [],
+        hasValidYaku: true
+      })
+    });
+
+    expect(result.valid).toBe(true);
+
+    if (!result.valid) {
+      throw new Error(
+        "変更後の翻数で和了できませんでした"
+      );
+    }
+
+    expect(
+      result.evaluation.best.yakuHan
+    ).toBe(3);
+    expect(
+      result.evaluation.best.totalHan
+    ).toBe(3);
+    expect(
+      result.evaluation.best.fu?.fu
+    ).toBe(30);
+    expect(
+      result.evaluation.best.score
+        .ronPayment
+    ).toBe(3900);
+    expect(getChange(result, 1)).toBe(3900);
+    expect(getChange(result, 2)).toBe(-3900);
+  });
+});
+
 describe("供託点の検証", () => {
   it("1000点単位でない供託を拒否する", () => {
     const round = createRound();
