@@ -56,7 +56,7 @@ function getEnemyAbilitySourceId(
   return `enemy-ability:${abilityId}`;
 }
 
-function isEnemyAbilityEnabled(
+export function isEnemyAbilityEnabled(
   state: AkuukanGameState,
   abilityId: EnemyAbilityId
 ): boolean {
