@@ -5,6 +5,9 @@ import {
 } from "react";
 import { TileView } from "./components/TileView";
 import {
+  areAkuukanDoraIndicatorsVisible
+} from "./lib/akuukan/informationVisibility";
+import {
   playGameSound,
   unlockGameAudio
 } from "./lib/gameAudio";
@@ -587,11 +590,13 @@ function getMeldDisplayTiles(
 interface WinResultDoraIndicatorsProps {
   doraIndicators: readonly Tile[];
   uraDoraIndicators: readonly Tile[];
+  doraIndicatorsVisible: boolean;
 }
 
 function WinResultDoraIndicators({
   doraIndicators,
-  uraDoraIndicators
+  uraDoraIndicators,
+  doraIndicatorsVisible
 }: WinResultDoraIndicatorsProps) {
   if (
     doraIndicators.length === 0 &&
@@ -615,7 +620,14 @@ function WinResultDoraIndicators({
             {doraIndicators.map((tile) => (
               <TileView
                 key={`result-dora-${tile.id}`}
-                tile={tile}
+                tile={
+                  doraIndicatorsVisible
+                    ? tile
+                    : undefined
+                }
+                faceDown={
+                  !doraIndicatorsVisible
+                }
                 compact
               />
             ))}
@@ -992,6 +1004,12 @@ export function GameBoard({
 
   const doraIndicators =
     getDoraIndicators(round);
+  const doraIndicatorsVisible =
+    !gameState.akuukan ||
+    areAkuukanDoraIndicatorsVisible({
+      akuukan: gameState.akuukan,
+      viewer: "player"
+    });
 
   const lastDiscardTileId =
     round.lastDiscard?.discard.tile.id ?? null;
@@ -1853,7 +1871,14 @@ export function GameBoard({
               {doraIndicators.map((tile) => (
                 <TileView
                   key={tile.id}
-                  tile={tile}
+                  tile={
+                    doraIndicatorsVisible
+                      ? tile
+                      : undefined
+                  }
+                  faceDown={
+                    !doraIndicatorsVisible
+                  }
                   compact
                 />
               ))}
@@ -2203,6 +2228,9 @@ export function GameBoard({
                   uraDoraIndicators={
                     winResult.uraDoraIndicatorTiles ?? []
                   }
+                  doraIndicatorsVisible={
+                    doraIndicatorsVisible
+                  }
                 />
               </header>
 
@@ -2330,6 +2358,9 @@ export function GameBoard({
                       }
                       uraDoraIndicators={
                         doubleRonUraDoraIndicatorTiles
+                      }
+                      doraIndicatorsVisible={
+                        doraIndicatorsVisible
                       }
                     />
                   </div>
