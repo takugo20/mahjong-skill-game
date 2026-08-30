@@ -5,6 +5,7 @@ import {
 } from "vitest";
 import {
   createInitialGameState,
+  declarePlayerMeldCall,
   declarePlayerOpenKan,
   getPlayerOpenKanCallOptions,
   playPlayerDiscard
@@ -125,6 +126,52 @@ function prepareCpuPon(
     hand: createPonHand(
       discardAfterCall
     ),
+    melds: [],
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+  setShortLiveWall(state);
+
+  return {
+    state,
+    calledTile
+  };
+}
+
+function prepareCpuOpenKan(
+  score: number
+): {
+  state: GameState;
+  calledTile: Tile;
+} {
+  const state = createState();
+  const calledTile = createTile(
+    "honor",
+    5
+  );
+
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [calledTile],
+    drawnTileId: calledTile.id,
+    drawnTileSource: "liveWall"
+  };
+  setEmptyCpuHands(state);
+  state.round.players[1] = {
+    ...state.round.players[1],
+    score,
+    hand: [
+      ...createTiles(
+        "honor",
+        [5, 5, 5]
+      ),
+      ...createTiles("man", [2, 2]),
+      ...createTiles(
+        "pin",
+        [1, 2, 3, 4, 5, 6]
+      ),
+      ...createTiles("sou", [7, 8])
+    ],
     melds: [],
     drawnTileId: null,
     drawnTileSource: null
@@ -300,6 +347,53 @@ describe("E-3の副露候補制限", () => {
       result.round.players[0].melds[0]
     ).toMatchObject({
       kind: "openKan"
+    });
+  });
+
+    it("プレイヤーのポン成立時に1000点を供託する", () => {
+    const state =
+      createPlayerOpenKanState(1000);
+    state.round.riichiPool = 2000;
+
+    const result = declarePlayerMeldCall(
+      state,
+      "akuukan-open-kan-pon"
+    );
+
+    expect(
+      result.round.players[0].score
+    ).toBe(0);
+    expect(result.round.riichiPool).toBe(
+      3000
+    );
+    expect(
+      result.round.players[0].melds[0]
+    ).toMatchObject({
+      kind: "pon"
+    });
+  });
+
+    it("通常CPUの大明槓成立時に1000点を供託する", () => {
+    const { state, calledTile } =
+      prepareCpuOpenKan(1000);
+
+    const result = playPlayerDiscard(
+      state,
+      calledTile.id,
+      () => 0.5
+    );
+
+    expect(
+      result.round.players[1].score
+    ).toBe(0);
+    expect(result.round.riichiPool).toBe(
+      1000
+    );
+    expect(
+      result.round.players[1].melds[0]
+    ).toMatchObject({
+      kind: "openKan",
+      calledTileId: calledTile.id
     });
   });
 });
