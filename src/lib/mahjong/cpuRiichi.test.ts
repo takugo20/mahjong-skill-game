@@ -4,6 +4,7 @@ import {
   it
 } from "vitest";
 import {
+  chooseCpuPostRiichiDiscard,
   chooseCpuRiichi
 } from "./cpuRiichi";
 import {
@@ -411,6 +412,78 @@ describe("E-4のノーテン立直判断", () => {
           hand.map((tile) => tile.id),
         doraIndicators: [],
         random: () => 0
+      })
+    ).toBeNull();
+  });
+});
+
+describe("E-4の立直後手替わり判断", () => {
+  it("向聴数を下げるツモ牌を残して不要牌を捨てる", () => {
+    const isolatedPinNine = createTile(
+      "pin",
+      9
+    );
+    const drawnTile = createTile(
+      "man",
+      4
+    );
+    const hand = [
+      ...createTiles("man", [1, 2, 3, 5]),
+      ...createTiles("pin", [1, 2, 3]),
+      isolatedPinNine,
+      ...createTiles("sou", [1, 2, 3]),
+      ...createTiles("honor", [1, 1]),
+      drawnTile
+    ];
+    const player = {
+      ...createCpuPlayer(hand),
+      riichi: true,
+      drawnTileId: drawnTile.id
+    };
+
+    const result =
+      chooseCpuPostRiichiDiscard({
+        player,
+        doraIndicators: []
+      });
+
+    expect(result).toMatchObject({
+      discardTileId: isolatedPinNine.id,
+      shanten: 0,
+      waitTileTypes: [
+        {
+          suit: "man",
+          rank: 3
+        },
+        {
+          suit: "man",
+          rank: 6
+        }
+      ]
+    });
+    expect(result?.discardTileId).not.toBe(
+      drawnTile.id
+    );
+  });
+
+  it("立直前またはツモ前なら手替わりを判断しない", () => {
+    const hand = createOneShantenHand();
+    const player = createCpuPlayer(hand);
+
+    expect(
+      chooseCpuPostRiichiDiscard({
+        player,
+        doraIndicators: []
+      })
+    ).toBeNull();
+    expect(
+      chooseCpuPostRiichiDiscard({
+        player: {
+          ...player,
+          riichi: true,
+          drawnTileId: null
+        },
+        doraIndicators: []
       })
     ).toBeNull();
   });
