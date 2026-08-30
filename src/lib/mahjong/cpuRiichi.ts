@@ -32,6 +32,12 @@ export interface CpuRiichiDecisionInput {
   random?: () => number;
 }
 
+export interface CpuPostRiichiDiscardInput {
+  player: PlayerState;
+  doraIndicators: readonly Tile[];
+  visibleTiles?: readonly Tile[];
+}
+
 export interface CpuRiichiDecision {
   discardTileId: string;
   shanten: number;
@@ -400,4 +406,48 @@ export function chooseCpuRiichi(
   }
 
   return decision;
+}
+
+export function chooseCpuPostRiichiDiscard(
+  input: CpuPostRiichiDiscardInput
+): CpuRiichiDecision | null {
+  if (
+    input.player.seat === 0 ||
+    !input.player.riichi ||
+    input.player.drawnTileId === null
+  ) {
+    return null;
+  }
+
+  const evaluationInput:
+    CpuRiichiDecisionInput = {
+      player: input.player,
+      riichiDiscardTileIds:
+        input.player.hand.map(
+          (tile) => tile.id
+        ),
+      doraIndicators:
+        input.doraIndicators,
+      visibleTiles: input.visibleTiles
+    };
+  const knownTiles = createKnownTiles(
+    evaluationInput
+  );
+  const candidates = input.player.hand
+    .map((tile) =>
+      evaluateDiscard(
+        evaluationInput,
+        tile,
+        knownTiles
+      )
+    )
+    .filter(
+      (
+        candidate
+      ): candidate is EvaluatedRiichiDiscard =>
+        candidate !== null
+    )
+    .sort(compareRiichiCandidates);
+
+  return candidates[0]?.decision ?? null;
 }
