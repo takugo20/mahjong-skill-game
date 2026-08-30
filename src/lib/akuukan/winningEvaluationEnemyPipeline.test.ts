@@ -18,6 +18,9 @@ import {
   createInitialAkuukanGameState
 } from "./state";
 import {
+  recordAkuukanE6WinningYaku
+} from "./winningEvaluationEnemyAbilityHistory";
+import {
   resolveAkuukanOpponentWinningYaku,
   resolveAkuukanPlayerWinningYaku,
   resolveAkuukanStandardWinningYaku
@@ -209,6 +212,105 @@ function createClosedSequenceContext(): YakumanContext {
 }
 
 describe("敵能力対応の役決定パイプライン", () => {
+  it("E-6は初回の役を記録後、同じ役を毎回2倍にする", () => {
+    const context =
+      createClosedSequenceContext();
+    const initial =
+      createInitialAkuukanGameState({
+        enemyId: "enemy-3",
+        equippedSkills: []
+      });
+    const firstResult =
+      resolveAkuukanOpponentWinningYaku({
+        context,
+        akuukan: initial,
+        winnerIsSelectedEnemy: true
+      });
+    const recorded =
+      recordAkuukanE6WinningYaku({
+        akuukan: initial,
+        winnerIsSelectedEnemy: true,
+        normalYakuIds:
+          firstResult
+            .activeNormalYakuCandidates
+            .map(
+              (candidate) => candidate.id
+            )
+      });
+    const secondResult =
+      resolveAkuukanOpponentWinningYaku({
+        context,
+        akuukan: recorded,
+        winnerIsSelectedEnemy: true
+      });
+    const recordedAgain =
+      recordAkuukanE6WinningYaku({
+        akuukan: recorded,
+        winnerIsSelectedEnemy: true,
+        normalYakuIds:
+          secondResult
+            .activeNormalYakuCandidates
+            .map(
+              (candidate) => candidate.id
+            )
+      });
+    const thirdResult =
+      resolveAkuukanOpponentWinningYaku({
+        context,
+        akuukan: recordedAgain,
+        winnerIsSelectedEnemy: true
+      });
+
+    expect(firstResult.normalYakuHan).toBe(6);
+    expect(secondResult.normalYakuHan).toBe(
+      12
+    );
+    expect(thirdResult.normalYakuHan).toBe(12);
+    expect(recordedAgain).toBe(recorded);
+    expect(
+      secondResult.normalYakuCandidates.find(
+        (candidate) =>
+          candidate.id === "ryanpeikou"
+      )?.fixedHanChanges
+    ).toEqual([
+      {
+        sourceId: "enemy-ability:E-6",
+        han: 6
+      }
+    ]);
+  });
+
+  it("E-6は同じ役を和了した通常CPUへ適用しない", () => {
+    const context =
+      createClosedSequenceContext();
+    const akuukan =
+      recordAkuukanE6WinningYaku({
+        akuukan:
+          createInitialAkuukanGameState({
+            enemyId: "enemy-3",
+            equippedSkills: []
+          }),
+        winnerIsSelectedEnemy: true,
+        normalYakuIds: [
+          "doubleRiichi",
+          "pinfu",
+          "ryanpeikou"
+        ]
+      });
+
+    expect(
+      resolveAkuukanOpponentWinningYaku({
+        context,
+        akuukan,
+        winnerIsSelectedEnemy: false
+      })
+    ).toEqual(
+      resolveAkuukanStandardWinningYaku(
+        context
+      )
+    );
+  });
+  
   it("E-14を特殊敵本人の副露手だけへ適用する", () => {
     const context =
       createOpenSanshokuContext();
