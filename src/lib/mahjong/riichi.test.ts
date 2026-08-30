@@ -155,6 +155,19 @@ describe("立直可能判定", () => {
     ).toBe(false);
   });
 
+  it("能力で禁止されている場合は立直候補を返さない", () => {
+    const input = createCheckInput({
+      riichiProhibited: true
+    });
+
+    expect(
+      getRiichiDiscardTileIds(input)
+    ).toEqual([]);
+    expect(
+      canDeclareRiichi(input)
+    ).toBe(false);
+  });
+
   it("副露手では立直できない", () => {
     const openMeldKinds: Meld["kind"][] = [
       "chi",
