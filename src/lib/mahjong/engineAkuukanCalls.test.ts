@@ -5,6 +5,7 @@ import {
 } from "vitest";
 import {
   createInitialGameState,
+  declarePlayerOpenKan,
   getPlayerOpenKanCallOptions,
   playPlayerDiscard
 } from "./engine";
@@ -231,6 +232,12 @@ describe("E-3の副露候補制限", () => {
       kind: "pon",
       calledTileId: calledTile.id
     });
+    expect(
+      result.round.players[1].score
+    ).toBe(0);
+    expect(result.round.riichiPool).toBe(
+      1000
+    );
   });
 
   it("E-3所有者本人は0点でもポンできる", () => {
@@ -249,6 +256,10 @@ describe("E-3の副露候補制限", () => {
       kind: "pon",
       calledTileId: calledTile.id
     });
+    expect(
+      result.round.players[2].score
+    ).toBe(0);
+    expect(result.round.riichiPool).toBe(0);
   });
 
   it("プレイヤーの大明槓候補を所持点で切り替える", () => {
@@ -265,5 +276,30 @@ describe("E-3の副露候補制限", () => {
     expect(
       getPlayerOpenKanCallOptions(exact)
     ).toHaveLength(1);
+  });
+
+    it("プレイヤーの大明槓成立時に1000点を供託する", () => {
+    const state =
+      createPlayerOpenKanState(1000);
+    state.round.riichiPool = 2000;
+    const option =
+      getPlayerOpenKanCallOptions(state)[0];
+
+    const result = declarePlayerOpenKan(
+      state,
+      option.id
+    );
+
+    expect(
+      result.round.players[0].score
+    ).toBe(0);
+    expect(result.round.riichiPool).toBe(
+      3000
+    );
+    expect(
+      result.round.players[0].melds[0]
+    ).toMatchObject({
+      kind: "openKan"
+    });
   });
 });
