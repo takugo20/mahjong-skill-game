@@ -396,4 +396,45 @@ describe("E-3の副露候補制限", () => {
       calledTileId: calledTile.id
     });
   });
+
+    it("ロンが優先されてCPUのポンが不成立なら供託しない", () => {
+    const { state, calledTile } =
+      prepareCpuPon(1, 1000);
+
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: [
+        ...createTiles("man", [1, 2, 3]),
+        ...createTiles("pin", [1, 2, 3]),
+        ...createTiles("sou", [1, 2, 3]),
+        ...createTiles(
+          "honor",
+          [1, 1, 1]
+        ),
+        createTile("honor", 5)
+      ],
+      melds: [],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+
+    const result = playPlayerDiscard(
+      state,
+      calledTile.id,
+      () => 0.5
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(
+      result.round.winResult?.winnerSeat
+    ).toBe(2);
+    expect(
+      result.round.players[1].score
+    ).toBe(1000);
+    expect(
+      result.round.players[1].melds
+    ).toHaveLength(0);
+  });
 });
