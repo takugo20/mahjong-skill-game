@@ -1,6 +1,7 @@
 import {
   getAkuukanCallDeposit,
-  isAkuukanCallAllowed
+  isAkuukanCallAllowed,
+  isAkuukanRonAllowed
 } from "../akuukan/callLegality";
 import type {
   AkuukanCallKind,
@@ -1558,6 +1559,21 @@ export function getRonCandidates(
     checkedCount < 3;
     checkedCount += 1
   ) {
+    if (
+      state.akuukan &&
+      !isAkuukanRonAllowed({
+        akuukan: state.akuukan,
+        winner:
+          getAkuukanCallOwner(
+            candidateSeat
+          )
+      })
+    ) {
+      candidateSeat =
+        nextSeat(candidateSeat);
+      continue;
+    }
+
     const resolution =
       getValidWinResolution(
         state,
