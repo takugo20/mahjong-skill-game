@@ -15,6 +15,12 @@ export interface AkuukanDoraIndicatorVisibilityInput {
   readonly viewer: AkuukanInformationViewer;
 }
 
+export interface AkuukanRiverVisibilityInput {
+  readonly akuukan: AkuukanGameState;
+  readonly viewer: AkuukanInformationViewer;
+  readonly riverOwner: AkuukanInformationViewer;
+}
+
 export function areAkuukanDoraIndicatorsVisible(
   input:
     AkuukanDoraIndicatorVisibilityInput
@@ -24,6 +30,19 @@ export function areAkuukanDoraIndicatorsVisible(
     !isEnemyAbilityEnabled(
       input.akuukan,
       "E-1"
+    )
+  );
+}
+
+export function areAkuukanRiverTilesVisible(
+  input: AkuukanRiverVisibilityInput
+): boolean {
+  return (
+    input.viewer !== "player" ||
+    input.riverOwner === "player" ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-13"
     )
   );
 }
