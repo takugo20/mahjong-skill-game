@@ -9,7 +9,8 @@ import {
 } from "./state";
 import {
   getAkuukanCallDeposit,
-  isAkuukanCallAllowed
+  isAkuukanCallAllowed,
+  isAkuukanRonAllowed
 } from "./callLegality";
 
 function createAkuukan(
@@ -420,5 +421,66 @@ describe("E-13のプレイヤー副露禁止", () => {
         })
       ).toBe(true);
     }
+  });
+});
+
+describe("E-13のプレイヤーロン禁止", () => {
+  it("プレイヤーはロンできない", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    expect(
+      isAkuukanRonAllowed({
+        akuukan,
+        winner: "player"
+      })
+    ).toBe(false);
+  });
+
+  it("敵8と通常CPUはロンできる", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    for (const winner of [
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        isAkuukanRonAllowed({
+          akuukan,
+          winner
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("E-13が無効ならプレイヤーもロンできる", () => {
+    const akuukan =
+      disableAkuukanSource(
+        createAkuukan("enemy-8"),
+        "enemy-ability:E-13"
+      );
+
+    expect(
+      isAkuukanRonAllowed({
+        akuukan,
+        winner: "player"
+      })
+    ).toBe(true);
+  });
+
+  it("E-13を持たない敵ならプレイヤーもロンできる", () => {
+    const akuukan = createAkuukan(
+      "enemy-1"
+    );
+
+    expect(
+      isAkuukanRonAllowed({
+        akuukan,
+        winner: "player"
+      })
+    ).toBe(true);
   });
 });
