@@ -62,10 +62,32 @@ function isAkuukanE8CallProhibited(
   );
 }
 
+function isAkuukanE13PlayerCallProhibited(
+  input: AkuukanCallCheckInput
+): boolean {
+  return (
+    input.owner === "player" &&
+    (
+      input.kind === "chi" ||
+      input.kind === "pon" ||
+      input.kind === "openKan"
+    ) &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-13"
+    )
+  );
+}
+
 export function isAkuukanCallAllowed(
   input: AkuukanCallCheckInput
 ): boolean {
-  if (isAkuukanE8CallProhibited(input)) {
+  if (
+    isAkuukanE8CallProhibited(input) ||
+    isAkuukanE13PlayerCallProhibited(
+      input
+    )
+  ) {
     return false;
   }
 
