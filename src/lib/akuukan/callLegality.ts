@@ -27,6 +27,11 @@ export interface AkuukanCallCheckInput {
   readonly score: number;
 }
 
+export interface AkuukanRonCheckInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winner: AkuukanCallOwner;
+}
+
 function isAkuukanE3DepositRequired(
   input: AkuukanCallCheckInput
 ): boolean {
@@ -95,6 +100,18 @@ export function isAkuukanCallAllowed(
     !isAkuukanE3DepositRequired(input) ||
     input.score >=
       AKUUKAN_E3_CALL_DEPOSIT
+  );
+}
+
+export function isAkuukanRonAllowed(
+  input: AkuukanRonCheckInput
+): boolean {
+  return (
+    input.winner !== "player" ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-13"
+    )
   );
 }
 
