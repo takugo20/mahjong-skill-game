@@ -234,12 +234,19 @@ export interface AkuukanE2DrawRestrictionState {
   restrictedPlayerIds: string[];
 }
 
+export interface AkuukanE19DiscardRestriction {
+  playerId: string;
+  tileId: string;
+}
+
 export interface AkuukanGameState {
   setup: AkuukanMatchSetup;
   e2DrawRestriction?:
     AkuukanE2DrawRestrictionState;
   e6LastWinningNormalYakuIds?:
     NormalYakuId[];
+  e19DiscardRestrictions?:
+    AkuukanE19DiscardRestriction[];
   disabledSources:
     AkuukanEffectSourceId[];
   activeEffects:
