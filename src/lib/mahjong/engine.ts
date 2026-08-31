@@ -7,7 +7,8 @@ import type {
   AkuukanCallOwner
 } from "../akuukan/callLegality";
 import {
-  applyAkuukanE12AfterCall
+  applyAkuukanE12AfterCall,
+  applyAkuukanE15AfterCall
 } from "../akuukan/callEffects";
 import {
   activateAkuukanE2DrawRestriction,
@@ -1794,50 +1795,96 @@ function applyCallDeposit(
   };
 }
 
+interface CallAfterEffectTarget {
+  readonly meldIndex?: number;
+  readonly addedTileId?: string;
+}
+
 function applyCallAfterEffects(
   state: GameState,
   seat: SeatIndex,
-  kind: AkuukanCallKind
+  kind: AkuukanCallKind,
+  target?: CallAfterEffectTarget
 ): GameState {
-  const stateAfterDeposit =
+  let stateAfterEffects =
     applyCallDeposit(
       state,
       seat,
       kind
     );
 
-  if (!stateAfterDeposit.akuukan) {
-    return stateAfterDeposit;
+  const akuukan = stateAfterEffects.akuukan;
+
+  if (!akuukan) {
+    return stateAfterEffects;
   }
 
-  const caller =
-    stateAfterDeposit.round.players[seat];
+  let caller =
+    stateAfterEffects.round.players[seat];
 
   if (!caller) {
-    return stateAfterDeposit;
+    return stateAfterEffects;
   }
 
   const e12Result =
     applyAkuukanE12AfterCall({
-      akuukan: stateAfterDeposit.akuukan,
+      akuukan,
       callerIsSelectedEnemy:
         getAkuukanCallOwner(seat) ===
         "selectedEnemy",
       kind,
       callerId: caller.id,
       players:
-        stateAfterDeposit.round.players
+        stateAfterEffects.round.players
     });
 
-  if (!e12Result) {
-    return stateAfterDeposit;
+  if (e12Result) {
+    stateAfterEffects = {
+      ...stateAfterEffects,
+      round: {
+        ...stateAfterEffects.round,
+        players: e12Result.players
+      }
+    };
+  }
+
+  caller =
+    stateAfterEffects.round.players[seat];
+
+  const e15Result =
+    applyAkuukanE15AfterCall({
+      akuukan,
+      callerIsSelectedEnemy:
+        getAkuukanCallOwner(seat) ===
+        "selectedEnemy",
+      kind,
+      melds: caller.melds,
+      meldIndex:
+        target?.meldIndex ??
+        caller.melds.length - 1,
+      ...(target?.addedTileId
+        ? {
+            addedTileId:
+              target.addedTileId
+          }
+        : {})
+    });
+
+  if (!e15Result) {
+    return stateAfterEffects;
   }
 
   return {
-    ...stateAfterDeposit,
+    ...stateAfterEffects,
     round: {
-      ...stateAfterDeposit.round,
-      players: e12Result.players
+      ...stateAfterEffects.round,
+      players: replacePlayer(
+        stateAfterEffects.round.players,
+        {
+          ...caller,
+          melds: e15Result.melds
+        }
+      )
     }
   };
 }
@@ -3064,15 +3111,29 @@ function completeCpuPendingSelfKan(
       pendingKan.declarerSeat,
     option: pendingKan
   });
-  const kanState = beginAkuukanTurnState({
-    ...state,
-    round: execution.round,
-    notice:
-      `${cpuPlayer.name}が${kanLabel}し、` +
-      `${getTileLabel(
-        execution.rinshanTile
-      )}を嶺上牌としてツモりました。`
-  });
+  const kanState = beginAkuukanTurnState(
+    applyCallAfterEffects(
+      {
+        ...state,
+        round: execution.round,
+        notice:
+          `${cpuPlayer.name}が${kanLabel}し、` +
+          `${getTileLabel(
+            execution.rinshanTile
+          )}を嶺上牌としてツモりました。`
+      },
+      pendingKan.declarerSeat,
+      pendingKan.kind,
+      pendingKan.kind === "addedKan"
+        ? {
+            meldIndex:
+              pendingKan.meldIndex,
+            addedTileId:
+              pendingKan.tileId
+          }
+        : undefined
+    )
+  );
   
   const continuedState =
     playCpuDiscardingTurn(
