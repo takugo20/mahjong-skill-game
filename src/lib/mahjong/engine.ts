@@ -17,7 +17,8 @@ import {
 import {
   activateAkuukanE2DrawRestriction,
   clearAkuukanE2DrawRestriction,
-  getAkuukanE2LiveWallDrawIndex
+  getAkuukanE2LiveWallDrawIndex,
+  getAkuukanE11LiveWallTileIndex
 } from "../akuukan/drawTileSelection";
 import {
   areAkuukanDoraIndicatorsVisible
@@ -382,6 +383,33 @@ function prepareAkuukanDealComposition(
   };
 }
 
+function takeAkuukanLiveWallTile(
+  akuukan: AkuukanGameState | undefined,
+  liveWall: Tile[],
+  recipientIsSelectedEnemy: boolean
+): Tile | undefined {
+  const tileIndex = akuukan
+    ? getAkuukanE11LiveWallTileIndex({
+        akuukan,
+        recipientIsSelectedEnemy,
+        liveWall
+      })
+    : liveWall.length > 0
+      ? 0
+      : null;
+
+  if (tileIndex === null) {
+    return undefined;
+  }
+
+  const [tile] = liveWall.splice(
+    tileIndex,
+    1
+  );
+
+  return tile;
+}
+
 export function createInitialGameState(
   random: () => number = Math.random,
   akuukanSetup?: AkuukanMatchSetup
@@ -425,7 +453,12 @@ export function createInitialGameState(
               ]
           : undefined;
       const tile =
-        reservedTile ?? liveWall.shift();
+        reservedTile ??
+        takeAkuukanLiveWallTile(
+          akuukan,
+          liveWall,
+          seat === 2
+        );
 
       if (!tile) {
         throw new Error("配牌中に通常山が不足しました。");
@@ -435,7 +468,12 @@ export function createInitialGameState(
     }
   }
 
-  const dealerDraw = liveWall.shift();
+  const dealerDraw =
+    takeAkuukanLiveWallTile(
+      akuukan,
+      liveWall,
+      false
+    );
 
   if (!dealerDraw) {
     throw new Error("親の第1ツモ牌がありません。");
@@ -503,6 +541,37 @@ function beginAkuukanTurnState(
       };
 }
 
+function getAkuukanLiveWallDrawIndex(
+  state: GameState,
+  player: PlayerState
+): number | null {
+  if (!state.akuukan) {
+    return state.round.liveWall.length > 0
+      ? 0
+      : null;
+  }
+
+  const e2DrawIndex =
+    getAkuukanE2LiveWallDrawIndex({
+      akuukan: state.akuukan,
+      playerId: player.id,
+      concealedTiles: player.hand,
+      melds: player.melds,
+      liveWall: state.round.liveWall
+    });
+
+  if (e2DrawIndex !== 0) {
+    return e2DrawIndex;
+  }
+
+  return getAkuukanE11LiveWallTileIndex({
+    akuukan: state.akuukan,
+    recipientIsSelectedEnemy:
+      player.seat === 2,
+    liveWall: state.round.liveWall
+  });
+}
+
 export function drawTile(
   state: GameState,
   seat: SeatIndex
@@ -517,17 +586,11 @@ export function drawTile(
   }
 
   const currentPlayer = round.players[seat];
-  const drawIndex = state.akuukan
-    ? getAkuukanE2LiveWallDrawIndex({
-        akuukan: state.akuukan,
-        playerId: currentPlayer.id,
-        concealedTiles: currentPlayer.hand,
-        melds: currentPlayer.melds,
-        liveWall: round.liveWall
-      })
-    : round.liveWall.length > 0
-      ? 0
-      : null;
+  const drawIndex =
+    getAkuukanLiveWallDrawIndex(
+      state,
+      currentPlayer
+    );
   const drawnTile =
     drawIndex === null
       ? undefined
@@ -4630,7 +4693,12 @@ function dealNextRoundHands(
               ]
           : undefined;
       const tile =
-        reservedTile ?? liveWall.shift();
+        reservedTile ??
+        takeAkuukanLiveWallTile(
+          akuukan,
+          liveWall,
+          seat === 2
+        );
 
       if (!tile) {
         throw new Error(
