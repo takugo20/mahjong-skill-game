@@ -8,11 +8,15 @@ import {
   disableAkuukanSource
 } from "./state";
 import {
-  areAkuukanDoraIndicatorsVisible
+  areAkuukanDoraIndicatorsVisible,
+  areAkuukanRiverTilesVisible
 } from "./informationVisibility";
 
 function createAkuukan(
-  enemyId: "enemy-1" | "enemy-2"
+  enemyId:
+    | "enemy-1"
+    | "enemy-2"
+    | "enemy-8"
 ) {
   return createInitialAkuukanGameState({
     enemyId,
@@ -97,6 +101,120 @@ describe("E-1のドラ表示牌可視性", () => {
           viewer
         })
       ).toBe(true);
+    }
+  });
+});
+
+describe("E-13の河可視性", () => {
+  it("プレイヤーには自分の河を見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    expect(
+      areAkuukanRiverTilesVisible({
+        akuukan,
+        viewer: "player",
+        riverOwner: "player"
+      })
+    ).toBe(true);
+  });
+
+  it("プレイヤーには他家3人の河を見せない", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    for (const riverOwner of [
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanRiverTilesVisible({
+          akuukan,
+          viewer: "player",
+          riverOwner
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("CPUにはすべての河を見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    for (const viewer of [
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      for (const riverOwner of [
+        "player",
+        "selectedEnemy",
+        "normalOpponent"
+      ] as const) {
+        expect(
+          areAkuukanRiverTilesVisible({
+            akuukan,
+            viewer,
+            riverOwner
+          })
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("E-13を持たない敵なら全員にすべての河を見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-2"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      for (const riverOwner of [
+        "player",
+        "selectedEnemy",
+        "normalOpponent"
+      ] as const) {
+        expect(
+          areAkuukanRiverTilesVisible({
+            akuukan,
+            viewer,
+            riverOwner
+          })
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("E-13が無効なら全員にすべての河を見せる", () => {
+    const akuukan =
+      disableAkuukanSource(
+        createAkuukan("enemy-8"),
+        "enemy-ability:E-13"
+      );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      for (const riverOwner of [
+        "player",
+        "selectedEnemy",
+        "normalOpponent"
+      ] as const) {
+        expect(
+          areAkuukanRiverTilesVisible({
+            akuukan,
+            viewer,
+            riverOwner
+          })
+        ).toBe(true);
+      }
     }
   });
 });
