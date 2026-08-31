@@ -20,6 +20,7 @@ import {
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex,
   getAkuukanE2RestrictedPlayerIds,
+  getAkuukanE11LiveWallTileIndex,
   isAkuukanE2DrawRestricted
 } from "./drawTileSelection";
 
@@ -398,6 +399,131 @@ describe("E-2の通常山ツモ候補除外", () => {
         concealedTiles:
           createSingleWaitHand(),
         melds: [],
+        liveWall
+      })
+    ).toBe(0);
+  });
+});
+
+describe("E-11の風牌取得禁止", () => {
+  it("通常山が空なら選択位置を返さない", () => {
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: createAkuukan(
+          "enemy-7"
+        ),
+        recipientIsSelectedEnemy: false,
+        liveWall: []
+      })
+    ).toBeNull();
+  });
+
+  it("他家の取得時は東南西北を飛ばして最初の非風牌を選ぶ", () => {
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: createAkuukan(
+          "enemy-7"
+        ),
+        recipientIsSelectedEnemy: false,
+        liveWall: [
+          createTile("honor", 1),
+          createTile("honor", 2),
+          createTile("honor", 3),
+          createTile("honor", 4),
+          createTile("pin", 2)
+        ]
+      })
+    ).toBe(4);
+  });
+
+  it("先頭が数牌なら通常どおり先頭を選ぶ", () => {
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: createAkuukan(
+          "enemy-7"
+        ),
+        recipientIsSelectedEnemy: false,
+        liveWall: [
+          createTile("sou", 9),
+          createTile("honor", 1)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("白發中は風牌ではないため通常どおり選ぶ", () => {
+    for (const dragonRank of [5, 6, 7]) {
+      expect(
+        getAkuukanE11LiveWallTileIndex({
+          akuukan: createAkuukan(
+            "enemy-7"
+          ),
+          recipientIsSelectedEnemy: false,
+          liveWall: [
+            createTile(
+              "honor",
+              dragonRank
+            ),
+            createTile("man", 1)
+          ]
+        })
+      ).toBe(0);
+    }
+  });
+
+  it("能力者CPU本人には風牌取得禁止を適用しない", () => {
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: createAkuukan(
+          "enemy-7"
+        ),
+        recipientIsSelectedEnemy: true,
+        liveWall: [
+          createTile("honor", 1),
+          createTile("man", 1)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("通常山に風牌しかなければそのまま先頭を選ぶ", () => {
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: createAkuukan(
+          "enemy-7"
+        ),
+        recipientIsSelectedEnemy: false,
+        liveWall: [
+          createTile("honor", 2),
+          createTile("honor", 4)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("E-11を持たない敵または能力無効時は適用しない", () => {
+    const disabled = disableAkuukanSource(
+      createAkuukan("enemy-7"),
+      "enemy-ability:E-11"
+    );
+    const liveWall = [
+      createTile("honor", 3),
+      createTile("pin", 3)
+    ];
+
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: createAkuukan(
+          "enemy-8"
+        ),
+        recipientIsSelectedEnemy: false,
+        liveWall
+      })
+    ).toBe(0);
+    expect(
+      getAkuukanE11LiveWallTileIndex({
+        akuukan: disabled,
+        recipientIsSelectedEnemy: false,
         liveWall
       })
     ).toBe(0);
