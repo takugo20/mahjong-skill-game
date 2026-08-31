@@ -12,6 +12,9 @@ import {
   applyAkuukanE15AfterCall
 } from "../akuukan/callEffects";
 import {
+  reserveAkuukanE16DoraTriplet
+} from "../akuukan/dealComposition";
+import {
   activateAkuukanE2DrawRestriction,
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex
@@ -48,6 +51,7 @@ import {
   recordAkuukanE6WinningYaku
 } from "../akuukan/winningEvaluationEnemyAbilityHistory";
 import type {
+  AkuukanGameState,
   AkuukanMatchSetup
 } from "../akuukan/types";
 import type {
@@ -336,6 +340,48 @@ export function getRoundLabel(
   return `${getWindLabel(round.prevailingWind)}${round.handNumber}局`;
 }
 
+interface AkuukanDealComposition {
+  readonly liveWall: Tile[];
+  readonly selectedEnemyReservedTiles:
+    Tile[];
+}
+
+function prepareAkuukanDealComposition(
+  akuukan: AkuukanGameState | undefined,
+  liveWall: Tile[],
+  deadWall: readonly Tile[]
+): AkuukanDealComposition {
+  if (!akuukan) {
+    return {
+      liveWall,
+      selectedEnemyReservedTiles: []
+    };
+  }
+
+  const initialDoraIndicator =
+    deadWall[DORA_INDICATOR_INDEXES[0]];
+
+  if (!initialDoraIndicator) {
+    throw new Error(
+      "初期ドラ表示牌がありません。"
+    );
+  }
+
+  const reservation =
+    reserveAkuukanE16DoraTriplet({
+      akuukan,
+      doraIndicator:
+        initialDoraIndicator,
+      availableTiles: liveWall
+    });
+
+  return {
+    liveWall: reservation.remainingTiles,
+    selectedEnemyReservedTiles:
+      reservation.reservedTiles
+  };
+}
+
 export function createInitialGameState(
   random: () => number = Math.random,
   akuukanSetup?: AkuukanMatchSetup
@@ -346,7 +392,21 @@ export function createInitialGameState(
   );
 
   const deadWall = shuffledTiles.slice(-14);
-  const liveWall = shuffledTiles.slice(0, -14);
+  const availableLiveWall =
+    shuffledTiles.slice(0, -14);
+  const akuukan = akuukanSetup
+    ? createInitialAkuukanGameState(
+        akuukanSetup
+      )
+    : undefined;
+  const dealComposition =
+    prepareAkuukanDealComposition(
+      akuukan,
+      availableLiveWall,
+      deadWall
+    );
+  const liveWall =
+    dealComposition.liveWall;
 
   const players: PlayerState[] = [
     createPlayer(0, "あなた"),
@@ -357,7 +417,15 @@ export function createInitialGameState(
 
   for (let drawIndex = 0; drawIndex < 13; drawIndex += 1) {
     for (let seat = 0; seat < 4; seat += 1) {
-      const tile = liveWall.shift();
+      const reservedTile =
+        seat === 2
+          ? dealComposition
+              .selectedEnemyReservedTiles[
+                drawIndex
+              ]
+          : undefined;
+      const tile =
+        reservedTile ?? liveWall.shift();
 
       if (!tile) {
         throw new Error("配牌中に通常山が不足しました。");
@@ -409,13 +477,8 @@ export function createInitialGameState(
     matchResult: null,
     playerMp: AKUUKAN_INITIAL_MP,
     maxMp: AKUUKAN_MAX_MP,
-    ...(akuukanSetup
-      ? {
-          akuukan:
-            createInitialAkuukanGameState(
-              akuukanSetup
-            )
-        }
+    ...(akuukan
+      ? { akuukan }
       : {}),
     notice: "東1局を開始しました。捨てる牌を選んでください。"
   };
@@ -4521,7 +4584,8 @@ function preparePlayersForNextRound(
 function dealNextRoundHands(
   players: PlayerState[],
   dealerSeat: SeatIndex,
-  random: () => number
+  random: () => number,
+  akuukan?: AkuukanGameState
 ): {
   players: PlayerState[];
   liveWall: Tile[];
@@ -4533,7 +4597,16 @@ function dealNextRoundHands(
   );
 
   const deadWall = shuffledTiles.slice(-14);
-  const liveWall = shuffledTiles.slice(0, -14);
+  const availableLiveWall =
+    shuffledTiles.slice(0, -14);
+  const dealComposition =
+    prepareAkuukanDealComposition(
+      akuukan,
+      availableLiveWall,
+      deadWall
+    );
+  const liveWall =
+    dealComposition.liveWall;
 
   for (
     let drawIndex = 0;
@@ -4549,7 +4622,15 @@ function dealNextRoundHands(
         (dealerSeat + seatOffset) % 4
       ) as SeatIndex;
 
-      const tile = liveWall.shift();
+      const reservedTile =
+        seat === 2
+          ? dealComposition
+              .selectedEnemyReservedTiles[
+                drawIndex
+              ]
+          : undefined;
+      const tile =
+        reservedTile ?? liveWall.shift();
 
       if (!tile) {
         throw new Error(
@@ -4806,24 +4887,25 @@ function resolveNextRoundStart(
       state.round.players,
       nextDealerSeat
     );
+  const nextAkuukan = state.akuukan
+    ? beginAkuukanRound(
+        clearAkuukanE2DrawRestriction(
+          state.akuukan
+        )
+      )
+    : undefined;
 
   const dealt = dealNextRoundHands(
     preparedPlayers,
     nextDealerSeat,
-    random
+    random,
+    nextAkuukan
   );
 
   const dealtState: GameState = {
     ...state,
-    ...(state.akuukan
-      ? {
-          akuukan:
-            beginAkuukanRound(
-              clearAkuukanE2DrawRestriction(
-                state.akuukan
-              )
-            )
-        }
+    ...(nextAkuukan
+      ? { akuukan: nextAkuukan }
       : {}),
     matchResult: null,
     playerMp: recoverAkuukanMp(
