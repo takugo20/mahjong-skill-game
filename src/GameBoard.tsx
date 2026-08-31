@@ -5,7 +5,8 @@ import {
 } from "react";
 import { TileView } from "./components/TileView";
 import {
-  areAkuukanDoraIndicatorsVisible
+  areAkuukanDoraIndicatorsVisible,
+  areAkuukanRiverTilesVisible
 } from "./lib/akuukan/informationVisibility";
 import {
   playGameSound,
@@ -226,6 +227,7 @@ type RiverPosition =
 interface RiverProps {
   player: PlayerState;
   position: RiverPosition;
+  tilesVisible: boolean;
   lastDiscardTileId: string | null;
   declarationTargetTileIds:
     readonly string[];
@@ -327,6 +329,7 @@ function ResponsibilityNotice({
 function River({
   player,
   position,
+  tilesVisible,
   lastDiscardTileId,
   declarationTargetTileIds
 }: RiverProps) {
@@ -366,7 +369,12 @@ function River({
             }
           >
             <TileView
-              tile={discard.tile}
+              tile={
+                tilesVisible
+                  ? discard.tile
+                  : undefined
+              }
+              faceDown={!tilesVisible}
               compact
               highlighted={
                 discard.tile.id ===
@@ -1011,6 +1019,28 @@ export function GameBoard({
       viewer: "player"
     });
 
+  const playerRiverTilesVisible =
+    !gameState.akuukan ||
+    areAkuukanRiverTilesVisible({
+      akuukan: gameState.akuukan,
+      viewer: "player",
+      riverOwner: "player"
+    });
+  const selectedEnemyRiverTilesVisible =
+    !gameState.akuukan ||
+    areAkuukanRiverTilesVisible({
+      akuukan: gameState.akuukan,
+      viewer: "player",
+      riverOwner: "selectedEnemy"
+    });
+  const normalOpponentRiverTilesVisible =
+    !gameState.akuukan ||
+    areAkuukanRiverTilesVisible({
+      akuukan: gameState.akuukan,
+      viewer: "player",
+      riverOwner: "normalOpponent"
+    });
+  
   const lastDiscardTileId =
     round.lastDiscard?.discard.tile.id ?? null;
 
@@ -1792,6 +1822,9 @@ export function GameBoard({
           <River
             player={round.players[2]}
             position="top"
+            tilesVisible={
+              selectedEnemyRiverTilesVisible
+            }
             lastDiscardTileId={lastDiscardTileId}
             declarationTargetTileIds={
               declarationTargetTileIds
@@ -1803,6 +1836,9 @@ export function GameBoard({
           <River
             player={round.players[3]}
             position="left"
+            tilesVisible={
+              normalOpponentRiverTilesVisible
+            }
             lastDiscardTileId={lastDiscardTileId}
             declarationTargetTileIds={
               declarationTargetTileIds
@@ -1814,6 +1850,9 @@ export function GameBoard({
           <River
             player={round.players[1]}
             position="right"
+            tilesVisible={
+              normalOpponentRiverTilesVisible
+            }
             lastDiscardTileId={lastDiscardTileId}
             declarationTargetTileIds={
               declarationTargetTileIds
@@ -1825,6 +1864,9 @@ export function GameBoard({
           <River
             player={player}
             position="bottom"
+            tilesVisible={
+              playerRiverTilesVisible
+            }
             lastDiscardTileId={lastDiscardTileId}
             declarationTargetTileIds={
               declarationTargetTileIds
