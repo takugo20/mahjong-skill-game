@@ -42,7 +42,10 @@ function createTile(
 }
 
 function createAkuukanState(
-  enemyId: "enemy-1" | "enemy-2"
+  enemyId:
+    | "enemy-1"
+    | "enemy-2"
+    | "enemy-8"
 ): GameState {
   return createInitialGameState(
     () => 0.5,
@@ -110,6 +113,56 @@ function countFaceDownTiles(
       /aria-label="裏向きの牌"/g
     )?.length ?? 0
   );
+}
+
+function setOneDiscardForEveryPlayer(
+  state: GameState
+): Tile[] {
+  const tiles = [
+    createTile("man", 1),
+    createTile("pin", 2),
+    createTile("sou", 3),
+    createTile("honor", 4)
+  ];
+
+  for (const seat of [0, 1, 2, 3] as const) {
+    state.round.players[seat] = {
+      ...state.round.players[seat],
+      discards: [
+        {
+          tile: tiles[seat],
+          tsumogiri: false,
+          riichiDeclaration: false,
+          faceDown: false,
+          called: false
+        }
+      ]
+    };
+  }
+
+  return tiles;
+}
+
+function getRiverHtml(
+  html: string,
+  playerName: string
+): string {
+  const marker =
+    `aria-label="${playerName}の河"`;
+  const startIndex = html.indexOf(marker);
+
+  if (startIndex < 0) {
+    return "";
+  }
+
+  const endIndex = html.indexOf(
+    "</div>",
+    startIndex
+  );
+
+  return endIndex < 0
+    ? html.slice(startIndex)
+    : html.slice(startIndex, endIndex + 6);
 }
 
 function createWinResult(
@@ -307,5 +360,114 @@ describe("E-1の画面表示", () => {
     expect(html).toContain(
       'aria-label="白"'
     );
+  });
+});
+
+describe("E-13の河表示", () => {
+  const tileLabels = [
+    "一萬",
+    "二筒",
+    "三索",
+    "北"
+  ] as const;
+
+  it("敵8戦では他家3人の河を裏向きにして自分の河を表向きにする", () => {
+    const state = createAkuukanState(
+      "enemy-8"
+    );
+
+    setOneDiscardForEveryPlayer(state);
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+    const playerRiver = getRiverHtml(
+      html,
+      state.round.players[0].name
+    );
+
+    expect(
+      countFaceDownTiles(playerRiver)
+    ).toBe(0);
+    expect(playerRiver).toContain(
+      `aria-label="${tileLabels[0]}"`
+    );
+
+    for (const seat of [1, 2, 3] as const) {
+      const opponentRiver = getRiverHtml(
+        html,
+        state.round.players[seat].name
+      );
+
+      expect(
+        countFaceDownTiles(opponentRiver)
+      ).toBe(1);
+      expect(opponentRiver).not.toContain(
+        `aria-label="${tileLabels[seat]}"`
+      );
+    }
+  });
+
+  it("E-13が無効なら4人の河を表向きにする", () => {
+    const state = createAkuukanState(
+      "enemy-8"
+    );
+
+    setOneDiscardForEveryPlayer(state);
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態がありません。"
+      );
+    }
+
+    state.akuukan = disableAkuukanSource(
+      state.akuukan,
+      "enemy-ability:E-13"
+    );
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+
+    for (const seat of [0, 1, 2, 3] as const) {
+      const river = getRiverHtml(
+        html,
+        state.round.players[seat].name
+      );
+
+      expect(
+        countFaceDownTiles(river)
+      ).toBe(0);
+      expect(river).toContain(
+        `aria-label="${tileLabels[seat]}"`
+      );
+    }
+  });
+
+  it("E-13を持たない敵なら4人の河を表向きにする", () => {
+    const state = createAkuukanState(
+      "enemy-2"
+    );
+
+    setOneDiscardForEveryPlayer(state);
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+
+    for (const seat of [0, 1, 2, 3] as const) {
+      const river = getRiverHtml(
+        html,
+        state.round.players[seat].name
+      );
+
+      expect(
+        countFaceDownTiles(river)
+      ).toBe(0);
+      expect(river).toContain(
+        `aria-label="${tileLabels[seat]}"`
+      );
+    }
   });
 });
