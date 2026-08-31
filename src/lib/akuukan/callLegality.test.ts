@@ -17,6 +17,7 @@ function createAkuukan(
     | "enemy-1"
     | "enemy-2"
     | "enemy-4"
+    | "enemy-8"
 ) {
   return createInitialAkuukanGameState({
     enemyId,
@@ -291,6 +292,133 @@ describe("E-8の副露・暗槓禁止", () => {
           })
         ).toBe(true);
       }
+    }
+  });
+});
+
+describe("E-13のプレイヤー副露禁止", () => {
+  it("プレイヤーはチー・ポン・大明槓できない", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    for (
+      const kind of [
+        "chi",
+        "pon",
+        "openKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind,
+          score: 25000
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("プレイヤー自身の暗槓・加槓はできる", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    for (
+      const kind of [
+        "closedKan",
+        "addedKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind,
+          score: 0
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("敵8と通常CPUはすべての副露・槓を宣言できる", () => {
+    const akuukan = createAkuukan(
+      "enemy-8"
+    );
+
+    for (
+      const owner of [
+        "selectedEnemy",
+        "normalOpponent"
+      ] as const
+    ) {
+      for (
+        const kind of [
+          "chi",
+          "pon",
+          "openKan",
+          "closedKan",
+          "addedKan"
+        ] as const
+      ) {
+        expect(
+          isAkuukanCallAllowed({
+            akuukan,
+            owner,
+            kind,
+            score: 0
+          })
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("E-13が無効ならプレイヤーの副露を禁止しない", () => {
+    const akuukan =
+      disableAkuukanSource(
+        createAkuukan("enemy-8"),
+        "enemy-ability:E-13"
+      );
+
+    for (
+      const kind of [
+        "chi",
+        "pon",
+        "openKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind,
+          score: 0
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("E-13を持たない敵ならプレイヤーの副露を禁止しない", () => {
+    const akuukan = createAkuukan(
+      "enemy-1"
+    );
+
+    for (
+      const kind of [
+        "chi",
+        "pon",
+        "openKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind,
+          score: 0
+        })
+      ).toBe(true);
     }
   });
 });
