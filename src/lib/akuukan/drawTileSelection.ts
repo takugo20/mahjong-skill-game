@@ -157,3 +157,46 @@ export function clearAkuukanE2DrawRestriction(
 
   return nextAkuukan;
 }
+
+export interface AkuukanE11LiveWallTileInput {
+  readonly akuukan: AkuukanGameState;
+  readonly recipientIsSelectedEnemy:
+    boolean;
+  readonly liveWall: readonly Tile[];
+}
+
+function isWindTile(tile: Tile): boolean {
+  return (
+    tile.suit === "honor" &&
+    tile.rank >= 1 &&
+    tile.rank <= 4
+  );
+}
+
+export function getAkuukanE11LiveWallTileIndex(
+  input: AkuukanE11LiveWallTileInput
+): number | null {
+  if (input.liveWall.length === 0) {
+    return null;
+  }
+
+  if (
+    input.recipientIsSelectedEnemy ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-11"
+    ) ||
+    !isWindTile(input.liveWall[0])
+  ) {
+    return 0;
+  }
+
+  const nonWindTileIndex =
+    input.liveWall.findIndex(
+      (tile) => !isWindTile(tile)
+    );
+
+  return nonWindTileIndex >= 0
+    ? nonWindTileIndex
+    : 0;
+}
