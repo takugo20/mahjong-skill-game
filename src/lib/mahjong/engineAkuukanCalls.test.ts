@@ -4,6 +4,9 @@ import {
   it
 } from "vitest";
 import {
+  disableAkuukanSource
+} from "../akuukan/state";
+import {
   createInitialGameState,
   declarePlayerMeldCall,
   declarePlayerOpenKan,
@@ -47,7 +50,8 @@ function createTiles(
 
 type CallTestEnemyId =
   | "enemy-2"
-  | "enemy-4";
+  | "enemy-4"
+  | "enemy-8";
 
 function createState(
   enemyId: CallTestEnemyId = "enemy-2"
@@ -307,11 +311,13 @@ function preparePlayerCallFromCpuDiscard(
   };
 }
 
-function createPlayerSelfKanState(): {
+function createPlayerSelfKanState(
+  enemyId: CallTestEnemyId = "enemy-4"
+): {
   state: GameState;
   addedTile: Tile;
 } {
-  const state = createState("enemy-4");
+  const state = createState(enemyId);
   const ponTiles = createTiles(
     "honor",
     [6, 6, 6]
@@ -849,5 +855,123 @@ describe("E-8のエンジン統合", () => {
       normalAddedKanResult.round.players[1]
         .melds[0]
     ).toMatchObject({ kind: "addedKan" });
+  });
+});
+
+describe("E-13の副露・槓エンジン統合", () => {
+  it("プレイヤーのポン・大明槓候補を表示しない", () => {
+    const prepared =
+      preparePlayerCallFromCpuDiscard(
+        "enemy-8"
+      );
+
+    const result = playPlayerDiscard(
+      prepared.state,
+      prepared.playerDiscard.id,
+      () => 0.5
+    );
+
+    expect(
+      getPlayerMeldCallOptions(result)
+    ).toEqual([]);
+    expect(
+      getPlayerOpenKanCallOptions(result)
+    ).toEqual([]);
+  });
+
+  it("E-13が無効ならプレイヤーの副露候補を表示する", () => {
+    const prepared =
+      preparePlayerCallFromCpuDiscard(
+        "enemy-8"
+      );
+
+    if (!prepared.state.akuukan) {
+      throw new Error(
+        "亜空間状態がありません。"
+      );
+    }
+
+    prepared.state.akuukan =
+      disableAkuukanSource(
+        prepared.state.akuukan,
+        "enemy-ability:E-13"
+      );
+
+    const result = playPlayerDiscard(
+      prepared.state,
+      prepared.playerDiscard.id,
+      () => 0.5
+    );
+
+    const meldOptions =
+      getPlayerMeldCallOptions(result);
+
+    expect(
+      meldOptions.length
+    ).toBeGreaterThan(0);
+    expect(
+      meldOptions.every(
+        (option) => option.kind === "pon"
+      )
+    ).toBe(true);
+    expect(
+      getPlayerOpenKanCallOptions(result)
+    ).toHaveLength(1);
+  });
+
+  it("プレイヤーの暗槓・加槓候補を両方残す", () => {
+    const { state, addedTile } =
+      createPlayerSelfKanState(
+        "enemy-8"
+      );
+    const options =
+      getPlayerSelfKanOptions(state);
+
+    expect(
+      options.some(
+        (option) =>
+          option.kind === "closedKan"
+      )
+    ).toBe(true);
+    expect(
+      options.some(
+        (option) =>
+          option.kind === "addedKan" &&
+          option.tileId === addedTile.id
+      )
+    ).toBe(true);
+  });
+
+  it("通常CPUのポン・大明槓を禁止しない", () => {
+    const pon = prepareCpuPon(
+      1,
+      25000,
+      "enemy-8"
+    );
+    const openKan = prepareCpuOpenKan(
+      25000,
+      1,
+      "enemy-8"
+    );
+
+    const ponResult = playPlayerDiscard(
+      pon.state,
+      pon.calledTile.id,
+      () => 0.5
+    );
+    const openKanResult =
+      playPlayerDiscard(
+        openKan.state,
+        openKan.calledTile.id,
+        () => 0.5
+      );
+
+    expect(
+      ponResult.round.players[1].melds[0]
+    ).toMatchObject({ kind: "pon" });
+    expect(
+      openKanResult.round.players[1]
+        .melds[0]
+    ).toMatchObject({ kind: "openKan" });
   });
 });
