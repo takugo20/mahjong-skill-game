@@ -34,7 +34,8 @@ import {
   getAkuukanE11LiveWallTileIndex
 } from "../akuukan/drawTileSelection";
 import {
-  areAkuukanDoraIndicatorsVisible
+  areAkuukanDoraIndicatorsVisible,
+  areAkuukanHandTilesVisible
 } from "../akuukan/informationVisibility";
 import type {
   AkuukanInformationViewer
@@ -3418,7 +3419,8 @@ function playCpuDiscardingTurn(
             cpuDoraIndicators,
           visibleTiles:
             getVisibleTilesForCpuRiichi(
-              state
+              state,
+              cpuSeat
             )
         })
       : null;
@@ -3558,18 +3560,47 @@ function completeCpuPendingSelfKan(
 }
 
 function getVisibleTilesForCpuRiichi(
-  state: GameState
+  state: GameState,
+  cpuSeat: SeatIndex
 ): Tile[] {
-  return state.round.players.flatMap(
-    (player) => [
-      ...player.discards.map(
-        (discard) => discard.tile
-      ),
-      ...player.melds.flatMap(
-        (meld) => meld.tiles
-      )
-    ]
-  );
+  const publicTiles =
+    state.round.players.flatMap(
+      (player) => [
+        ...player.discards.map(
+          (discard) => discard.tile
+        ),
+        ...player.melds.flatMap(
+          (meld) => meld.tiles
+        )
+      ]
+    );
+  const akuukan = state.akuukan;
+
+  if (!akuukan) {
+    return publicTiles;
+  }
+
+  const viewer =
+    getAkuukanInformationViewer(
+      cpuSeat
+    );
+  const visibleHandTiles =
+    state.round.players.flatMap(
+      (player) =>
+        areAkuukanHandTilesVisible({
+          akuukan,
+          viewer,
+          viewerIsHandOwner:
+            player.seat === cpuSeat
+        })
+          ? player.hand
+          : []
+    );
+
+  return [
+    ...publicTiles,
+    ...visibleHandTiles
+  ];
 }
 
 function getAkuukanRiichiOwner(
@@ -3683,8 +3714,9 @@ function getCpuRiichiDecision(
       ),
     visibleTiles:
       getVisibleTilesForCpuRiichi(
-        state
-      ),
+        state,
+        cpuSeat
+      )
     allowNotenRiichi:
       isNotenRiichiAllowed(
         state,
