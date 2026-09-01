@@ -15,6 +15,12 @@ import {
   reserveAkuukanE16DoraTriplet
 } from "../akuukan/dealComposition";
 import {
+  assignAkuukanE19DiscardRestrictions,
+  getAkuukanE19ForbiddenTileIds,
+  isAkuukanE19DiscardAllowed,
+  synchronizeAkuukanE19PlayerHandRestrictions
+} from "../akuukan/discardLegality";
+import {
   activateAkuukanE2DrawRestriction,
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex,
@@ -410,6 +416,26 @@ function takeAkuukanLiveWallTile(
   return tile;
 }
 
+function assignAkuukanDealCompletedEffects(
+  akuukan: AkuukanGameState | undefined,
+  players: readonly PlayerState[],
+  random: () => number
+): AkuukanGameState | undefined {
+  if (!akuukan) {
+    return undefined;
+  }
+
+  return assignAkuukanE19DiscardRestrictions({
+    akuukan,
+    players: players.map((player) => ({
+      playerId: player.id,
+      isSelectedEnemy: player.seat === 2,
+      concealedTiles: player.hand
+    })),
+    random
+  });
+}
+
 export function createInitialGameState(
   random: () => number = Math.random,
   akuukanSetup?: AkuukanMatchSetup
@@ -452,13 +478,19 @@ export function createInitialGameState(
                 drawIndex
               ]
           : undefined;
-      const tile =
-        reservedTile ??
-        takeAkuukanLiveWallTile(
-          akuukan,
-          liveWall,
-          seat === 2
-        );
+  const akuukanAfterDeal =
+    assignAkuukanDealCompletedEffects(
+      akuukan,
+      players,
+      random
+    );
+
+  const dealerDraw =
+    takeAkuukanLiveWallTile(
+      akuukanAfterDeal,
+      liveWall,
+      false
+    );
 
       if (!tile) {
         throw new Error("配牌中に通常山が不足しました。");
@@ -515,8 +547,8 @@ export function createInitialGameState(
     matchResult: null,
     playerMp: AKUUKAN_INITIAL_MP,
     maxMp: AKUUKAN_MAX_MP,
-    ...(akuukan
-      ? { akuukan }
+    ...(akuukanAfterDeal
+      ? { akuukan: akuukanAfterDeal }
       : {}),
     notice: "東1局を開始しました。捨てる牌を選んでください。"
   };
@@ -532,6 +564,79 @@ function beginAkuukanTurnState(
   const akuukan = beginAkuukanTurn(
     state.akuukan
   );
+
+  return akuukan === state.akuukan
+    ? state
+    : {
+        ...state,
+        akuukan
+      };
+}
+
+function getAkuukanE19ForbiddenTileIdsForPlayer(
+  state: GameState,
+  player: PlayerState
+): readonly string[] {
+  return state.akuukan
+    ? getAkuukanE19ForbiddenTileIds(
+        state.akuukan,
+        player.id
+      )
+    : [];
+}
+
+function getForbiddenDiscardTileIdsForPlayer(
+  state: GameState,
+  player: PlayerState
+): string[] {
+  const e19ForbiddenTileIdSet = new Set(
+    getAkuukanE19ForbiddenTileIdsForPlayer(
+      state,
+      player
+    )
+  );
+  const callRestriction =
+    state.round.meldCallDiscardRestriction;
+
+  return player.hand
+    .filter(
+      (tile) =>
+        e19ForbiddenTileIdSet.has(tile.id) ||
+        (
+          callRestriction?.callerSeat ===
+            player.seat &&
+          callRestriction.forbiddenTileTypes.some(
+            (tileType) =>
+              isSameTileFace(
+                tile,
+                tileType
+              )
+          )
+        )
+    )
+    .map((tile) => tile.id);
+}
+
+function synchronizeAkuukanE19ForPlayerHand(
+  state: GameState,
+  seat: SeatIndex
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  const player = state.round.players[seat];
+
+  if (!player) {
+    return state;
+  }
+
+  const akuukan =
+    synchronizeAkuukanE19PlayerHandRestrictions({
+      akuukan: state.akuukan,
+      playerId: player.id,
+      concealedTiles: player.hand
+    });
 
   return akuukan === state.akuukan
     ? state
@@ -688,6 +793,23 @@ export function discardTile(
 
   const discardedTile = currentPlayer.hand[tileIndex];
 
+    const discardedTile = currentPlayer.hand[tileIndex];
+
+  if (
+    state.akuukan &&
+    !isAkuukanE19DiscardAllowed({
+      akuukan: state.akuukan,
+      playerId: currentPlayer.id,
+      tileId: discardedTile.id
+    })
+  ) {
+    return {
+      ...state,
+      notice:
+        "この牌は敵10の能力により捨てられません。別の牌を選んでください。"
+    };
+  }
+
   const callRestriction =
     round.meldCallDiscardRestriction;
 
@@ -829,17 +951,26 @@ function calculateDiscardPriority(
 function chooseCpuDiscard(
   player: PlayerState,
   doraIndicators: readonly Tile[],
-  random: () => number
+  random: () => number,
+  forbiddenTileIds: readonly string[] = []
 ): Tile {
-  const candidates = player.hand.map((tile) => ({
-    tile,
-    priority: calculateDiscardPriority(
-      tile,
-      player,
-      doraIndicators,
-      random
+  const forbiddenTileIdSet = new Set(
+    forbiddenTileIds
+  );
+  const candidates = player.hand
+    .filter(
+      (tile) =>
+        !forbiddenTileIdSet.has(tile.id)
     )
-  }));
+    .map((tile) => ({
+      tile,
+      priority: calculateDiscardPriority(
+        tile,
+        player,
+        doraIndicators,
+        random
+      )
+    }));
 
   candidates.sort(
     (left, right) =>
@@ -1955,6 +2086,12 @@ function applyCallAfterEffects(
       kind
     );
 
+  stateAfterEffects =
+    synchronizeAkuukanE19ForPlayerHand(
+      stateAfterEffects,
+      seat
+    );
+
   const akuukan = stateAfterEffects.akuukan;
 
   if (!akuukan) {
@@ -2429,7 +2566,8 @@ function createMeldCallDiscardRestriction(
 
 function applyCpuMeldCall(
   state: GameState,
-  decision: CpuMeldCallDecision
+  decision: CpuMeldCallDecision,
+  random: () => number
 ): GameState {
   const option = decision.option;
   const lastDiscard =
@@ -2561,9 +2699,39 @@ function applyCpuMeldCall(
     )
   );
 
+  const callerAfterCall =
+    callState.round.players[
+      option.callerSeat
+    ];
+  const forbiddenTileIds =
+    getForbiddenDiscardTileIdsForPlayer(
+      callState,
+      callerAfterCall
+    );
+  const forbiddenTileIdSet = new Set(
+    forbiddenTileIds
+  );
+  const requestedTile =
+    callerAfterCall.hand.find(
+      (tile) =>
+        tile.id ===
+          decision.discardTileId &&
+        !forbiddenTileIdSet.has(tile.id)
+    );
+  const selectedTile =
+    requestedTile ??
+    chooseCpuDiscard(
+      callerAfterCall,
+      getDoraIndicatorsForCpu(
+        callState,
+        option.callerSeat
+      ),
+      random,
+      forbiddenTileIds
+    );
   const discardedState = discardTile(
     callState,
-    decision.discardTileId
+    selectedTile.id
   );
 
   if (
@@ -2660,7 +2828,11 @@ function applyCpuOpenKanCall(
       kanState,
       option.callerSeat
     ),
-    random
+    random,
+    getForbiddenDiscardTileIdsForPlayer(
+      kanState,
+      updatedCaller
+    )
   );
   const discardedState = discardTile(
     kanState,
@@ -3144,6 +3316,14 @@ function playCpuDiscardingTurn(
 
   const cpuPlayer =
     state.round.players[cpuSeat];
+  const forbiddenTileIds =
+    getForbiddenDiscardTileIdsForPlayer(
+      state,
+      cpuPlayer
+    );
+  const forbiddenTileIdSet = new Set(
+    forbiddenTileIds
+  );
   const cpuDoraIndicators =
     getDoraIndicatorsForCpu(
       state,
@@ -3155,7 +3335,7 @@ function playCpuDiscardingTurn(
       cpuSeat,
       random
     );
-  
+
   if (riichiDecision) {
     return playCpuRiichiDeclaration(
       state,
@@ -3186,7 +3366,10 @@ function playCpuDiscardingTurn(
           (tile) =>
             tile.id ===
             postRiichiDiscardDecision
-              .discardTileId
+              .discardTileId &&
+            !forbiddenTileIdSet.has(
+              tile.id
+            )
         )
       : undefined;
   const selectedTile =
@@ -3200,12 +3383,14 @@ function playCpuDiscardingTurn(
         chooseCpuDiscard(
           cpuPlayer,
           cpuDoraIndicators,
-          random
+          random,
+          forbiddenTileIds
         )
       : chooseCpuDiscard(
           cpuPlayer,
           cpuDoraIndicators,
-          random
+          random,
+          forbiddenTileIds
         ));
 
   return discardTile(
@@ -3391,6 +3576,12 @@ function getCpuRiichiDecision(
 
   const cpuPlayer =
     state.round.players[cpuSeat];
+  const forbiddenTileIdSet = new Set(
+    getAkuukanE19ForbiddenTileIdsForPlayer(
+      state,
+      cpuPlayer
+    )
+  );
   const candidateTileIds =
     getRiichiDiscardTileIds({
       concealedTiles: cpuPlayer.hand,
@@ -3414,7 +3605,10 @@ function getCpuRiichiDecision(
           state,
           cpuSeat
         )
-    });
+    }).filter(
+      (tileId) =>
+        !forbiddenTileIdSet.has(tileId)
+    );
 
   return chooseCpuRiichi({
     player: cpuPlayer,
@@ -3700,7 +3894,8 @@ function completeCpuTurns(
             )
           : applyCpuMeldCall(
               nextState,
-              cpuDecision.decision
+              cpuDecision.decision,
+              random
             );
 
       onCpuProgress?.({
@@ -4088,6 +4283,12 @@ export function getPlayerRiichiDiscardTileIds(
   }
 
   const player = state.round.players[0];
+  const forbiddenTileIdSet = new Set(
+    getAkuukanE19ForbiddenTileIdsForPlayer(
+      state,
+      player
+    )
+  );
 
   return getRiichiDiscardTileIds({
     concealedTiles: player.hand,
@@ -4102,7 +4303,10 @@ export function getPlayerRiichiDiscardTileIds(
       isNotenRiichiAllowed(state, 0),
     riichiProhibited:
       isRiichiProhibited(state, 0)
-  });
+  }).filter(
+    (tileId) =>
+      !forbiddenTileIdSet.has(tileId)
+  );
 }
 
 export function getPlayerSelfKanOptions(
@@ -4240,15 +4444,20 @@ export function completePlayerSelfKan(
       ? "暗槓"
       : "加槓";
 
-  const kanState = beginAkuukanTurnState({
-    ...state,
-    round: execution.round,
-    notice:
-      `${kanLabel}が成立し、` +
-      `${getTileLabel(
-        execution.rinshanTile
-      )}を嶺上牌としてツモりました。`
-  });
+  const kanState = beginAkuukanTurnState(
+    synchronizeAkuukanE19ForPlayerHand(
+      {
+        ...state,
+        round: execution.round,
+        notice:
+          `${kanLabel}が成立し、` +
+          `${getTileLabel(
+            execution.rinshanTile
+          )}を嶺上牌としてツモりました。`
+      },
+      0
+    )
+  );
 
   return kanState;
 }
@@ -4969,11 +5178,17 @@ function resolveNextRoundStart(
     random,
     nextAkuukan
   );
+  const dealtAkuukan =
+    assignAkuukanDealCompletedEffects(
+      nextAkuukan,
+      dealt.players,
+      random
+    );
 
   const dealtState: GameState = {
     ...state,
-    ...(nextAkuukan
-      ? { akuukan: nextAkuukan }
+    ...(dealtAkuukan
+      ? { akuukan: dealtAkuukan }
       : {}),
     matchResult: null,
     playerMp: recoverAkuukanMp(
