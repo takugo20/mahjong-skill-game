@@ -18,10 +18,12 @@ import type {
 import {
   AKUUKAN_E5_TARGET_SUITS,
   activateAkuukanE2DrawRestriction,
+  assignAkuukanE5TargetSuit,
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex,
   getAkuukanE2RestrictedPlayerIds,
   getAkuukanE5LiveWallDrawIndex,
+  getAkuukanE5TargetSuit,
   getAkuukanE11LiveWallTileIndex,
   isAkuukanE2DrawRestricted,
   selectAkuukanE5TargetSuit
@@ -462,6 +464,106 @@ describe("E-5の局開始時対象色選択", () => {
         random
       })
     ).toBeNull();
+    expect(randomCallCount).toBe(0);
+  });
+
+  it("選んだ対象色を新しい状態へ保存して取得する", () => {
+    const initial = createAkuukan(
+      "enemy-5"
+    );
+    const assigned =
+      assignAkuukanE5TargetSuit({
+        akuukan: initial,
+        random: () => 0.5
+      });
+
+    expect(assigned).not.toBe(initial);
+    expect(
+      getAkuukanE5TargetSuit(initial)
+    ).toBeNull();
+    expect(
+      getAkuukanE5TargetSuit(assigned)
+    ).toBe("pin");
+    expect(assigned.e5TargetSuit).toBe(
+      "pin"
+    );
+  });
+
+  it("次局用に実行し直すと対象色を再抽選する", () => {
+    const firstRound =
+      assignAkuukanE5TargetSuit({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        random: () => 0
+      });
+    const nextRound =
+      assignAkuukanE5TargetSuit({
+        akuukan: firstRound,
+        random: () => 0.999999
+      });
+
+    expect(
+      getAkuukanE5TargetSuit(firstRound)
+    ).toBe("sou");
+    expect(
+      getAkuukanE5TargetSuit(nextRound)
+    ).toBe("man");
+  });
+
+  it("E-5を持たない状態は変更せず乱数も消費しない", () => {
+    let randomCallCount = 0;
+    const initial = createAkuukan(
+      "enemy-4"
+    );
+    const result =
+      assignAkuukanE5TargetSuit({
+        akuukan: initial,
+        random: () => {
+          randomCallCount += 1;
+          return 0;
+        }
+      });
+
+    expect(result).toBe(initial);
+    expect(
+      getAkuukanE5TargetSuit(result)
+    ).toBeNull();
+    expect(randomCallCount).toBe(0);
+  });
+
+  it("E-5が無効なら保存済み対象色を消去して乱数を消費しない", () => {
+    const assigned =
+      assignAkuukanE5TargetSuit({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        random: () => 0.5
+      });
+    const disabled = disableAkuukanSource(
+      assigned,
+      "enemy-ability:E-5"
+    );
+    let randomCallCount = 0;
+    const cleared =
+      assignAkuukanE5TargetSuit({
+        akuukan: disabled,
+        random: () => {
+          randomCallCount += 1;
+          return 0;
+        }
+      });
+
+    expect(cleared).not.toBe(disabled);
+    expect(
+      getAkuukanE5TargetSuit(disabled)
+    ).toBe("pin");
+    expect(
+      getAkuukanE5TargetSuit(cleared)
+    ).toBeNull();
+    expect(cleared).not.toHaveProperty(
+      "e5TargetSuit"
+    );
     expect(randomCallCount).toBe(0);
   });
 });
