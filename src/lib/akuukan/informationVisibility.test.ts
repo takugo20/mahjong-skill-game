@@ -9,6 +9,7 @@ import {
 } from "./state";
 import {
   areAkuukanDoraIndicatorsVisible,
+  areAkuukanHandTilesVisible,
   areAkuukanRiverTilesVisible
 } from "./informationVisibility";
 
@@ -16,6 +17,7 @@ function createAkuukan(
   enemyId:
     | "enemy-1"
     | "enemy-2"
+    | "enemy-6"
     | "enemy-8"
 ) {
   return createInitialAkuukanGameState({
@@ -102,6 +104,91 @@ describe("E-1のドラ表示牌可視性", () => {
         })
       ).toBe(true);
     }
+  });
+});
+
+describe("E-10の手牌可視性", () => {
+  it("全員が自分の手牌を見られる", () => {
+    const akuukan = createAkuukan(
+      "enemy-6"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanHandTilesVisible({
+          akuukan,
+          viewer,
+          viewerIsHandOwner: true
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("敵6本人には他家の手牌を見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-6"
+    );
+
+    expect(
+      areAkuukanHandTilesVisible({
+        akuukan,
+        viewer: "selectedEnemy",
+        viewerIsHandOwner: false
+      })
+    ).toBe(true);
+  });
+
+  it("敵6戦でもプレイヤーと通常CPUには他家の手牌を見せない", () => {
+    const akuukan = createAkuukan(
+      "enemy-6"
+    );
+
+    for (const viewer of [
+      "player",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanHandTilesVisible({
+          akuukan,
+          viewer,
+          viewerIsHandOwner: false
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("E-10を持たない敵本人には他家の手牌を見せない", () => {
+    const akuukan = createAkuukan(
+      "enemy-2"
+    );
+
+    expect(
+      areAkuukanHandTilesVisible({
+        akuukan,
+        viewer: "selectedEnemy",
+        viewerIsHandOwner: false
+      })
+    ).toBe(false);
+  });
+
+  it("E-10が無効なら敵6本人にも他家の手牌を見せない", () => {
+    const akuukan =
+      disableAkuukanSource(
+        createAkuukan("enemy-6"),
+        "enemy-ability:E-10"
+      );
+
+    expect(
+      areAkuukanHandTilesVisible({
+        akuukan,
+        viewer: "selectedEnemy",
+        viewerIsHandOwner: false
+      })
+    ).toBe(false);
   });
 });
 
