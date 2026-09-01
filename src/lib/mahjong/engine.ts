@@ -478,6 +478,22 @@ export function createInitialGameState(
                 drawIndex
               ]
           : undefined;
+      const tile =
+        reservedTile ??
+        takeAkuukanLiveWallTile(
+          akuukan,
+          liveWall,
+          seat === 2
+        );
+
+      if (!tile) {
+        throw new Error("配牌中に通常山が不足しました。");
+      }
+
+      players[seat].hand.push(tile);
+    }
+  }
+
   const akuukanAfterDeal =
     assignAkuukanDealCompletedEffects(
       akuukan,
@@ -488,21 +504,6 @@ export function createInitialGameState(
   const dealerDraw =
     takeAkuukanLiveWallTile(
       akuukanAfterDeal,
-      liveWall,
-      false
-    );
-
-      if (!tile) {
-        throw new Error("配牌中に通常山が不足しました。");
-      }
-
-      players[seat].hand.push(tile);
-    }
-  }
-
-  const dealerDraw =
-    takeAkuukanLiveWallTile(
-      akuukan,
       liveWall,
       false
     );
@@ -792,8 +793,6 @@ export function discardTile(
   }
 
   const discardedTile = currentPlayer.hand[tileIndex];
-
-    const discardedTile = currentPlayer.hand[tileIndex];
 
   if (
     state.akuukan &&
