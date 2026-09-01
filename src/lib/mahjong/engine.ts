@@ -16,6 +16,9 @@ import {
   reserveAkuukanE26TenpaiHand
 } from "../akuukan/dealComposition";
 import {
+  reserveAkuukanE29ShantenHands
+} from "../akuukan/shantenDealComposition";
+import {
   assignAkuukanE19DiscardRestrictions,
   getAkuukanE19ForbiddenTileIds,
   isAkuukanE19DiscardAllowed,
@@ -350,8 +353,8 @@ export function getRoundLabel(
 
 interface AkuukanDealComposition {
   readonly liveWall: Tile[];
-  readonly selectedEnemyReservedTiles:
-    Tile[];
+  readonly reservedTilesBySeat:
+    readonly Tile[][];
 }
 
 function prepareAkuukanDealComposition(
@@ -362,7 +365,12 @@ function prepareAkuukanDealComposition(
   if (!akuukan) {
     return {
       liveWall,
-      selectedEnemyReservedTiles: []
+      reservedTilesBySeat: [
+        [],
+        [],
+        [],
+        []
+      ]
     };
   }
 
@@ -389,17 +397,35 @@ function prepareAkuukanDealComposition(
         doraTripletReservation
           .remainingTiles
     });
+  const shantenHandsReservation =
+    reserveAkuukanE29ShantenHands({
+      akuukan,
+      availableTiles:
+        tenpaiHandReservation
+          .remainingTiles
+    });
+  const selectedEnemyReservedTiles = [
+    ...doraTripletReservation
+      .reservedTiles,
+    ...tenpaiHandReservation
+      .reservedTiles
+  ];
 
   return {
     liveWall:
-      tenpaiHandReservation
+      shantenHandsReservation
         .remainingTiles,
-    selectedEnemyReservedTiles: [
-      ...doraTripletReservation
-        .reservedTiles,
-      ...tenpaiHandReservation
-        .reservedTiles
-    ]
+    reservedTilesBySeat:
+      shantenHandsReservation
+        .constraintsSatisfied
+        ? shantenHandsReservation
+            .reservedTilesBySeat
+        : [
+            [],
+            [],
+            selectedEnemyReservedTiles,
+            []
+          ]
   };
 }
 
@@ -486,12 +512,10 @@ export function createInitialGameState(
   for (let drawIndex = 0; drawIndex < 13; drawIndex += 1) {
     for (let seat = 0; seat < 4; seat += 1) {
       const reservedTile =
-        seat === 2
-          ? dealComposition
-              .selectedEnemyReservedTiles[
-                drawIndex
-              ]
-          : undefined;
+              dealComposition
+                .reservedTilesBySeat[seat]?.[
+                  drawIndex
+                ];
       const tile =
         reservedTile ??
         takeAkuukanLiveWallTile(
@@ -4908,12 +4932,10 @@ function dealNextRoundHands(
       ) as SeatIndex;
 
       const reservedTile =
-        seat === 2
-          ? dealComposition
-              .selectedEnemyReservedTiles[
-                drawIndex
-              ]
-          : undefined;
+              dealComposition
+                .reservedTilesBySeat[seat]?.[
+                  drawIndex
+                ];
       const tile =
         reservedTile ??
         takeAkuukanLiveWallTile(
