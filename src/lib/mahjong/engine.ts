@@ -118,7 +118,7 @@ import type {
 import {
   chooseCpuPostRiichiDiscard,
   chooseCpuRiichi
-} from "./cpuRiichi";;
+} from "./cpuRiichi";
 import type {
   CpuRiichiDecision
 } from "./cpuRiichi";
@@ -3421,7 +3421,7 @@ function playCpuDiscardingTurn(
             getVisibleTilesForCpuRiichi(
               state,
               cpuSeat
-            )
+            ),
         })
       : null;
   const postRiichiSelectedTile =
