@@ -26,8 +26,11 @@ import {
 } from "../akuukan/discardLegality";
 import {
   activateAkuukanE2DrawRestriction,
+  assignAkuukanE5TargetSuit,
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex,
+  getAkuukanE5LiveWallDrawIndex,
+  getAkuukanE5TargetSuit,
   getAkuukanE11LiveWallTileIndex
 } from "../akuukan/drawTileSelection";
 import {
@@ -480,6 +483,17 @@ export function createInitialGameState(
   random: () => number = Math.random,
   akuukanSetup?: AkuukanMatchSetup
 ): GameState {
+  const initialAkuukan = akuukanSetup
+    ? createInitialAkuukanGameState(
+        akuukanSetup
+      )
+    : undefined;
+  const akuukan = initialAkuukan
+    ? assignAkuukanE5TargetSuit({
+        akuukan: initialAkuukan,
+        random
+      })
+    : undefined;
   const shuffledTiles = shuffleTiles(
     createFullTileSet(),
     random
@@ -488,11 +502,6 @@ export function createInitialGameState(
   const deadWall = shuffledTiles.slice(-14);
   const availableLiveWall =
     shuffledTiles.slice(0, -14);
-  const akuukan = akuukanSetup
-    ? createInitialAkuukanGameState(
-        akuukanSetup
-      )
-    : undefined;
   const dealComposition =
     prepareAkuukanDealComposition(
       akuukan,
@@ -693,6 +702,22 @@ function getAkuukanLiveWallDrawIndex(
     return state.round.liveWall.length > 0
       ? 0
       : null;
+  }
+
+  const e5DrawIndex =
+    getAkuukanE5LiveWallDrawIndex({
+      akuukan: state.akuukan,
+      recipientIsSelectedEnemy:
+        player.seat === 2,
+      targetSuit:
+        getAkuukanE5TargetSuit(
+          state.akuukan
+        ),
+      liveWall: state.round.liveWall
+    });
+
+  if (e5DrawIndex !== 0) {
+    return e5DrawIndex;
   }
 
   const e2DrawIndex =
@@ -5199,12 +5224,18 @@ function resolveNextRoundStart(
       state.round.players,
       nextDealerSeat
     );
-  const nextAkuukan = state.akuukan
+  const begunAkuukan = state.akuukan
     ? beginAkuukanRound(
         clearAkuukanE2DrawRestriction(
           state.akuukan
         )
       )
+    : undefined;
+  const nextAkuukan = begunAkuukan
+    ? assignAkuukanE5TargetSuit({
+        akuukan: begunAkuukan,
+        random
+      })
     : undefined;
 
   const dealt = dealNextRoundHands(
