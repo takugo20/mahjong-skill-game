@@ -3716,7 +3716,7 @@ function getCpuRiichiDecision(
       getVisibleTilesForCpuRiichi(
         state,
         cpuSeat
-      )
+      ),
     allowNotenRiichi:
       isNotenRiichiAllowed(
         state,
