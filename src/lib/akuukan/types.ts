@@ -1,4 +1,7 @@
 import type {
+  NumberSuit
+} from "../mahjong/types";
+import type {
   NormalYakuId
 } from "../mahjong/yaku";
 
@@ -243,6 +246,7 @@ export interface AkuukanGameState {
   setup: AkuukanMatchSetup;
   e2DrawRestriction?:
     AkuukanE2DrawRestrictionState;
+  e5TargetSuit?: NumberSuit;
   e6LastWinningNormalYakuIds?:
     NormalYakuId[];
   e19DiscardRestrictions?:
