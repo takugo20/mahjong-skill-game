@@ -16,12 +16,15 @@ import type {
   EnemyId
 } from "./types";
 import {
+  AKUUKAN_E5_TARGET_SUITS,
   activateAkuukanE2DrawRestriction,
   clearAkuukanE2DrawRestriction,
   getAkuukanE2LiveWallDrawIndex,
   getAkuukanE2RestrictedPlayerIds,
+  getAkuukanE5LiveWallDrawIndex,
   getAkuukanE11LiveWallTileIndex,
-  isAkuukanE2DrawRestricted
+  isAkuukanE2DrawRestricted,
+  selectAkuukanE5TargetSuit
 } from "./drawTileSelection";
 
 let serialNumber = 0;
@@ -399,6 +402,202 @@ describe("E-2の通常山ツモ候補除外", () => {
         concealedTiles:
           createSingleWaitHand(),
         melds: [],
+        liveWall
+      })
+    ).toBe(0);
+  });
+});
+
+describe("E-5の局開始時対象色選択", () => {
+  it("乱数の3区間を索子・筒子・萬子へ対応させる", () => {
+    const akuukan = createAkuukan(
+      "enemy-5"
+    );
+
+    expect(
+      AKUUKAN_E5_TARGET_SUITS
+    ).toEqual(["sou", "pin", "man"]);
+    expect(
+      selectAkuukanE5TargetSuit({
+        akuukan,
+        random: () => 0
+      })
+    ).toBe("sou");
+    expect(
+      selectAkuukanE5TargetSuit({
+        akuukan,
+        random: () => 0.5
+      })
+    ).toBe("pin");
+    expect(
+      selectAkuukanE5TargetSuit({
+        akuukan,
+        random: () => 0.999999
+      })
+    ).toBe("man");
+  });
+
+  it("E-5を持たないか無効なら色を選ばず乱数も消費しない", () => {
+    let randomCallCount = 0;
+    const random = () => {
+      randomCallCount += 1;
+      return 0;
+    };
+    const disabled = disableAkuukanSource(
+      createAkuukan("enemy-5"),
+      "enemy-ability:E-5"
+    );
+
+    expect(
+      selectAkuukanE5TargetSuit({
+        akuukan: createAkuukan(
+          "enemy-4"
+        ),
+        random
+      })
+    ).toBeNull();
+    expect(
+      selectAkuukanE5TargetSuit({
+        akuukan: disabled,
+        random
+      })
+    ).toBeNull();
+    expect(randomCallCount).toBe(0);
+  });
+});
+
+describe("E-5の特定色限定ツモ", () => {
+  it("通常山が空なら選択位置を返さない", () => {
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        recipientIsSelectedEnemy: true,
+        targetSuit: "sou",
+        liveWall: []
+      })
+    ).toBeNull();
+  });
+
+  it("索子・筒子・萬子のどれが対象でも最初の同色牌を選ぶ", () => {
+    const akuukan = createAkuukan(
+      "enemy-5"
+    );
+
+    for (const targetSuit of
+      AKUUKAN_E5_TARGET_SUITS) {
+      expect(
+        getAkuukanE5LiveWallDrawIndex({
+          akuukan,
+          recipientIsSelectedEnemy: true,
+          targetSuit,
+          liveWall: [
+            createTile("honor", 1),
+            createTile(
+              targetSuit,
+              5,
+              true
+            ),
+            createTile(targetSuit, 6)
+          ]
+        })
+      ).toBe(1);
+    }
+  });
+
+  it("対象色が残っている間は字牌と他色を飛ばす", () => {
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        recipientIsSelectedEnemy: true,
+        targetSuit: "sou",
+        liveWall: [
+          createTile("honor", 7),
+          createTile("man", 9),
+          createTile("pin", 1),
+          createTile("sou", 3)
+        ]
+      })
+    ).toBe(3);
+  });
+
+  it("対象色が通常山から尽きたら通常どおり先頭を選ぶ", () => {
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        recipientIsSelectedEnemy: true,
+        targetSuit: "sou",
+        liveWall: [
+          createTile("honor", 2),
+          createTile("pin", 4),
+          createTile("man", 7)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("能力者CPU本人以外には限定ツモを適用しない", () => {
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        recipientIsSelectedEnemy: false,
+        targetSuit: "sou",
+        liveWall: [
+          createTile("honor", 3),
+          createTile("sou", 8)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("対象色が未選択なら通常どおり先頭を選ぶ", () => {
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-5"
+        ),
+        recipientIsSelectedEnemy: true,
+        targetSuit: null,
+        liveWall: [
+          createTile("honor", 4),
+          createTile("sou", 2)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("E-5を持たない敵または能力無効時は適用しない", () => {
+    const disabled = disableAkuukanSource(
+      createAkuukan("enemy-5"),
+      "enemy-ability:E-5"
+    );
+    const liveWall = [
+      createTile("honor", 5),
+      createTile("sou", 6)
+    ];
+
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-4"
+        ),
+        recipientIsSelectedEnemy: true,
+        targetSuit: "sou",
+        liveWall
+      })
+    ).toBe(0);
+    expect(
+      getAkuukanE5LiveWallDrawIndex({
+        akuukan: disabled,
+        recipientIsSelectedEnemy: true,
+        targetSuit: "sou",
         liveWall
       })
     ).toBe(0);
