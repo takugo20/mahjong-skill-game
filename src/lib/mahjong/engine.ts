@@ -12,7 +12,8 @@ import {
   applyAkuukanE15AfterCall
 } from "../akuukan/callEffects";
 import {
-  reserveAkuukanE16DoraTriplet
+  reserveAkuukanE16DoraTriplet,
+  reserveAkuukanE26TenpaiHand
 } from "../akuukan/dealComposition";
 import {
   assignAkuukanE19DiscardRestrictions,
@@ -374,18 +375,31 @@ function prepareAkuukanDealComposition(
     );
   }
 
-  const reservation =
+  const doraTripletReservation =
     reserveAkuukanE16DoraTriplet({
       akuukan,
       doraIndicator:
         initialDoraIndicator,
       availableTiles: liveWall
     });
+  const tenpaiHandReservation =
+    reserveAkuukanE26TenpaiHand({
+      akuukan,
+      availableTiles:
+        doraTripletReservation
+          .remainingTiles
+    });
 
   return {
-    liveWall: reservation.remainingTiles,
-    selectedEnemyReservedTiles:
-      reservation.reservedTiles
+    liveWall:
+      tenpaiHandReservation
+        .remainingTiles,
+    selectedEnemyReservedTiles: [
+      ...doraTripletReservation
+        .reservedTiles,
+      ...tenpaiHandReservation
+        .reservedTiles
+    ]
   };
 }
 
