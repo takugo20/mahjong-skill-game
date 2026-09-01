@@ -15,6 +15,12 @@ export interface AkuukanDoraIndicatorVisibilityInput {
   readonly viewer: AkuukanInformationViewer;
 }
 
+export interface AkuukanHandVisibilityInput {
+  readonly akuukan: AkuukanGameState;
+  readonly viewer: AkuukanInformationViewer;
+  readonly viewerIsHandOwner: boolean;
+}
+
 export interface AkuukanRiverVisibilityInput {
   readonly akuukan: AkuukanGameState;
   readonly viewer: AkuukanInformationViewer;
@@ -30,6 +36,21 @@ export function areAkuukanDoraIndicatorsVisible(
     !isEnemyAbilityEnabled(
       input.akuukan,
       "E-1"
+    )
+  );
+}
+
+export function areAkuukanHandTilesVisible(
+  input: AkuukanHandVisibilityInput
+): boolean {
+  return (
+    input.viewerIsHandOwner ||
+    (
+      input.viewer === "selectedEnemy" &&
+      isEnemyAbilityEnabled(
+        input.akuukan,
+        "E-10"
+      )
     )
   );
 }
