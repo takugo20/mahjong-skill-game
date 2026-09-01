@@ -3,6 +3,7 @@ import {
 } from "../mahjong/hand";
 import type {
   Meld,
+  NumberSuit,
   Tile
 } from "../mahjong/types";
 import type {
@@ -156,6 +157,82 @@ export function clearAkuukanE2DrawRestriction(
   delete nextAkuukan.e2DrawRestriction;
 
   return nextAkuukan;
+}
+
+export const AKUUKAN_E5_TARGET_SUITS = [
+  "sou",
+  "pin",
+  "man"
+] as const satisfies readonly NumberSuit[];
+
+export type AkuukanE5TargetSuit =
+  (typeof AKUUKAN_E5_TARGET_SUITS)[number];
+
+export interface SelectAkuukanE5TargetSuitInput {
+  readonly akuukan: AkuukanGameState;
+  readonly random: () => number;
+}
+
+export function selectAkuukanE5TargetSuit(
+  input: SelectAkuukanE5TargetSuitInput
+): AkuukanE5TargetSuit | null {
+  if (
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-5"
+    )
+  ) {
+    return null;
+  }
+
+  const selectedIndex = Math.floor(
+    input.random() *
+      AKUUKAN_E5_TARGET_SUITS.length
+  );
+
+  return (
+    AKUUKAN_E5_TARGET_SUITS[
+      selectedIndex
+    ] ?? AKUUKAN_E5_TARGET_SUITS[0]
+  );
+}
+
+export interface AkuukanE5LiveWallDrawInput {
+  readonly akuukan: AkuukanGameState;
+  readonly recipientIsSelectedEnemy:
+    boolean;
+  readonly targetSuit:
+    AkuukanE5TargetSuit | null;
+  readonly liveWall: readonly Tile[];
+}
+
+export function getAkuukanE5LiveWallDrawIndex(
+  input: AkuukanE5LiveWallDrawInput
+): number | null {
+  if (input.liveWall.length === 0) {
+    return null;
+  }
+
+  if (
+    !input.recipientIsSelectedEnemy ||
+    input.targetSuit === null ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-5"
+    )
+  ) {
+    return 0;
+  }
+
+  const targetSuitTileIndex =
+    input.liveWall.findIndex(
+      (tile) =>
+        tile.suit === input.targetSuit
+    );
+
+  return targetSuitTileIndex >= 0
+    ? targetSuitTileIndex
+    : 0;
 }
 
 export interface AkuukanE11LiveWallTileInput {
