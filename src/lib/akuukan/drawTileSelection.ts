@@ -197,6 +197,46 @@ export function selectAkuukanE5TargetSuit(
   );
 }
 
+export interface AssignAkuukanE5TargetSuitInput {
+  readonly akuukan: AkuukanGameState;
+  readonly random: () => number;
+}
+
+export function assignAkuukanE5TargetSuit(
+  input: AssignAkuukanE5TargetSuitInput
+): AkuukanGameState {
+  const targetSuit =
+    selectAkuukanE5TargetSuit(input);
+
+  if (targetSuit !== null) {
+    return {
+      ...input.akuukan,
+      e5TargetSuit: targetSuit
+    };
+  }
+
+  if (
+    input.akuukan.e5TargetSuit ===
+    undefined
+  ) {
+    return input.akuukan;
+  }
+
+  const nextAkuukan = {
+    ...input.akuukan
+  };
+
+  delete nextAkuukan.e5TargetSuit;
+
+  return nextAkuukan;
+}
+
+export function getAkuukanE5TargetSuit(
+  akuukan: AkuukanGameState
+): AkuukanE5TargetSuit | null {
+  return akuukan.e5TargetSuit ?? null;
+}
+
 export interface AkuukanE5LiveWallDrawInput {
   readonly akuukan: AkuukanGameState;
   readonly recipientIsSelectedEnemy:
