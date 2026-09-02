@@ -1,4 +1,7 @@
 import {
+  getAkuukanMatchSetupDisabledSources
+} from "./matchSetupEffects";
+import {
   assertValidAkuukanMatchSetup
 } from "./setupValidation";
 import type {
@@ -33,7 +36,10 @@ export function createInitialAkuukanGameState(
           })
         )
     },
-    disabledSources: [],
+    disabledSources:
+      getAkuukanMatchSetupDisabledSources(
+        setup
+      ),
     activeEffects: [],
     nextRoundEffects: [],
     usedSources: {
