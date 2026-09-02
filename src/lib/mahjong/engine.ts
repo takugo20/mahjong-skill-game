@@ -59,10 +59,17 @@ import {
   isAkuukanRiichiProhibited
 } from "../akuukan/riichiLegality";
 import {
+  activateAkuukanEffect,
   beginAkuukanRound,
   beginAkuukanTurn,
-  createInitialAkuukanGameState
+  createInitialAkuukanGameState,
+  endAkuukanEffect,
+  hasAkuukanEffectInstance
 } from "../akuukan/state";
+import {
+  getAkuukanNormalTurnActionCount,
+  shouldStartAkuukanAdditionalNormalAction
+} from "../akuukan/turnCountChange";
 import {
   createAkuukanWinningCandidateScoreAdjuster,
   createAkuukanWinningCandidateYakuEvaluator,
@@ -206,6 +213,16 @@ const FIRST_DRAW_TURN_BY_WIND:
     west: 2,
     north: 3
   };
+
+const AKUUKAN_E25_FIRST_ACTION_EFFECT_ID =
+  "enemy-ability:E-25:first-normal-action";
+const AKUUKAN_E25_SECOND_ACTION_EFFECT_ID =
+  "enemy-ability:E-25:second-normal-action";
+
+type AkuukanE25NormalActionStage =
+  | "first"
+  | "second"
+  | null;
 
 export type CpuProgressPhase =
   | "draw"
@@ -632,6 +649,173 @@ function beginAkuukanTurnState(
       };
 }
 
+function getAkuukanE25NormalActionStage(
+  akuukan: AkuukanGameState
+): AkuukanE25NormalActionStage {
+  if (
+    hasAkuukanEffectInstance(
+      akuukan,
+      AKUUKAN_E25_SECOND_ACTION_EFFECT_ID
+    )
+  ) {
+    return "second";
+  }
+
+  if (
+    hasAkuukanEffectInstance(
+      akuukan,
+      AKUUKAN_E25_FIRST_ACTION_EFFECT_ID
+    )
+  ) {
+    return "first";
+  }
+
+  return null;
+}
+
+function setAkuukanE25NormalActionStage(
+  akuukan: AkuukanGameState,
+  stage: AkuukanE25NormalActionStage
+): AkuukanGameState {
+  let updated = endAkuukanEffect(
+    akuukan,
+    AKUUKAN_E25_FIRST_ACTION_EFFECT_ID
+  );
+  updated = endAkuukanEffect(
+    updated,
+    AKUUKAN_E25_SECOND_ACTION_EFFECT_ID
+  );
+
+  if (stage === null) {
+    return updated;
+  }
+
+  return activateAkuukanEffect(updated, {
+    instanceId:
+      stage === "first"
+        ? AKUUKAN_E25_FIRST_ACTION_EFFECT_ID
+        : AKUUKAN_E25_SECOND_ACTION_EFFECT_ID,
+    sourceId: "enemy-ability:E-25",
+    remainingTurns: null
+  });
+}
+
+function setAkuukanE25NormalActionStageInState(
+  state: GameState,
+  stage: AkuukanE25NormalActionStage
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  const akuukan =
+    setAkuukanE25NormalActionStage(
+      state.akuukan,
+      stage
+    );
+
+  return akuukan === state.akuukan
+    ? state
+    : {
+        ...state,
+        akuukan
+      };
+}
+
+function beginAkuukanE25NormalAction(
+  state: GameState,
+  actor: PlayerState
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  const actionCount =
+    getAkuukanNormalTurnActionCount({
+      akuukan: state.akuukan,
+      actorIsSelectedEnemy:
+        actor.seat === 2
+    });
+
+  if (actionCount !== 2) {
+    return setAkuukanE25NormalActionStageInState(
+      state,
+      null
+    );
+  }
+
+  const stage =
+    getAkuukanE25NormalActionStage(
+      state.akuukan
+    );
+
+  if (
+    stage === "second" &&
+    state.round.lastDiscard?.seat ===
+      actor.seat
+  ) {
+    return state;
+  }
+
+  return setAkuukanE25NormalActionStageInState(
+    state,
+    "first"
+  );
+}
+
+function resolveAkuukanE25AfterDiscard(
+  state: GameState
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  const stage =
+    getAkuukanE25NormalActionStage(
+      state.akuukan
+    );
+
+  if (stage === null) {
+    return state;
+  }
+
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    stage === "second" ||
+    !lastDiscard ||
+    state.round.phase !== "drawing" ||
+    state.round.liveWall.length === 0 ||
+    !shouldStartAkuukanAdditionalNormalAction({
+      akuukan: state.akuukan,
+      actorIsSelectedEnemy:
+        lastDiscard.seat === 2,
+      completedActionCount: 1,
+      result: "uninterruptedDiscard"
+    })
+  ) {
+    return setAkuukanE25NormalActionStageInState(
+      state,
+      null
+    );
+  }
+
+  const secondActionState =
+    setAkuukanE25NormalActionStageInState(
+      state,
+      "second"
+    );
+
+  return {
+    ...secondActionState,
+    round: {
+      ...secondActionState.round,
+      currentSeat: lastDiscard.seat
+    }
+  };
+}
+
 function getAkuukanE19ForbiddenTileIdsForPlayer(
   state: GameState,
   player: PlayerState
@@ -836,7 +1020,7 @@ export function drawTile(
         )
       : state.playerMp;
 
-  return beginAkuukanTurnState({
+  const drawnState = beginAkuukanTurnState({
     ...state,
     playerMp: updatedMp,
     round: {
@@ -857,6 +1041,11 @@ export function drawTile(
         ? "牌をツモりました。捨てる牌を選んでください。"
         : `${currentPlayer.name}がツモりました。`
   });
+
+  return beginAkuukanE25NormalAction(
+    drawnState,
+    updatedPlayer
+  );
 }
 
 export function discardTile(
@@ -2475,11 +2664,20 @@ function applyCallAfterEffects(
   target?: CallAfterEffectTarget
 ): GameState {
   let stateAfterEffects =
-    applyCallDeposit(
-      state,
-      seat,
-      kind
-    );
+    kind === "chi" ||
+    kind === "pon" ||
+    kind === "openKan"
+      ? setAkuukanE25NormalActionStageInState(
+          state,
+          null
+        )
+      : state;
+
+  stateAfterEffects = applyCallDeposit(
+    stateAfterEffects,
+    seat,
+    kind
+  );
 
   stateAfterEffects =
     synchronizeAkuukanE19ForPlayerHand(
@@ -4358,6 +4556,11 @@ function completeCpuTurns(
     if (fourWindsState) {
       return fourWindsState;
     }
+
+    nextState =
+      resolveAkuukanE25AfterDiscard(
+        nextState
+      );
 
     if (
       nextState.round.phase !== "drawing"
