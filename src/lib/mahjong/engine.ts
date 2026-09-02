@@ -31,7 +31,8 @@ import {
   getAkuukanE2LiveWallDrawIndex,
   getAkuukanE5LiveWallDrawIndex,
   getAkuukanE5TargetSuit,
-  getAkuukanE11LiveWallTileIndex
+  getAkuukanE11LiveWallTileIndex,
+  getAkuukanE22LiveWallDrawIndex
 } from "../akuukan/drawTileSelection";
 import {
   areAkuukanDoraIndicatorsVisible,
@@ -742,10 +743,23 @@ function getAkuukanLiveWallDrawIndex(
     return e2DrawIndex;
   }
 
-  return getAkuukanE11LiveWallTileIndex({
+  const e11DrawIndex =
+    getAkuukanE11LiveWallTileIndex({
+      akuukan: state.akuukan,
+      recipientIsSelectedEnemy:
+        player.seat === 2,
+      liveWall: state.round.liveWall
+    });
+
+  if (e11DrawIndex !== 0) {
+    return e11DrawIndex;
+  }
+
+  return getAkuukanE22LiveWallDrawIndex({
     akuukan: state.akuukan,
     recipientIsSelectedEnemy:
       player.seat === 2,
+    concealedTiles: player.hand,
     liveWall: state.round.liveWall
   });
 }
