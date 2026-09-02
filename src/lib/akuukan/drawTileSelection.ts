@@ -359,3 +359,64 @@ export function getAkuukanE22LiveWallDrawIndex(
     ? newTileTypeIndex
     : 0;
 }
+
+export interface AkuukanE23LiveWallDrawInput {
+  readonly akuukan: AkuukanGameState;
+  readonly recipientIsSelectedEnemy:
+    boolean;
+  readonly previousDiscardTile: Tile | null;
+  readonly liveWall: readonly Tile[];
+  readonly random: () => number;
+}
+
+export function getAkuukanE23LiveWallDrawIndex(
+  input: AkuukanE23LiveWallDrawInput
+): number | null {
+  if (input.liveWall.length === 0) {
+    return null;
+  }
+
+  const previousDiscardTile =
+    input.previousDiscardTile;
+
+  if (
+    input.recipientIsSelectedEnemy ||
+    previousDiscardTile === null ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-23"
+    )
+  ) {
+    return 0;
+  }
+
+  const sameTileTypeIndex =
+    input.liveWall.findIndex(
+      (tile) =>
+        isSameTileType(
+          tile,
+          previousDiscardTile
+        )
+    );
+
+  if (sameTileTypeIndex < 0) {
+    return 0;
+  }
+
+  const differentTileTypeIndex =
+    input.liveWall.findIndex(
+      (tile) =>
+        !isSameTileType(
+          tile,
+          previousDiscardTile
+        )
+    );
+
+  if (differentTileTypeIndex < 0) {
+    return sameTileTypeIndex;
+  }
+
+  return input.random() < 0.5
+    ? sameTileTypeIndex
+    : differentTileTypeIndex;
+}
