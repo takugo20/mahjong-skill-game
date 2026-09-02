@@ -48,6 +48,10 @@ import {
   recoverAkuukanMp
 } from "../akuukan/mp";
 import {
+  applyAkuukanE20PaymentMultiplier,
+  isAkuukanE20PaymentMultiplierEnabled
+} from "../akuukan/paymentAdjustments";
+import {
   isAkuukanNotenRiichiAllowed,
   isAkuukanOpenRiichiAllowed,
   isAkuukanRiichiProhibited
@@ -127,6 +131,9 @@ import {
 } from "./drawSettlement";
 import {
   resolveNagashiManganSettlement
+} from "./nagashiMangan";
+import type {
+  NagashiManganSettlementResult
 } from "./nagashiMangan";
 import {
   getFuritenStatus
@@ -1166,6 +1173,246 @@ function createWinInput(
   };
 }
 
+function applyAkuukanE20ToWinResolution(
+  state: GameState,
+  resolution:
+    ValidRoundWinResolution
+): ValidRoundWinResolution {
+  const akuukan = state.akuukan;
+
+  if (
+    !akuukan ||
+    resolution.winnerSeat !== 2 ||
+    !isAkuukanE20PaymentMultiplierEnabled(
+      akuukan,
+      true
+    )
+  ) {
+    return resolution;
+  }
+
+  const winnerChange =
+    resolution.pointChanges.find(
+      (change) =>
+        change.seat ===
+        resolution.winnerSeat
+    );
+
+  if (!winnerChange) {
+    throw new Error(
+      "E-20の和了者点数移動が見つかりません。"
+    );
+  }
+
+  const paymentPointsBefore =
+    resolution.pointChanges.reduce(
+      (total, change) =>
+        change.change < 0
+          ? total - change.change
+          : total,
+      0
+    );
+  const nonPaymentPoints =
+    winnerChange.change -
+    paymentPointsBefore;
+
+  if (
+    !Number.isSafeInteger(
+      nonPaymentPoints
+    ) ||
+    nonPaymentPoints < 0
+  ) {
+    throw new Error(
+      "E-20の支払額と供託点を分離できません。"
+    );
+  }
+
+  let paymentPointsAfter = 0;
+  const adjustedPayerChanges =
+    resolution.pointChanges.map(
+      (change) => {
+        if (change.change >= 0) {
+          return { ...change };
+        }
+
+        const paymentPoints =
+          applyAkuukanE20PaymentMultiplier({
+            akuukan,
+            winnerIsSelectedEnemy: true,
+            paymentPoints: -change.change
+          });
+
+        paymentPointsAfter += paymentPoints;
+
+        return {
+          ...change,
+          change: -paymentPoints,
+          pointsAfter:
+            change.pointsBefore -
+            paymentPoints
+        };
+      }
+    );
+  const winnerPointsAfter =
+    paymentPointsAfter +
+    nonPaymentPoints;
+  const pointChanges =
+    adjustedPayerChanges.map(
+      (change) =>
+        change.seat ===
+        resolution.winnerSeat
+          ? {
+              ...change,
+              change: winnerPointsAfter,
+              pointsAfter:
+                change.pointsBefore +
+                winnerPointsAfter
+            }
+          : change
+    );
+  const pointsAfterByPlayerId =
+    new Map(
+      pointChanges.map(
+        (change) => [
+          change.playerId,
+          change.pointsAfter
+        ]
+      )
+    );
+
+  return {
+    ...resolution,
+    pointChanges,
+    playersAfter:
+      resolution.playersAfter.map(
+        (player) => ({
+          ...player,
+          score:
+            pointsAfterByPlayerId.get(
+              player.id
+            ) ?? player.score
+        })
+      )
+  };
+}
+
+function applyAkuukanE20ToNagashiSettlement(
+  state: GameState,
+  settlement:
+    NagashiManganSettlementResult
+): NagashiManganSettlementResult {
+  const selectedEnemy =
+    state.round.players[2];
+  const akuukan = state.akuukan;
+
+  if (
+    !akuukan ||
+    !settlement.winnerIds.includes(
+      selectedEnemy.id
+    ) ||
+    !isAkuukanE20PaymentMultiplierEnabled(
+      akuukan,
+      true
+    )
+  ) {
+    return settlement;
+  }
+
+  const changesByPlayerId = new Map(
+    state.round.players.map(
+      (player) => [player.id, 0]
+    )
+  );
+  const payments =
+    settlement.payments.map(
+      (payment) => ({
+        ...payment,
+        points:
+          payment.winnerId ===
+          selectedEnemy.id
+            ? applyAkuukanE20PaymentMultiplier(
+                {
+                  akuukan,
+                  winnerIsSelectedEnemy:
+                    true,
+                  paymentPoints:
+                    payment.points
+                }
+              )
+            : payment.points
+      })
+    );
+
+  for (const payment of payments) {
+    changesByPlayerId.set(
+      payment.winnerId,
+      (changesByPlayerId.get(
+        payment.winnerId
+      ) ?? 0) + payment.points
+    );
+    changesByPlayerId.set(
+      payment.payerId,
+      (changesByPlayerId.get(
+        payment.payerId
+      ) ?? 0) - payment.points
+    );
+  }
+
+  if (
+    settlement.riichiPoolRecipientId
+  ) {
+    changesByPlayerId.set(
+      settlement.riichiPoolRecipientId,
+      (changesByPlayerId.get(
+        settlement.riichiPoolRecipientId
+      ) ?? 0) + state.round.riichiPool
+    );
+  }
+
+  const pointChanges =
+    settlement.pointChanges.map(
+      (change) => {
+        const adjustedChange =
+          changesByPlayerId.get(
+            change.playerId
+          ) ?? 0;
+
+        return {
+          ...change,
+          change: adjustedChange,
+          pointsAfter:
+            change.pointsBefore +
+            adjustedChange
+        };
+      }
+    );
+  const pointsAfterByPlayerId =
+    new Map(
+      pointChanges.map(
+        (change) => [
+          change.playerId,
+          change.pointsAfter
+        ]
+      )
+    );
+
+  return {
+    ...settlement,
+    payments,
+    pointChanges,
+    playersAfter:
+      settlement.playersAfter.map(
+        (player) => ({
+          ...player,
+          points:
+            pointsAfterByPlayerId.get(
+              player.id
+            ) ?? player.points
+        })
+      )
+  };
+}
+
 function isPlayerFuriten(
   state: GameState,
   seat: SeatIndex
@@ -1216,6 +1463,19 @@ function createRoundWinResult(
   const best = resolution.evaluation.best;
   const winner =
     round.players[resolution.winnerSeat];
+
+    const winnerPointChange =
+    resolution.pointChanges.find(
+      (change) =>
+        change.seat ===
+        resolution.winnerSeat
+    );
+
+  if (!winnerPointChange) {
+    throw new Error(
+      "和了者の点数移動が見つかりません。"
+    );
+  }
 
     const responsiblePlayer =
     resolution.responsibility === null
@@ -1277,7 +1537,8 @@ function createRoundWinResult(
     yakumanMultiplier:
       best.yakumanMultiplier,
     limitName: best.score.limitName,
-    totalPoints: best.score.totalPoints,
+    totalPoints:
+      winnerPointChange.change,
     pointChanges:
       resolution.pointChanges
   };
@@ -1593,13 +1854,20 @@ function finishRoundWithExhaustiveDraw(
       seat: getSeat(change.playerId)
     }));
 
-  const nagashiSettlement =
+  const baseNagashiSettlement =
     resolveNagashiManganSettlement({
       players: settlementPlayers,
       honba: state.round.honba,
       riichiPool:
         state.round.riichiPool
     });
+  const nagashiSettlement =
+    baseNagashiSettlement
+      ? applyAkuukanE20ToNagashiSettlement(
+          state,
+          baseNagashiSettlement
+        )
+      : null;
 
   if (nagashiSettlement) {
     const winnerSeats =
@@ -1807,7 +2075,10 @@ function getValidWinResolution(
     );
 
     return resolution.valid
-      ? resolution
+      ? applyAkuukanE20ToWinResolution(
+          state,
+          resolution
+        )
       : null;
   } catch {
     return null;
