@@ -2648,7 +2648,8 @@ export function getPlayerOpenKanCallOptions(
     !isCallAllowed(
       state,
       0,
-      "openKan"
+      "openKan",
+      lastDiscard.seat
     )
   ) {
     return [];
