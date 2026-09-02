@@ -59,6 +59,10 @@ export type WinningCandidateYakuEvaluator = (
   context: YakumanContext
 ) => WinningCandidateYakuEvaluation;
 
+export type WinningCandidateScoreAdjuster = (
+  score: ScoreCalculationResult
+) => ScoreCalculationResult;
+
 export interface WinningHandEvaluationInput {
   concealedTiles: readonly Tile[];
   melds?: readonly Meld[];
@@ -84,6 +88,8 @@ export interface WinningHandEvaluationInput {
   kazoeYakuman?: boolean;
   candidateYakuEvaluator?:
     WinningCandidateYakuEvaluator;
+  candidateScoreAdjuster?:
+    WinningCandidateScoreAdjuster;
 }
 
 export interface WinningHandCandidate {
@@ -188,6 +194,15 @@ function evaluateCandidateYaku(
       normalYaku.length > 0 ||
       yakuman.length > 0
   };
+}
+
+function adjustCandidateScore(
+  input: WinningHandEvaluationInput,
+  score: ScoreCalculationResult
+): ScoreCalculationResult {
+  return input.candidateScoreAdjuster
+    ? input.candidateScoreAdjuster(score)
+    : score;
 }
 
 function compareCandidates(
@@ -309,21 +324,24 @@ export function evaluateWinningHand(
             yakuman
           );
 
-        const score = calculateScore({
-          han: 0,
-          fu: 0,
-          winMethod: input.winMethod,
-          dealer:
-            input.seatWind === "east",
-          yakumanMultiplier,
-          honba: input.honba,
-          riichiSticks:
-            input.riichiSticks,
-          kiriageMangan:
-            input.kiriageMangan,
-          kazoeYakuman:
-            input.kazoeYakuman
-        });
+        const score = adjustCandidateScore(
+          input,
+          calculateScore({
+            han: 0,
+            fu: 0,
+            winMethod: input.winMethod,
+            dealer:
+              input.seatWind === "east",
+            yakumanMultiplier,
+            honba: input.honba,
+            riichiSticks:
+              input.riichiSticks,
+            kiriageMangan:
+              input.kiriageMangan,
+            kazoeYakuman:
+              input.kazoeYakuman
+          })
+        );
 
         candidates.push({
           decomposition,
@@ -371,20 +389,23 @@ export function evaluateWinningHand(
       const totalHan =
         yakuHan + dora.totalHan;
 
-      const score = calculateScore({
-        han: totalHan,
-        fu: fu.fu,
-        winMethod: input.winMethod,
-        dealer:
-          input.seatWind === "east",
-        honba: input.honba,
-        riichiSticks:
-          input.riichiSticks,
-        kiriageMangan:
-          input.kiriageMangan,
-        kazoeYakuman:
-          input.kazoeYakuman
-      });
+      const score = adjustCandidateScore(
+        input,
+        calculateScore({
+          han: totalHan,
+          fu: fu.fu,
+          winMethod: input.winMethod,
+          dealer:
+            input.seatWind === "east",
+          honba: input.honba,
+          riichiSticks:
+            input.riichiSticks,
+          kiriageMangan:
+            input.kiriageMangan,
+          kazoeYakuman:
+            input.kazoeYakuman
+        })
+      );
 
       candidates.push({
         decomposition,
