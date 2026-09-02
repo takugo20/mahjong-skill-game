@@ -317,3 +317,45 @@ export function getAkuukanE11LiveWallTileIndex(
     ? nonWindTileIndex
     : 0;
 }
+
+export interface AkuukanE22LiveWallDrawInput {
+  readonly akuukan: AkuukanGameState;
+  readonly recipientIsSelectedEnemy:
+    boolean;
+  readonly concealedTiles: readonly Tile[];
+  readonly liveWall: readonly Tile[];
+}
+
+export function getAkuukanE22LiveWallDrawIndex(
+  input: AkuukanE22LiveWallDrawInput
+): number | null {
+  if (input.liveWall.length === 0) {
+    return null;
+  }
+
+  if (
+    input.recipientIsSelectedEnemy ||
+    !isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-22"
+    )
+  ) {
+    return 0;
+  }
+
+  const newTileTypeIndex =
+    input.liveWall.findIndex(
+      (tile) =>
+        !input.concealedTiles.some(
+          (concealedTile) =>
+            isSameTileType(
+              tile,
+              concealedTile
+            )
+        )
+    );
+
+  return newTileTypeIndex >= 0
+    ? newTileTypeIndex
+    : 0;
+}
