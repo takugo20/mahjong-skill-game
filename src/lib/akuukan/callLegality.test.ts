@@ -19,6 +19,7 @@ function createAkuukan(
     | "enemy-2"
     | "enemy-4"
     | "enemy-8"
+    | "enemy-12"
 ) {
   return createInitialAkuukanGameState({
     enemyId,
@@ -482,5 +483,180 @@ describe("E-13のプレイヤーロン禁止", () => {
         winner: "player"
       })
     ).toBe(true);
+  });
+});
+
+describe("E-24の捨て牌への反応禁止", () => {
+  it("敵12の捨て牌にはチー・ポン・大明槓できない", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (
+      const owner of [
+        "player",
+        "normalOpponent"
+      ] as const
+    ) {
+      for (
+        const kind of [
+          "chi",
+          "pon",
+          "openKan"
+        ] as const
+      ) {
+        expect(
+          isAkuukanCallAllowed({
+            akuukan,
+            owner,
+            kind,
+            score: 25000,
+            discardOwner:
+              "selectedEnemy"
+          })
+        ).toBe(false);
+      }
+    }
+  });
+
+  it("敵12以外の捨て牌には通常どおり副露できる", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (
+      const kind of [
+        "chi",
+        "pon",
+        "openKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind,
+          score: 25000,
+          discardOwner:
+            "normalOpponent"
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("暗槓と加槓は敵12の能力の対象外にする", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (
+      const kind of [
+        "closedKan",
+        "addedKan"
+      ] as const
+    ) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind,
+          score: 0
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("E-24が存在しないか無効なら副露を禁止しない", () => {
+    const otherEnemy = createAkuukan(
+      "enemy-1"
+    );
+    const disabledE24 =
+      disableAkuukanSource(
+        createAkuukan("enemy-12"),
+        "enemy-ability:E-24"
+      );
+
+    for (const akuukan of [
+      otherEnemy,
+      disabledE24
+    ]) {
+      expect(
+        isAkuukanCallAllowed({
+          akuukan,
+          owner: "player",
+          kind: "pon",
+          score: 25000,
+          discardOwner:
+            "selectedEnemy"
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("敵12の捨て牌にはどの家もロンできない", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (const winner of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        isAkuukanRonAllowed({
+          akuukan,
+          winner,
+          discardOwner:
+            "selectedEnemy"
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("他家の捨て牌と槍槓では通常どおりロンできる", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    expect(
+      isAkuukanRonAllowed({
+        akuukan,
+        winner: "player",
+        discardOwner:
+          "normalOpponent"
+      })
+    ).toBe(true);
+    expect(
+      isAkuukanRonAllowed({
+        akuukan,
+        winner: "player"
+      })
+    ).toBe(true);
+  });
+
+  it("E-24が存在しないか無効ならロンを禁止しない", () => {
+    const otherEnemy = createAkuukan(
+      "enemy-1"
+    );
+    const disabledE24 =
+      disableAkuukanSource(
+        createAkuukan("enemy-12"),
+        "enemy-ability:E-24"
+      );
+
+    for (const akuukan of [
+      otherEnemy,
+      disabledE24
+    ]) {
+      expect(
+        isAkuukanRonAllowed({
+          akuukan,
+          winner: "player",
+          discardOwner:
+            "selectedEnemy"
+        })
+      ).toBe(true);
+    }
   });
 });
