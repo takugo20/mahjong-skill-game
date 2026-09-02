@@ -6,6 +6,7 @@ import {
 import {
   activateAkuukanEffect,
   advanceAkuukanTurnEffects,
+  beginAkuukanRound,
   beginAkuukanTurn,
   canUseAkuukanSource,
   createInitialAkuukanGameState,
@@ -33,6 +34,22 @@ function createSetup(): AkuukanMatchSetup {
       {
         id: "1-1",
         level: 3
+      }
+    ]
+  };
+}
+
+function createE18Setup(): AkuukanMatchSetup {
+  return {
+    enemyId: "enemy-6",
+    equippedSkills: [
+      {
+        id: "1-1",
+        level: 3
+      },
+      {
+        id: "2-7",
+        level: 1
       }
     ]
   };
@@ -108,6 +125,113 @@ describe("亜空間麻雀の対局状態初期化", () => {
 
     expect(second.disabledSources).toEqual([]);
     expect(second.usedSources.turn).toEqual([]);
+  });
+});
+
+describe("敵6 E-18の対局状態初期化", () => {
+  it("装備スキルを保持したまま無効化状態で開始する", () => {
+    const setup = createE18Setup();
+    const state =
+      createInitialAkuukanGameState(
+        setup
+      );
+
+    expect(state.setup).toEqual(setup);
+    expect(state.disabledSources).toEqual([
+      "player-skill:1-1",
+      "player-skill:2-7"
+    ]);
+    expect(
+      isAkuukanSourceDisabled(
+        state,
+        "player-skill:1-1"
+      )
+    ).toBe(true);
+    expect(
+      isAkuukanSourceDisabled(
+        state,
+        "player-skill:2-7"
+      )
+    ).toBe(true);
+  });
+
+  it("敵6自身のE-10とE-18は有効なまま開始する", () => {
+    const state =
+      createInitialAkuukanGameState(
+        createE18Setup()
+      );
+
+    expect(
+      isAkuukanSourceDisabled(
+        state,
+        "enemy-ability:E-10"
+      )
+    ).toBe(false);
+    expect(
+      isAkuukanSourceDisabled(
+        state,
+        "enemy-ability:E-18"
+      )
+    ).toBe(false);
+  });
+
+  it("E-18を持たない敵なら装備スキルを無効化しない", () => {
+    const setup = {
+      ...createE18Setup(),
+      enemyId: "enemy-5" as const
+    };
+    const state =
+      createInitialAkuukanGameState(
+        setup
+      );
+
+    expect(state.disabledSources).toEqual(
+      []
+    );
+    expect(
+      isAkuukanSourceDisabled(
+        state,
+        "player-skill:1-1"
+      )
+    ).toBe(false);
+  });
+
+  it("無効化されたスキルは使用できない", () => {
+    const state =
+      createInitialAkuukanGameState(
+        createE18Setup()
+      );
+    const result = tryUseAkuukanSource(
+      state,
+      "round",
+      "player-skill:1-1"
+    );
+
+    expect(
+      canUseAkuukanSource(
+        state,
+        "round",
+        "player-skill:1-1"
+      )
+    ).toBe(false);
+    expect(result.succeeded).toBe(false);
+    expect(result.state).toBe(state);
+  });
+
+  it("局が変わってもE-18の無効化を維持する", () => {
+    const initial =
+      createInitialAkuukanGameState(
+        createE18Setup()
+      );
+    const nextRound =
+      beginAkuukanRound(initial);
+
+    expect(
+      nextRound.disabledSources
+    ).toEqual([
+      "player-skill:1-1",
+      "player-skill:2-7"
+    ]);
   });
 });
 
