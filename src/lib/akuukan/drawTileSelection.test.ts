@@ -26,6 +26,7 @@ import {
   getAkuukanE5TargetSuit,
   getAkuukanE11LiveWallTileIndex,
   getAkuukanE22LiveWallDrawIndex,
+  getAkuukanE23LiveWallDrawIndex,
   isAkuukanE2DrawRestricted,
   selectAkuukanE5TargetSuit
 } from "./drawTileSelection";
@@ -1005,5 +1006,306 @@ describe("E-22の同種牌ツモ禁止", () => {
         liveWall
       })
     ).toBe(0);
+  });
+});
+
+describe("E-23の直前捨て牌と同種牌ツモ", () => {
+  it("通常山が空なら選択位置を返さず乱数も消費しない", () => {
+    let randomCallCount = 0;
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-12"
+        ),
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile:
+          createTile("man", 1),
+        liveWall: [],
+        random: () => {
+          randomCallCount += 1;
+          return 0;
+        }
+      })
+    ).toBeNull();
+    expect(randomCallCount).toBe(0);
+  });
+
+  it("50％未満なら直前の捨て牌と同じ最初の牌種を選ぶ", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+    const previousDiscardTile =
+      createTile("man", 3);
+    const liveWall = [
+      createTile("pin", 3),
+      createTile("sou", 1),
+      createTile("man", 3),
+      createTile("man", 3)
+    ];
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random: () => 0
+      })
+    ).toBe(2);
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random: () => 0.499999
+      })
+    ).toBe(2);
+  });
+
+  it("50％以上なら同じ牌種を除外して最初の別牌種を選ぶ", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+    const previousDiscardTile =
+      createTile("pin", 5);
+    const liveWall = [
+      createTile("pin", 5),
+      createTile("sou", 5),
+      createTile("pin", 5, true),
+      createTile("honor", 5)
+    ];
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random: () => 0.5
+      })
+    ).toBe(1);
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random: () => 0.999999
+      })
+    ).toBe(1);
+  });
+
+  it("両方の候補がある場合だけ乱数を1回消費する", () => {
+    let randomCallCount = 0;
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-12"
+        ),
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile:
+          createTile("sou", 7),
+        liveWall: [
+          createTile("honor", 1),
+          createTile("sou", 7)
+        ],
+        random: () => {
+          randomCallCount += 1;
+          return 0.25;
+        }
+      })
+    ).toBe(1);
+    expect(randomCallCount).toBe(1);
+  });
+
+  it("赤牌と通常牌を同じ牌種として扱う", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile:
+          createTile("man", 5, true),
+        liveWall: [
+          createTile("honor", 1),
+          createTile("man", 5)
+        ],
+        random: () => 0
+      })
+    ).toBe(1);
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile:
+          createTile("pin", 5),
+        liveWall: [
+          createTile("pin", 5, true),
+          createTile("sou", 2)
+        ],
+        random: () => 0.5
+      })
+    ).toBe(1);
+  });
+
+  it("同じ数字でも色が異なる牌は別の牌種として扱う", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+    const previousDiscardTile =
+      createTile("man", 3);
+    const liveWall = [
+      createTile("pin", 3),
+      createTile("man", 3)
+    ];
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random: () => 0
+      })
+    ).toBe(1);
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random: () => 0.5
+      })
+    ).toBe(0);
+  });
+
+  it("同じ牌種が通常山になければ先頭へ戻り乱数を消費しない", () => {
+    let randomCallCount = 0;
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-12"
+        ),
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile:
+          createTile("man", 1),
+        liveWall: [
+          createTile("pin", 1),
+          createTile("sou", 1)
+        ],
+        random: () => {
+          randomCallCount += 1;
+          return 0;
+        }
+      })
+    ).toBe(0);
+    expect(randomCallCount).toBe(0);
+  });
+
+  it("別の牌種が通常山になければ同じ牌種を選び乱数を消費しない", () => {
+    let randomCallCount = 0;
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-12"
+        ),
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile:
+          createTile("sou", 7),
+        liveWall: [
+          createTile("sou", 7),
+          createTile("sou", 7)
+        ],
+        random: () => {
+          randomCallCount += 1;
+          return 0.75;
+        }
+      })
+    ).toBe(0);
+    expect(randomCallCount).toBe(0);
+  });
+
+  it("能力者CPU本人または直前の捨て牌がない者には適用しない", () => {
+    let randomCallCount = 0;
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+    const liveWall = [
+      createTile("pin", 4),
+      createTile("man", 4)
+    ];
+    const random = () => {
+      randomCallCount += 1;
+      return 0;
+    };
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: true,
+        previousDiscardTile:
+          createTile("man", 4),
+        liveWall,
+        random
+      })
+    ).toBe(0);
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile: null,
+        liveWall,
+        random
+      })
+    ).toBe(0);
+    expect(randomCallCount).toBe(0);
+  });
+
+  it("E-23を持たない敵または能力無効時は適用しない", () => {
+    let randomCallCount = 0;
+    const disabled = disableAkuukanSource(
+      createAkuukan("enemy-12"),
+      "enemy-ability:E-23"
+    );
+    const previousDiscardTile =
+      createTile("man", 4);
+    const liveWall = [
+      createTile("pin", 4),
+      createTile("man", 4)
+    ];
+    const random = () => {
+      randomCallCount += 1;
+      return 0;
+    };
+
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random
+      })
+    ).toBe(0);
+    expect(
+      getAkuukanE23LiveWallDrawIndex({
+        akuukan: disabled,
+        recipientIsSelectedEnemy: false,
+        previousDiscardTile,
+        liveWall,
+        random
+      })
+    ).toBe(0);
+    expect(randomCallCount).toBe(0);
   });
 });
