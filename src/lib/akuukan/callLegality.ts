@@ -25,11 +25,13 @@ export interface AkuukanCallCheckInput {
   readonly owner: AkuukanCallOwner;
   readonly kind: AkuukanCallKind;
   readonly score: number;
+  readonly discardOwner?: AkuukanCallOwner;
 }
 
 export interface AkuukanRonCheckInput {
   readonly akuukan: AkuukanGameState;
   readonly winner: AkuukanCallOwner;
+  readonly discardOwner?: AkuukanCallOwner;
 }
 
 function isAkuukanE3DepositRequired(
@@ -84,12 +86,46 @@ function isAkuukanE13PlayerCallProhibited(
   );
 }
 
+function isAkuukanE24DiscardCallProhibited(
+  input: AkuukanCallCheckInput
+): boolean {
+  return (
+    input.discardOwner ===
+      "selectedEnemy" &&
+    (
+      input.kind === "chi" ||
+      input.kind === "pon" ||
+      input.kind === "openKan"
+    ) &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-24"
+    )
+  );
+}
+
+function isAkuukanE24DiscardRonProhibited(
+  input: AkuukanRonCheckInput
+): boolean {
+  return (
+    input.discardOwner ===
+      "selectedEnemy" &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-24"
+    )
+  );
+}
+
 export function isAkuukanCallAllowed(
   input: AkuukanCallCheckInput
 ): boolean {
   if (
     isAkuukanE8CallProhibited(input) ||
     isAkuukanE13PlayerCallProhibited(
+      input
+    ) ||
+    isAkuukanE24DiscardCallProhibited(
       input
     )
   ) {
@@ -107,10 +143,15 @@ export function isAkuukanRonAllowed(
   input: AkuukanRonCheckInput
 ): boolean {
   return (
-    input.winner !== "player" ||
-    !isEnemyAbilityEnabled(
-      input.akuukan,
-      "E-13"
+    !isAkuukanE24DiscardRonProhibited(
+      input
+    ) &&
+    (
+      input.winner !== "player" ||
+      !isEnemyAbilityEnabled(
+        input.akuukan,
+        "E-13"
+      )
     )
   );
 }
