@@ -19,6 +19,7 @@ function createAkuukan(
     | "enemy-2"
     | "enemy-6"
     | "enemy-8"
+    | "enemy-12"
 ) {
   return createInitialAkuukanGameState({
     enemyId,
@@ -302,6 +303,109 @@ describe("E-13の河可視性", () => {
           })
         ).toBe(true);
       }
+    }
+  });
+});
+
+describe("E-24の能力者河不可視", () => {
+  it("敵12の河をプレイヤー・敵12本人・通常CPUの全員に見せない", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanRiverTilesVisible({
+          akuukan,
+          viewer,
+          riverOwner: "selectedEnemy"
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("プレイヤーの河は全員に見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanRiverTilesVisible({
+          akuukan,
+          viewer,
+          riverOwner: "player"
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("通常CPUの河は全員に見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-12"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanRiverTilesVisible({
+          akuukan,
+          viewer,
+          riverOwner: "normalOpponent"
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("E-24を持たない敵なら敵本人の河も全員に見せる", () => {
+    const akuukan = createAkuukan(
+      "enemy-2"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanRiverTilesVisible({
+          akuukan,
+          viewer,
+          riverOwner: "selectedEnemy"
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("E-24が無効なら敵12の河も全員に見せる", () => {
+    const akuukan = disableAkuukanSource(
+      createAkuukan("enemy-12"),
+      "enemy-ability:E-24"
+    );
+
+    for (const viewer of [
+      "player",
+      "selectedEnemy",
+      "normalOpponent"
+    ] as const) {
+      expect(
+        areAkuukanRiverTilesVisible({
+          akuukan,
+          viewer,
+          riverOwner: "selectedEnemy"
+        })
+      ).toBe(true);
     }
   });
 });
