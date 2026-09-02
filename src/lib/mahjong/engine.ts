@@ -62,6 +62,7 @@ import {
   createInitialAkuukanGameState
 } from "../akuukan/state";
 import {
+  createAkuukanWinningCandidateScoreAdjuster,
   createAkuukanWinningCandidateYakuEvaluator,
   shouldAkuukanWinningCandidateBeTreatedAsClosed
 } from "../akuukan/winningEvaluationEngineAdapter";
@@ -1146,6 +1147,14 @@ function createWinInput(
           candidateYakuEvaluator:
             createAkuukanWinningCandidateYakuEvaluator(
               akuukanWinningInput
+            ),
+          candidateScoreAdjuster:
+            createAkuukanWinningCandidateScoreAdjuster(
+              {
+                ...akuukanWinningInput,
+                winMethod,
+                dealer: player.isDealer
+              }
             )
         }
       : {}),
