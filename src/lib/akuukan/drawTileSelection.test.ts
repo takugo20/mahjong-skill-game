@@ -25,6 +25,7 @@ import {
   getAkuukanE5LiveWallDrawIndex,
   getAkuukanE5TargetSuit,
   getAkuukanE11LiveWallTileIndex,
+  getAkuukanE22LiveWallDrawIndex,
   isAkuukanE2DrawRestricted,
   selectAkuukanE5TargetSuit
 } from "./drawTileSelection";
@@ -825,6 +826,182 @@ describe("E-11の風牌取得禁止", () => {
       getAkuukanE11LiveWallTileIndex({
         akuukan: disabled,
         recipientIsSelectedEnemy: false,
+        liveWall
+      })
+    ).toBe(0);
+  });
+});
+
+describe("E-22の同種牌ツモ禁止", () => {
+  it("通常山が空なら選択位置を返さない", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [],
+        liveWall: []
+      })
+    ).toBeNull();
+  });
+
+  it("他家の手牌にある牌種を飛ばして最初の新しい牌種を選ぶ", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [
+          createTile("man", 1),
+          createTile("pin", 5),
+          createTile("honor", 7)
+        ],
+        liveWall: [
+          createTile("man", 1),
+          createTile("pin", 5),
+          createTile("honor", 7),
+          createTile("sou", 9)
+        ]
+      })
+    ).toBe(3);
+  });
+
+  it("赤牌と通常牌を同じ牌種として扱う", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [
+          createTile("man", 5, true)
+        ],
+        liveWall: [
+          createTile("man", 5),
+          createTile("sou", 3)
+        ]
+      })
+    ).toBe(1);
+
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [
+          createTile("pin", 5)
+        ],
+        liveWall: [
+          createTile("pin", 5, true),
+          createTile("honor", 1)
+        ]
+      })
+    ).toBe(1);
+  });
+
+  it("同じ数字でも色が異なる牌は除外しない", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [
+          createTile("man", 3)
+        ],
+        liveWall: [
+          createTile("pin", 3),
+          createTile("man", 3)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("手牌が空なら通常どおり先頭を選ぶ", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [],
+        liveWall: [
+          createTile("man", 1),
+          createTile("sou", 9)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("能力者CPU本人には同種牌ツモ禁止を適用しない", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: true,
+        concealedTiles: [
+          createTile("man", 1)
+        ],
+        liveWall: [
+          createTile("man", 1),
+          createTile("sou", 9)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("手牌にない牌種が通常山になければ先頭へ戻る", () => {
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-11"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles: [
+          createTile("man", 1),
+          createTile("pin", 2)
+        ],
+        liveWall: [
+          createTile("man", 1),
+          createTile("pin", 2),
+          createTile("man", 1)
+        ]
+      })
+    ).toBe(0);
+  });
+
+  it("E-22を持たない敵または能力無効時は適用しない", () => {
+    const disabled = disableAkuukanSource(
+      createAkuukan("enemy-11"),
+      "enemy-ability:E-22"
+    );
+    const concealedTiles = [
+      createTile("man", 1)
+    ];
+    const liveWall = [
+      createTile("man", 1),
+      createTile("sou", 9)
+    ];
+
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: createAkuukan(
+          "enemy-10"
+        ),
+        recipientIsSelectedEnemy: false,
+        concealedTiles,
+        liveWall
+      })
+    ).toBe(0);
+    expect(
+      getAkuukanE22LiveWallDrawIndex({
+        akuukan: disabled,
+        recipientIsSelectedEnemy: false,
+        concealedTiles,
         liveWall
       })
     ).toBe(0);
