@@ -59,11 +59,21 @@ export function areAkuukanRiverTilesVisible(
   input: AkuukanRiverVisibilityInput
 ): boolean {
   return (
-    input.viewer !== "player" ||
-    input.riverOwner === "player" ||
-    !isEnemyAbilityEnabled(
-      input.akuukan,
-      "E-13"
+    !(
+      input.riverOwner ===
+        "selectedEnemy" &&
+      isEnemyAbilityEnabled(
+        input.akuukan,
+        "E-24"
+      )
+    ) &&
+    (
+      input.viewer !== "player" ||
+      input.riverOwner === "player" ||
+      !isEnemyAbilityEnabled(
+        input.akuukan,
+        "E-13"
+      )
     )
   );
 }
