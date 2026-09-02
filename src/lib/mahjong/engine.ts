@@ -32,7 +32,8 @@ import {
   getAkuukanE5LiveWallDrawIndex,
   getAkuukanE5TargetSuit,
   getAkuukanE11LiveWallTileIndex,
-  getAkuukanE22LiveWallDrawIndex
+  getAkuukanE22LiveWallDrawIndex,
+  getAkuukanE23LiveWallDrawIndex
 } from "../akuukan/drawTileSelection";
 import {
   areAkuukanDoraIndicatorsVisible,
@@ -706,7 +707,8 @@ function synchronizeAkuukanE19ForPlayerHand(
 
 function getAkuukanLiveWallDrawIndex(
   state: GameState,
-  player: PlayerState
+  player: PlayerState,
+  random: () => number
 ): number | null {
   if (!state.akuukan) {
     return state.round.liveWall.length > 0
@@ -728,6 +730,23 @@ function getAkuukanLiveWallDrawIndex(
 
   if (e5DrawIndex !== 0) {
     return e5DrawIndex;
+  }
+
+  const e23DrawIndex =
+    getAkuukanE23LiveWallDrawIndex({
+      akuukan: state.akuukan,
+      recipientIsSelectedEnemy:
+        player.seat === 2,
+      previousDiscardTile:
+        player.discards[
+          player.discards.length - 1
+        ]?.tile ?? null,
+      liveWall: state.round.liveWall,
+      random
+    });
+
+  if (e23DrawIndex !== 0) {
+    return e23DrawIndex;
   }
 
   const e2DrawIndex =
@@ -766,7 +785,8 @@ function getAkuukanLiveWallDrawIndex(
 
 export function drawTile(
   state: GameState,
-  seat: SeatIndex
+  seat: SeatIndex,
+  random: () => number = Math.random
 ): GameState {
   const round = state.round;
 
@@ -781,7 +801,8 @@ export function drawTile(
   const drawIndex =
     getAkuukanLiveWallDrawIndex(
       state,
-      currentPlayer
+      currentPlayer,
+      random
     );
   const drawnTile =
     drawIndex === null
@@ -4324,7 +4345,11 @@ function completeCpuTurns(
     }
 
     if (nextState.round.currentSeat === 0) {
-      nextState = drawTile(nextState, 0);
+      nextState = drawTile(
+        nextState,
+        0,
+        random
+      );
       break;
     }
 
@@ -4333,7 +4358,8 @@ function completeCpuTurns(
 
     nextState = drawTile(
       nextState,
-      cpuSeat
+      cpuSeat,
+      random
     );
 
     onCpuProgress?.({
@@ -5619,7 +5645,11 @@ function resolveNextRoundStart(
 
   const startedState =
     nextDealerSeat === 0
-      ? drawTile(dealtState, 0)
+      ? drawTile(
+          dealtState,
+          0,
+          random
+        )
       : completeCpuTurns(
           dealtState,
           random,
