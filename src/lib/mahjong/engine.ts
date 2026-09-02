@@ -2201,7 +2201,15 @@ export function getRonCandidates(
         winner:
           getAkuukanCallOwner(
             candidateSeat
-          )
+          ),
+        ...(chankanSource
+          ? {}
+          : {
+              discardOwner:
+                getAkuukanCallOwner(
+                  discarderSeat
+                )
+            })
       })
     ) {
       candidateSeat =
@@ -2379,7 +2387,8 @@ function getAkuukanCallOwner(
 function isCallAllowed(
   state: GameState,
   seat: SeatIndex,
-  kind: AkuukanCallKind
+  kind: AkuukanCallKind,
+  discarderSeat?: SeatIndex
 ): boolean {
   if (!state.akuukan) {
     return true;
@@ -2394,7 +2403,15 @@ function isCallAllowed(
       akuukan: state.akuukan,
       owner: getAkuukanCallOwner(seat),
       kind,
-      score: caller.score
+      score: caller.score,
+      ...(discarderSeat === undefined
+        ? {}
+        : {
+            discardOwner:
+              getAkuukanCallOwner(
+                discarderSeat
+              )
+          })
     })
   );
 }
@@ -2574,7 +2591,8 @@ function createPlayerMeldCallOptions(
     isCallAllowed(
       state,
       0,
-      option.kind
+      option.kind,
+      lastDiscard.seat
     )
   );
 }
@@ -2747,7 +2765,8 @@ function getCpuCallDecisions(
           isCallAllowed(
             state,
             player.seat,
-            option.kind
+            option.kind,
+            lastDiscard.seat
           )
         );
       const meldCallDecision =
@@ -2763,7 +2782,8 @@ function getCpuCallDecisions(
         isCallAllowed(
           state,
           player.seat,
-          "openKan"
+          "openKan",
+          lastDiscard.seat
         )
           ? getOpenKanCallOptions({
               callerSeat: player.seat,
