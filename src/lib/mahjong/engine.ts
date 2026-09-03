@@ -43,6 +43,9 @@ import type {
   AkuukanInformationViewer
 } from "../akuukan/informationVisibility";
 import {
+  isAkuukanE27WinInvalidated
+} from "../akuukan/handValueAdjustments";
+import {
   AKUUKAN_DRAW_MP_RECOVERY,
   AKUUKAN_INITIAL_MP,
   AKUUKAN_MAX_MP,
@@ -1807,11 +1810,60 @@ function recordAkuukanE6AfterWins(
   });
 }
 
+function isAkuukanE27ResolutionInvalidated(
+  state: GameState,
+  resolution:
+    ValidRoundWinResolution
+): boolean {
+  if (!state.akuukan) {
+    return false;
+  }
+
+  return isAkuukanE27WinInvalidated({
+    akuukan: state.akuukan,
+    winnerIsSelectedEnemy:
+      resolution.winnerSeat === 2,
+    score:
+      resolution.evaluation.best.score
+  });
+}
+
+function finishRoundWithAkuukanE27Draw(
+  state: GameState,
+  resolutions:
+    readonly ValidRoundWinResolution[]
+): GameState {
+  return finishRoundWithAbortiveDraw(
+    state,
+    {
+      reason: "enemyAbilityE27",
+      invalidatedWinnerSeats:
+        resolutions.map(
+          (resolution) =>
+            resolution.winnerSeat
+        )
+    },
+    "E-27により満貫未満の和了が無効となり、特殊途中流局です。"
+  );
+}
+
 function finishRoundWithWin(
   state: GameState,
   resolution:
     ValidRoundWinResolution
 ): GameState {
+  if (
+    isAkuukanE27ResolutionInvalidated(
+      state,
+      resolution
+    )
+  ) {
+    return finishRoundWithAkuukanE27Draw(
+      state,
+      [resolution]
+    );
+  }
+
   const winner =
     state.round.players[
       resolution.winnerSeat
@@ -1873,6 +1925,22 @@ function finishRoundWithRonCandidates(
     ),
     riichiPool: state.round.riichiPool
   });
+
+  if (
+    result.kind !== "tripleRon" &&
+    candidates.some((candidate) =>
+      isAkuukanE27ResolutionInvalidated(
+        state,
+        candidate
+      )
+    )
+  ) {
+    return finishRoundWithAkuukanE27Draw(
+      state,
+      candidates
+    );
+  }
+
   const akuukan =
     result.kind === "singleRon" ||
     result.kind === "doubleRon"
