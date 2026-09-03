@@ -1,0 +1,221 @@
+import {
+  describe,
+  expect,
+  it
+} from "vitest";
+import type {
+  PlayerState,
+  Tile,
+  TileSuit,
+  Wind
+} from "../mahjong/types";
+import type {
+  AkuukanE28RiverDrawCandidate
+} from "./riverDraw";
+import {
+  selectAkuukanE28RiverDrawCandidate
+} from "./riverDrawAi";
+
+let serialNumber = 0;
+
+const SEAT_WINDS: readonly Wind[] = [
+  "east",
+  "south",
+  "west",
+  "north"
+];
+
+function createTile(
+  suit: TileSuit,
+  rank: number,
+  red = false
+): Tile {
+  serialNumber += 1;
+
+  return {
+    id: `e28-river-ai-${serialNumber}`,
+    suit,
+    rank,
+    red
+  };
+}
+
+function createTiles(
+  suit: TileSuit,
+  ranks: readonly number[]
+): Tile[] {
+  return ranks.map(
+    (rank) => createTile(suit, rank)
+  );
+}
+
+function createDrawer(
+  hand: Tile[]
+): PlayerState {
+  return {
+    id: "enemy-15-player",
+    name: "敵15",
+    seat: 2,
+    seatWind: SEAT_WINDS[2],
+    score: 25000,
+    hand,
+    melds: [],
+    discards: [],
+    isDealer: false,
+    riichi: false,
+    doubleRiichi: false,
+    ippatsu: false,
+    temporaryFuriten: false,
+    riichiFuriten: false,
+    drawnTileId: null,
+    drawnTileSource: null
+  };
+}
+
+function createCandidate(
+  tile: Tile,
+  options: {
+    readonly riverOwnerSeat?: 0 | 1 | 2 | 3;
+    readonly discardIndex?: number;
+    readonly faceDown?: boolean;
+  } = {}
+): AkuukanE28RiverDrawCandidate {
+  return {
+    tile,
+    riverOwnerSeat:
+      options.riverOwnerSeat ?? 0,
+    discardIndex:
+      options.discardIndex ?? 0,
+    faceDown:
+      options.faceDown === true
+  };
+}
+
+function createSingleWaitHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3]),
+    ...createTiles("pin", [1, 2, 3]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1, 1]),
+    createTile("pin", 5)
+  ];
+}
+
+function createOneShantenHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3, 5]),
+    ...createTiles("pin", [1, 2, 3, 9]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1])
+  ];
+}
+
+describe("敵15 E-28の河牌選択AI", () => {
+  it("その場でツモ和了できる牌を選ぶ", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const unrelated = createCandidate(
+      createTile("man", 9)
+    );
+    const winning = createCandidate(
+      createTile("pin", 5),
+      {
+        riverOwnerSeat: 1,
+        discardIndex: 2
+      }
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [unrelated, winning]
+      })
+    ).toBe(winning);
+  });
+
+  it("七対子を完成させる牌もツモ和了候補として選ぶ", () => {
+    const drawer = createDrawer([
+      ...createTiles(
+        "man",
+        [1, 1, 2, 2, 3, 3]
+      ),
+      ...createTiles(
+        "pin",
+        [4, 4, 5, 5, 6, 6]
+      ),
+      createTile("sou", 9)
+    ]);
+    const winning = createCandidate(
+      createTile("sou", 9)
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [winning]
+      })
+    ).toBe(winning);
+  });
+
+  it("一向聴から聴牌へ進める牌を選ぶ", () => {
+    const drawer = createDrawer(
+      createOneShantenHand()
+    );
+    const unrelated = createCandidate(
+      createTile("honor", 7)
+    );
+    const tenpai = createCandidate(
+      createTile("man", 4),
+      {
+        riverOwnerSeat: 3
+      }
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [unrelated, tenpai]
+      })
+    ).toBe(tenpai);
+  });
+
+  it("向聴数が進まない表向き牌しかなければ通常山を選ぶ", () => {
+    const drawer = createDrawer(
+      createOneShantenHand()
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [
+          createCandidate(
+            createTile("honor", 7)
+          ),
+          createCandidate(
+            createTile("sou", 9)
+          )
+        ]
+      })
+    ).toBeNull();
+  });
+
+  it("裏向き牌が和了牌でも内容を参照せず通常山を選ぶ", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const hiddenWinning = createCandidate(
+      createTile("pin", 5),
+      {
+        faceDown: true
+      }
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [hiddenWinning]
+      })
+    ).toBeNull();
+  });
+});
