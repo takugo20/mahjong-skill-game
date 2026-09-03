@@ -495,6 +495,42 @@ describe("敵15 E-28のエンジン統合", () => {
     ).toBe(winningRiverTile);
   });
 
+    it("通常山が空なら河ツモを行わず荒牌平局にする", () => {
+    const state = prepareDrawState();
+    const winningRiverTile = createTile(
+      "pin",
+      5
+    );
+
+    state.round.players[2].hand =
+      createSingleWaitHand();
+    state.round.players[0].discards = [
+      createDiscard(winningRiverTile)
+    ];
+    state.round.liveWall = [];
+
+    const result = drawCpuTile(
+      state,
+      2,
+      () => 0
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.drawResult).not.toBeNull();
+    expect(
+      result.round.nagashiManganResult
+    ).toBeNull();
+    expect(
+      result.round.players[0].discards[0]
+        .tile
+    ).toBe(winningRiverTile);
+    expect(
+      result.round.players[2].drawnTileId
+    ).toBeNull();
+  });
+
     it("CPU進行中に河牌をツモしてそのままツモ和了する", () => {
     const state = createInitialGameState(
       () => 0.5,
