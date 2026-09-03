@@ -14,6 +14,7 @@ import type {
 import {
   getAkuukanE28RiverDrawCandidates,
   isAkuukanE28RiverDrawEnabled,
+  selectRandomAkuukanE28FaceDownCandidate,
   takeAkuukanE28RiverTile
 } from "./riverDraw";
 import {
@@ -232,6 +233,75 @@ describe("E-28の河牌候補", () => {
         players
       })
     ).toEqual([]);
+  });
+});
+
+describe("E-28の裏向き河牌選択", () => {
+  it("表向き牌を除外して裏向き牌だけからランダムに選ぶ", () => {
+    const players = createPlayers();
+    const faceUp = createTile("man", 1);
+    const firstFaceDown = createTile(
+      "pin",
+      2
+    );
+    const secondFaceDown = createTile(
+      "sou",
+      3
+    );
+
+    players[0].discards = [
+      createDiscard(faceUp),
+      createDiscard(firstFaceDown, {
+        faceDown: true
+      })
+    ];
+    players[1].discards = [
+      createDiscard(secondFaceDown, {
+        faceDown: true
+      })
+    ];
+
+    const candidates =
+      getAkuukanE28RiverDrawCandidates({
+        akuukan: createAkuukan(),
+        drawerIsSelectedEnemy: true,
+        players
+      });
+
+    expect(
+      selectRandomAkuukanE28FaceDownCandidate(
+        candidates,
+        () => 0
+      )?.tile
+    ).toBe(firstFaceDown);
+    expect(
+      selectRandomAkuukanE28FaceDownCandidate(
+        candidates,
+        () => 0.999
+      )?.tile
+    ).toBe(secondFaceDown);
+  });
+
+  it("裏向き牌が河にない場合は選択しない", () => {
+    const players = createPlayers();
+
+    players[0].discards = [
+      createDiscard(createTile("honor", 1))
+    ];
+
+    const candidates =
+      getAkuukanE28RiverDrawCandidates({
+        akuukan: createAkuukan(),
+        drawerIsSelectedEnemy: true,
+        players
+      });
+
+    expect(
+      selectRandomAkuukanE28FaceDownCandidate(
+        candidates,
+        () => 0.5
+      )
+    ).toBeNull();
   });
 });
 
