@@ -14,6 +14,7 @@ export interface AkuukanE28RiverDrawCandidate {
   readonly tile: Tile;
   readonly riverOwnerSeat: SeatIndex;
   readonly discardIndex: number;
+  readonly faceDown: boolean;
 }
 
 export interface GetAkuukanE28RiverDrawCandidatesInput {
@@ -71,9 +72,35 @@ export function getAkuukanE28RiverDrawCandidates(
                 tile: discard.tile,
                 riverOwnerSeat:
                   player.seat,
-                discardIndex
+                discardIndex,
+                faceDown:
+                  discard.faceDown
               }]
       )
+  );
+}
+
+export function selectRandomAkuukanE28FaceDownCandidate(
+  candidates:
+    readonly AkuukanE28RiverDrawCandidate[],
+  random: () => number
+): AkuukanE28RiverDrawCandidate | null {
+  const faceDownCandidates =
+    candidates.filter(
+      (candidate) => candidate.faceDown
+    );
+
+  if (faceDownCandidates.length === 0) {
+    return null;
+  }
+
+  const selectedIndex = Math.floor(
+    random() * faceDownCandidates.length
+  );
+
+  return (
+    faceDownCandidates[selectedIndex] ??
+    faceDownCandidates[0]
   );
 }
 
