@@ -19,7 +19,8 @@ export type GamePhase =
 
 export type DrawnTileSource =
   | "liveWall"
-  | "rinshan";
+  | "rinshan"
+  | "river";
 
 export interface Tile {
   id: string;
