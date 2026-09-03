@@ -1866,6 +1866,179 @@ function isPlayerFuriten(
   }).isFuriten;
 }
 
+interface AkuukanPlayerSkill1_3Application {
+  readonly state: GameState;
+  readonly scoringState: GameState;
+}
+
+function applyAkuukanPlayerSkill1_3BeforeWin(
+  state: GameState,
+  winMethod: "tsumo" | "ron",
+  random: () => number
+): AkuukanPlayerSkill1_3Application {
+  const unchanged = {
+    state,
+    scoringState: state
+  };
+
+  if (!state.akuukan) {
+    return unchanged;
+  }
+
+  const player = state.round.players[0];
+  const ronWinningTile =
+    winMethod === "ron"
+      ? getPendingKanChankanSource(state)
+          ?.winningTile ??
+        state.round.lastDiscard?.discard
+          .tile ??
+        null
+      : null;
+
+  if (
+    winMethod === "ron" &&
+    !ronWinningTile
+  ) {
+    return unchanged;
+  }
+
+  const transformation =
+    applyAkuukanRedTileTransformation({
+      akuukan: state.akuukan,
+      skillId: "1-3",
+      tiles:
+        ronWinningTile
+          ? [
+              ...player.hand,
+              ronWinningTile
+            ]
+          : player.hand,
+      random
+    });
+
+  if (!transformation.transformedTileId) {
+    return unchanged;
+  }
+
+  const transformedTile =
+    transformation.tiles.find(
+      (tile) =>
+        tile.id ===
+        transformation.transformedTileId
+    );
+
+  if (!transformedTile) {
+    return unchanged;
+  }
+
+  const transformedTileById = new Map(
+    transformation.tiles.map((tile) => [
+      tile.id,
+      tile
+    ])
+  );
+  const transformedPlayerHand =
+    player.hand.map(
+      (tile) =>
+        transformedTileById.get(tile.id) ??
+        tile
+    );
+  const playerHandChanged =
+    player.hand.some(
+      (tile) =>
+        tile.id === transformedTile.id
+    );
+  const stateAfterTransformation =
+    playerHandChanged
+      ? {
+          ...state,
+          round: {
+            ...state.round,
+            players: replacePlayer(
+              state.round.players,
+              {
+                ...player,
+                hand: sortTiles(
+                  transformedPlayerHand
+                )
+              }
+            )
+          }
+        }
+      : state;
+
+  if (
+    winMethod !== "ron" ||
+    transformedTile.id !==
+      ronWinningTile?.id
+  ) {
+    return {
+      state: stateAfterTransformation,
+      scoringState:
+        stateAfterTransformation
+    };
+  }
+
+  const pendingKan =
+    stateAfterTransformation.round
+      .pendingKan;
+
+  if (pendingKan) {
+    const declarer =
+      stateAfterTransformation.round
+        .players[pendingKan.declarerSeat];
+
+    return {
+      state: stateAfterTransformation,
+      scoringState: {
+        ...stateAfterTransformation,
+        round: {
+          ...stateAfterTransformation.round,
+          players: replacePlayer(
+            stateAfterTransformation.round
+              .players,
+            {
+              ...declarer,
+              hand: declarer.hand.map(
+                (tile) =>
+                  tile.id ===
+                  transformedTile.id
+                    ? transformedTile
+                    : tile
+              )
+            }
+          )
+        }
+      }
+    };
+  }
+
+  const lastDiscard =
+    stateAfterTransformation.round
+      .lastDiscard;
+
+  if (!lastDiscard) {
+    return unchanged;
+  }
+
+  return {
+    state: stateAfterTransformation,
+    scoringState: {
+      ...stateAfterTransformation,
+      round: {
+        ...stateAfterTransformation.round,
+        lastDiscard: {
+          ...lastDiscard,
+          discard: {
+            ...lastDiscard.discard,
+            tile: transformedTile
+          }
+        }
+      }
+    }
+  };
+}
+
 export function canPlayerTsumo(
   state: GameState
 ): boolean {
@@ -2487,7 +2660,8 @@ function finishRoundWithExhaustiveDraw(
 }
 
 export function declarePlayerTsumo(
-  state: GameState
+  state: GameState,
+  random: () => number = Math.random
 ): GameState {
   if (!canPlayerTsumo(state)) {
     return {
@@ -2496,9 +2670,15 @@ export function declarePlayerTsumo(
     };
   }
 
+  const application =
+    applyAkuukanPlayerSkill1_3BeforeWin(
+      state,
+      "tsumo",
+      random
+    );
   const resolution = resolveRoundWin(
     createWinInput(
-      state,
+      application.scoringState,
       0,
       "tsumo"
     )
@@ -2512,13 +2692,14 @@ export function declarePlayerTsumo(
   }
 
   return finishRoundWithWin(
-    state,
+    application.state,
     resolution
   );
 }
 
 export function declarePlayerRon(
-  state: GameState
+  state: GameState,
+  random: () => number = Math.random
 ): GameState {
   if (state.round.phase !== "reaction") {
     return {
@@ -2543,9 +2724,45 @@ export function declarePlayerRon(
     };
   }
 
+  if (candidates.length === 3) {
+    return finishRoundWithRonCandidates(
+      state,
+      candidates
+    );
+  }
+
+  const application =
+    applyAkuukanPlayerSkill1_3BeforeWin(
+      state,
+      "ron",
+      random
+    );
+  const chankanSource =
+    getPendingKanChankanSource(
+      application.scoringState
+    );
+  const playerResolution =
+    getValidWinResolution(
+      application.scoringState,
+      0,
+      "ron",
+      chankanSource ?? undefined
+    );
+
+  if (!playerResolution) {
+    return {
+      ...state,
+      notice: "ロン和了の精算に失敗しました。"
+    };
+  }
+
   return finishRoundWithRonCandidates(
-    state,
-    candidates
+    application.state,
+    candidates.map((candidate) =>
+      candidate.winnerSeat === 0
+        ? playerResolution
+        : candidate
+    )
   );
 }
 
