@@ -2925,11 +2925,60 @@ interface CallAfterEffectTarget {
   readonly addedTileId?: string;
 }
 
+function applyAkuukanPlayerSkill1_2AfterCall(
+  state: GameState,
+  callerSeat: SeatIndex,
+  kind: AkuukanCallKind,
+  random: () => number
+): GameState {
+  if (
+    !state.akuukan ||
+    callerSeat === 0 ||
+    (
+      kind !== "chi" &&
+      kind !== "pon" &&
+      kind !== "openKan"
+    )
+  ) {
+    return state;
+  }
+
+  const player = state.round.players[0];
+  const transformation =
+    applyAkuukanRedTileTransformation({
+      akuukan: state.akuukan,
+      skillId: "1-2",
+      tiles: player.hand,
+      random
+    });
+
+  if (!transformation.transformedTileId) {
+    return state;
+  }
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: replacePlayer(
+        state.round.players,
+        {
+          ...player,
+          hand: sortTiles(
+            transformation.tiles
+          )
+        }
+      )
+    }
+  };
+}
+
 function applyCallAfterEffects(
   state: GameState,
   seat: SeatIndex,
   kind: AkuukanCallKind,
-  target?: CallAfterEffectTarget
+  target?: CallAfterEffectTarget,
+  random: () => number = Math.random
 ): GameState {
   let stateAfterEffects =
     kind === "chi" ||
@@ -2987,6 +3036,14 @@ function applyCallAfterEffects(
       }
     };
   }
+
+  stateAfterEffects =
+    applyAkuukanPlayerSkill1_2AfterCall(
+      stateAfterEffects,
+      seat,
+      kind,
+      random
+    );
 
   caller =
     stateAfterEffects.round.players[seat];
@@ -3560,7 +3617,9 @@ function applyCpuMeldCall(
         }
       },
       option.callerSeat,
-      option.kind
+      option.kind,
+      undefined,
+      random
     )
   );
 
@@ -3669,7 +3728,9 @@ function applyCpuOpenKanCall(
           )}を嶺上牌としてツモりました。`
       },
       option.callerSeat,
-      "openKan"
+      "openKan",
+      undefined,
+      random
     )
   );
   
