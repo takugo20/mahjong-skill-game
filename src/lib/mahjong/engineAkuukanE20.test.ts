@@ -4,6 +4,9 @@ import {
   it
 } from "vitest";
 import {
+  getAkuukanE19ForbiddenTileIds
+} from "../akuukan/discardLegality";
+import {
   disableAkuukanSource
 } from "../akuukan/state";
 import type {
@@ -238,6 +241,48 @@ describe("engine Akuukan E-20 integration", () => {
       27000,
       25000
     ]);
+  });
+
+    it("keeps E-19 restrictions while E-20 doubles the selected enemy's ron payment", () => {
+    const state = prepareRonState("enemy-10");
+
+    if (!state.akuukan) {
+      throw new Error("亜空間対局状態がありません。");
+    }
+
+    const restrictionsBefore =
+      state.akuukan.e19DiscardRestrictions?.map(
+        (restriction) => ({ ...restriction })
+      ) ?? [];
+
+    expect(restrictionsBefore).toHaveLength(9);
+
+    for (const seat of [0, 1, 3] as const) {
+      expect(
+        getAkuukanE19ForbiddenTileIds(
+          state.akuukan,
+          state.round.players[seat].id
+        )
+      ).toHaveLength(3);
+    }
+
+    expect(
+      getAkuukanE19ForbiddenTileIds(
+        state.akuukan,
+        state.round.players[2].id
+      )
+    ).toEqual([]);
+
+    const result = skipPlayerRon(state);
+
+    expect(result.round.winResult).toMatchObject({
+      winnerSeat: 2,
+      loserSeat: 1,
+      totalPoints: 2000
+    });
+    expect(result.akuukan?.e19DiscardRestrictions).toEqual(
+      restrictionsBefore
+    );
   });
 
   it("doubles ron payments including honba but does not double the riichi pool", () => {
