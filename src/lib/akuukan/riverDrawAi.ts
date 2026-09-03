@@ -6,6 +6,9 @@ import {
 import {
   getDoraTileType
 } from "../mahjong/dora";
+import {
+  isDiscardFuriten
+} from "../mahjong/furiten";
 import type {
   PlayerState,
   Tile
@@ -16,6 +19,7 @@ import type {
 
 export interface SelectAkuukanE28RiverDrawCandidateInput {
   readonly drawer: PlayerState;
+  readonly players?: readonly PlayerState[];
   readonly candidates:
     readonly AkuukanE28RiverDrawCandidate[];
   readonly liveWall?: readonly Tile[];
@@ -255,6 +259,56 @@ function doesCandidateLiftOwnFuriten(
   );
 }
 
+function doesCandidateLiftOtherPlayerFuriten(
+  drawer: PlayerState,
+  candidate:
+    AkuukanE28RiverDrawCandidate,
+  players: readonly PlayerState[]
+): boolean {
+  if (
+    candidate.riverOwnerSeat ===
+    drawer.seat
+  ) {
+    return false;
+  }
+
+  const riverOwner = players.find(
+    (player) =>
+      player.seat ===
+      candidate.riverOwnerSeat
+  );
+
+  if (!riverOwner) {
+    return false;
+  }
+
+  const furitenInput = {
+    concealedTiles: riverOwner.hand,
+    melds: riverOwner.melds
+  };
+  const currentlyFuriten =
+    isDiscardFuriten({
+      ...furitenInput,
+      discards: riverOwner.discards
+    });
+  const discardsAfterRemoval =
+    riverOwner.discards.filter(
+      (_discard, discardIndex) =>
+        discardIndex !==
+        candidate.discardIndex
+    );
+  const remainsFuritenAfterRemoval =
+    isDiscardFuriten({
+      ...furitenInput,
+      discards: discardsAfterRemoval
+    });
+
+  return (
+    currentlyFuriten &&
+    !remainsFuritenAfterRemoval
+  );
+}
+
 export function selectAkuukanE28RiverDrawCandidate(
   input:
     SelectAkuukanE28RiverDrawCandidateInput
@@ -285,10 +339,20 @@ export function selectAkuukanE28RiverDrawCandidate(
     return winningCandidate.candidate;
   }
 
-  const currentShanten = calculateShanten(
+    const currentShanten = calculateShanten(
     input.drawer.hand,
     input.drawer.melds
   ).minimum;
+  const players = input.players ?? [];
+  const liftsOtherPlayerFuriten = (
+    evaluation:
+      AkuukanE28RiverDrawEvaluation
+  ): boolean =>
+    doesCandidateLiftOtherPlayerFuriten(
+      input.drawer,
+      evaluation.candidate,
+      players
+    );
   const improvingCandidates =
     evaluations
       .filter(
@@ -297,14 +361,42 @@ export function selectAkuukanE28RiverDrawCandidate(
           currentShanten
       )
       .sort(
-        (left, right) =>
-          left.shantenAfter -
-          right.shantenAfter
+        (left, right) => {
+          const shantenDifference =
+            left.shantenAfter -
+            right.shantenAfter;
+
+          if (shantenDifference !== 0) {
+            return shantenDifference;
+          }
+
+          return (
+            Number(
+              liftsOtherPlayerFuriten(
+                left
+              )
+            ) -
+            Number(
+              liftsOtherPlayerFuriten(
+                right
+              )
+            )
+          );
+        }
       );
 
   if (improvingCandidates.length > 0) {
     return improvingCandidates[0].candidate;
   }
+
+  const lowRiskEvaluations =
+    evaluations.filter(
+      (evaluation) =>
+        !liftsOtherPlayerFuriten(
+          evaluation
+        )
+    );
+  const liveWall = input.liveWall ?? [];
 
   const liveWall = input.liveWall ?? [];
 
@@ -316,7 +408,7 @@ export function selectAkuukanE28RiverDrawCandidate(
         liveWall
       );
     const acceptanceCandidates =
-      evaluations
+      lowRiskEvaluations
         .map((evaluation) => ({
           evaluation,
           acceptance:
@@ -344,7 +436,8 @@ export function selectAkuukanE28RiverDrawCandidate(
 
   const doraIndicators =
     input.doraIndicators ?? [];
-  const bonusCandidates = evaluations
+  const bonusCandidates =
+    lowRiskEvaluations
     .map((evaluation) => ({
       evaluation,
       bonusValue: getBonusTileValue(
