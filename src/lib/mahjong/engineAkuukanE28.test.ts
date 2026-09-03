@@ -13,6 +13,9 @@ import {
   drawCpuTile,
   playPlayerDiscard
 } from "./engine";
+import {
+  isDiscardFuriten
+} from "./furiten";
 import type {
   Discard,
   GameState,
@@ -221,6 +224,104 @@ describe("敵15 E-28のエンジン統合", () => {
         (discard) => discard.tile.id
       )
     ).toEqual([remainingTile.id]);
+  });
+
+    it("河牌と履歴の削除によって唯一の捨て牌振聴を解除する", () => {
+    const state = prepareDrawState();
+    const discardedWinningTile =
+      createTile("pin", 5);
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: createSingleWaitHand(),
+      melds: [],
+      discards: [
+        createDiscard(
+          discardedWinningTile
+        )
+      ]
+    };
+
+    const beforePlayer =
+      state.round.players[0];
+
+    expect(
+      isDiscardFuriten({
+        concealedTiles:
+          beforePlayer.hand,
+        melds: beforePlayer.melds,
+        discards: beforePlayer.discards
+      })
+    ).toBe(true);
+
+    const result =
+      drawAkuukanE28RiverTile(
+        state,
+        2,
+        0,
+        discardedWinningTile.id
+      );
+    const afterPlayer =
+      result.round.players[0];
+
+    expect(afterPlayer.discards).toEqual(
+      []
+    );
+    expect(
+      isDiscardFuriten({
+        concealedTiles:
+          afterPlayer.hand,
+        melds: afterPlayer.melds,
+        discards: afterPlayer.discards
+      })
+    ).toBe(false);
+  });
+
+  it("同じ和了牌の捨て牌履歴が残れば振聴を継続する", () => {
+    const state = prepareDrawState();
+    const selectedWinningTile =
+      createTile("pin", 5);
+    const remainingWinningTile =
+      createTile("pin", 5);
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: createSingleWaitHand(),
+      melds: [],
+      discards: [
+        createDiscard(
+          selectedWinningTile
+        ),
+        createDiscard(
+          remainingWinningTile
+        )
+      ]
+    };
+
+    const result =
+      drawAkuukanE28RiverTile(
+        state,
+        2,
+        0,
+        selectedWinningTile.id
+      );
+    const riverOwner =
+      result.round.players[0];
+
+    expect(
+      riverOwner.discards.map(
+        (discard) => discard.tile.id
+      )
+    ).toEqual([
+      remainingWinningTile.id
+    ]);
+    expect(
+      isDiscardFuriten({
+        concealedTiles: riverOwner.hand,
+        melds: riverOwner.melds,
+        discards: riverOwner.discards
+      })
+    ).toBe(true);
   });
 
   it("裏向き牌を選ぶ場合は全裏向き候補から再抽選する", () => {
