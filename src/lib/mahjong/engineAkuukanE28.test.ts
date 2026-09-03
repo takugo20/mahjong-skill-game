@@ -16,6 +16,9 @@ import {
 import {
   isDiscardFuriten
 } from "./furiten";
+import {
+  isNagashiManganEligible
+} from "./nagashiMangan";
 import type {
   Discard,
   GameState,
@@ -321,6 +324,58 @@ describe("敵15 E-28のエンジン統合", () => {
         melds: riverOwner.melds,
         discards: riverOwner.discards
       })
+    ).toBe(true);
+  });
+
+    it("河から除いた中張牌を流し満貫の判定対象から外す", () => {
+    const state = prepareDrawState();
+    const terminalTile = createTile(
+      "man",
+      1
+    );
+    const removedSimpleTile = createTile(
+      "pin",
+      5
+    );
+    const honorTile = createTile(
+      "honor",
+      7
+    );
+
+    state.round.players[0].discards = [
+      createDiscard(terminalTile),
+      createDiscard(removedSimpleTile),
+      createDiscard(honorTile)
+    ];
+
+    expect(
+      isNagashiManganEligible(
+        state.round.players[0].discards
+      )
+    ).toBe(false);
+
+    const result =
+      drawAkuukanE28RiverTile(
+        state,
+        2,
+        0,
+        removedSimpleTile.id
+      );
+    const remainingDiscards =
+      result.round.players[0].discards;
+
+    expect(
+      remainingDiscards.map(
+        (discard) => discard.tile.id
+      )
+    ).toEqual([
+      terminalTile.id,
+      honorTile.id
+    ]);
+    expect(
+      isNagashiManganEligible(
+        remainingDiscards
+      )
     ).toBe(true);
   });
 
