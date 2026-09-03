@@ -2897,6 +2897,86 @@ export function GameBoard({
               </article>
             </section>
           )}
+                {abortiveDrawResult?.reason ===
+          "enemyAbilityE27" &&
+          round.phase === "roundEnd" && (
+            <section
+              className="win-result-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="E-27特殊途中流局結果"
+            >
+              <article className="win-result-card triple-ron-result-card">
+                <header className="win-result-header">
+                  <div>
+                    <span>敵能力発動</span>
+
+                    <strong>E-27</strong>
+                  </div>
+
+                  <b className="draw-result-count">
+                    和了無効
+                  </b>
+                </header>
+
+                <div className="triple-ron-players">
+                  {abortiveDrawResult.invalidatedWinnerSeats.map(
+                    (seat) => {
+                      const invalidatedWinner =
+                        round.players[seat];
+
+                      return (
+                        <div key={seat}>
+                          <span className="wind-badge">
+                            {getWindLabel(
+                              invalidatedWinner.seatWind
+                            )}
+                          </span>
+
+                          <strong>
+                            {invalidatedWinner.name}
+                          </strong>
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>判定</span>
+
+                  <strong>
+                    満貫未満の和了
+                  </strong>
+                </div>
+
+                <div className="draw-result-summary">
+                  <span>精算</span>
+
+                  <strong>点数移動なし</strong>
+                </div>
+
+                <p className="triple-ron-description">
+                  敵15のE-27により和了が無効となり、
+                  特殊途中流局です。親は連荘し、
+                  本場を1つ増やします。
+                  {round.riichiPool > 0
+                    ? `供託${formatScore(
+                        round.riichiPool
+                      )}点は次局へ持ち越します。`
+                    : "供託点はありません。"}
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-button win-result-next"
+                  onClick={handleNextRound}
+                >
+                  次局へ
+                </button>
+              </article>
+            </section>
+          )}
         {drawResult &&
           round.phase === "roundEnd" && (
             <section
