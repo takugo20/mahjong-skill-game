@@ -1082,12 +1082,10 @@ export function drawTile(
   const round = state.round;
 
   if (
-    !state.akuukan ||
-    seat === 0 ||
-    !drawer ||
-    state.round.liveWall.length === 0
+    round.phase !== "drawing" ||
+    round.currentSeat !== seat
   ) {
-    return drawTile(state, seat, random);
+    return state;
   }
 
   const currentPlayer = round.players[seat];
@@ -1167,7 +1165,8 @@ export function drawCpuTile(
   if (
     !state.akuukan ||
     seat === 0 ||
-    !drawer
+    !drawer ||
+    state.round.liveWall.length === 0
   ) {
     return drawTile(state, seat, random);
   }
