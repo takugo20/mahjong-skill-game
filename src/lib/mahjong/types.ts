@@ -210,19 +210,26 @@ export interface RoundFourKansDrawResult {
   ];
 }
 
+export interface RoundEnemyAbilityE27DrawResult {
+  reason: "enemyAbilityE27";
+  invalidatedWinnerSeats: SeatIndex[];
+}
+
 export type RoundAbortiveDrawReason =
   | RoundNineTerminalsDrawResult["reason"]
   | RoundFourWindsDrawResult["reason"]
   | RoundFourRiichiDrawResult["reason"]
   | RoundFourKansDrawResult["reason"]
-  | RoundTripleRonDrawResult["reason"];
+  | RoundTripleRonDrawResult["reason"]
+  | RoundEnemyAbilityE27DrawResult["reason"];
 
 export type RoundAbortiveDrawResult =
   | RoundNineTerminalsDrawResult
   | RoundFourWindsDrawResult
   | RoundFourRiichiDrawResult
   | RoundFourKansDrawResult
-  | RoundTripleRonDrawResult;
+  | RoundTripleRonDrawResult
+  | RoundEnemyAbilityE27DrawResult;
 
 export interface RoundDrawResult {
   tenpaiSeats: SeatIndex[];
