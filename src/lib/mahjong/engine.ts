@@ -65,6 +65,9 @@ import {
   isAkuukanE20PaymentMultiplierEnabled
 } from "../akuukan/paymentAdjustments";
 import {
+  applyAkuukanRedTileTransformation
+} from "../akuukan/redTileTransformation";
+import {
   isAkuukanNotenRiichiAllowed,
   isAkuukanOpenRiichiAllowed,
   isAkuukanRiichiProhibited
@@ -518,6 +521,40 @@ function assignAkuukanDealCompletedEffects(
   });
 }
 
+function applyAkuukanPlayerDealCompletedEffects(
+  akuukan: AkuukanGameState | undefined,
+  players: PlayerState[],
+  random: () => number
+): void {
+  if (!akuukan) {
+    return;
+  }
+
+  const player = players.find(
+    (candidate) => candidate.seat === 0
+  );
+
+  if (!player) {
+    return;
+  }
+
+  const transformation =
+    applyAkuukanRedTileTransformation({
+      akuukan,
+      skillId: "1-1",
+      tiles: player.hand,
+      random
+    });
+
+  if (!transformation.transformedTileId) {
+    return;
+  }
+
+  player.hand = sortTiles(
+    transformation.tiles
+  );
+}
+
 export function createInitialGameState(
   random: () => number = Math.random,
   akuukanSetup?: AkuukanMatchSetup
@@ -579,6 +616,12 @@ export function createInitialGameState(
       players[seat].hand.push(tile);
     }
   }
+
+  applyAkuukanPlayerDealCompletedEffects(
+    akuukan,
+    players,
+    random
+  );
 
   const akuukanAfterDeal =
     assignAkuukanDealCompletedEffects(
@@ -6044,6 +6087,11 @@ function resolveNextRoundStart(
     nextDealerSeat,
     random,
     nextAkuukan
+  );
+  applyAkuukanPlayerDealCompletedEffects(
+    nextAkuukan,
+    dealt.players,
+    random
   );
   const dealtAkuukan =
     assignAkuukanDealCompletedEffects(
