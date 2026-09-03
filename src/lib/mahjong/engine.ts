@@ -48,6 +48,9 @@ import {
   takeAkuukanE28RiverTile
 } from "../akuukan/riverDraw";
 import {
+  selectAkuukanE28RiverDrawCandidate
+} from "../akuukan/riverDrawAi";
+import {
   isAkuukanE27WinInvalidated
 } from "../akuukan/handValueAdjustments";
 import {
@@ -1150,6 +1153,57 @@ export function drawTile(
     drawnState,
     updatedPlayer
   );
+}
+
+export function drawCpuTile(
+  state: GameState,
+  seat: SeatIndex,
+  random: () => number = Math.random
+): GameState {
+  const drawer = state.round.players[seat];
+
+  if (
+    !state.akuukan ||
+    seat === 0 ||
+    !drawer
+  ) {
+    return drawTile(state, seat, random);
+  }
+
+  const candidates =
+    getAkuukanE28RiverDrawCandidates({
+      akuukan: state.akuukan,
+      drawerIsSelectedEnemy: seat === 2,
+      players: state.round.players
+    });
+  const selectedCandidate =
+    selectAkuukanE28RiverDrawCandidate({
+      drawer,
+      candidates,
+      liveWall: state.round.liveWall,
+      doraIndicators:
+        getDoraIndicatorsForCpu(
+          state,
+          seat
+        )
+    });
+
+  if (!selectedCandidate) {
+    return drawTile(state, seat, random);
+  }
+
+  const riverDrawState =
+    drawAkuukanE28RiverTile(
+      state,
+      seat,
+      selectedCandidate.riverOwnerSeat,
+      selectedCandidate.tile.id,
+      random
+    );
+
+  return riverDrawState === state
+    ? drawTile(state, seat, random)
+    : riverDrawState;
 }
 
 export function discardTile(
@@ -4749,7 +4803,7 @@ function completeCpuTurns(
     const cpuSeat =
       nextState.round.currentSeat;
 
-    nextState = drawTile(
+    nextState = drawCpuTile(
       nextState,
       cpuSeat,
       random
