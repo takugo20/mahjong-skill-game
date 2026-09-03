@@ -39,6 +39,9 @@ import {
   areAkuukanDoraIndicatorsVisible,
   areAkuukanHandTilesVisible
 } from "../akuukan/informationVisibility";
+import type {
+  AkuukanInformationViewer
+} from "../akuukan/informationVisibility";
 import {
   getAkuukanE28RiverDrawCandidates,
   selectRandomAkuukanE28FaceDownCandidate,
