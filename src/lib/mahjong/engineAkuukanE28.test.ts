@@ -549,6 +549,64 @@ describe("敵15 E-28のエンジン統合", () => {
     ).toBe(unrelatedRiverTile);
   });
 
+    it("小さな改善で他家の振聴を解除する河牌を避けて通常山からツモる", () => {
+    const state = prepareDrawState();
+    const riskyRiverTile = createTile(
+      "pin",
+      6
+    );
+    const wallTile = createTile("pin", 5);
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        ...createTiles("man", [1, 2, 3]),
+        ...createTiles("pin", [1, 2, 3]),
+        ...createTiles("sou", [1, 2, 3]),
+        ...createTiles(
+          "honor",
+          [1, 1, 1]
+        ),
+        createTile("pin", 6)
+      ],
+      melds: [],
+      discards: [
+        createDiscard(riskyRiverTile)
+      ]
+    };
+    state.round.players[2].hand =
+      createSingleWaitHand();
+    state.round.liveWall = [
+      wallTile,
+      createTile("pin", 4),
+      createTile("pin", 4),
+      createTile("pin", 7),
+      createTile("pin", 7)
+    ];
+    state.round.doraIndicatorCount = 0;
+
+    const result = drawCpuTile(
+      state,
+      2,
+      () => 0
+    );
+
+    expect(getDrawnTile(result)).toBe(
+      wallTile
+    );
+    expect(
+      result.round.players[2]
+        .drawnTileSource
+    ).toBe("liveWall");
+    expect(
+      result.round.players[0].discards[0]
+        .tile
+    ).toBe(riskyRiverTile);
+    expect(result.round.liveWall).toHaveLength(
+      4
+    );
+  });
+
   it("E-28が無効なら和了牌が河にあっても通常山からツモる", () => {
     const state = prepareDrawState();
     const winningRiverTile = createTile(
