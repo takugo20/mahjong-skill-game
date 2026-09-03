@@ -279,7 +279,9 @@ export function getFourKansDrawResult(
 }
 
 export function getAbortiveDrawLabel(
-  reason: RoundAbortiveDrawReason
+  reason:
+    | RoundAbortiveDrawReason
+    | "enemyAbilityE27"
 ): string {
   switch (reason) {
     case "nineTerminals":
@@ -292,5 +294,7 @@ export function getAbortiveDrawLabel(
       return "四槓散了";
     case "tripleRon":
       return "三家和";
+    case "enemyAbilityE27":
+      return "敵能力による特殊途中流局";
   }
 }
