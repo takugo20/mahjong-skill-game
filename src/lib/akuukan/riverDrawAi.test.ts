@@ -218,4 +218,108 @@ describe("敵15 E-28の河牌選択AI", () => {
       })
     ).toBeNull();
   });
+
+    it("向聴数が同じなら通常山の受け入れ枚数を増やす牌を選ぶ", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const acceptanceImprovement =
+      createCandidate(
+        createTile("pin", 6)
+      );
+    const redDora = createCandidate(
+      createTile("man", 9, true),
+      {
+        riverOwnerSeat: 1
+      }
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [
+          redDora,
+          acceptanceImprovement
+        ],
+        liveWall: [
+          createTile("pin", 5),
+          createTile("pin", 4),
+          createTile("pin", 4),
+          createTile("pin", 7),
+          createTile("pin", 7)
+        ],
+        doraIndicators: [
+          createTile("man", 8)
+        ]
+      })
+    ).toBe(acceptanceImprovement);
+  });
+
+  it("受け入れを増やす牌がなければ最も価値が高いドラ・赤ドラを選ぶ", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const unrelated = createCandidate(
+      createTile("honor", 7)
+    );
+    const normalDora = createCandidate(
+      createTile("man", 9),
+      {
+        riverOwnerSeat: 1
+      }
+    );
+    const redDora = createCandidate(
+      createTile("man", 9, true),
+      {
+        riverOwnerSeat: 3
+      }
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [
+          unrelated,
+          normalDora,
+          redDora
+        ],
+        doraIndicators: [
+          createTile("man", 8)
+        ]
+      })
+    ).toBe(redDora);
+  });
+
+  it("自分の河にある唯一の和了牌を回収候補にできる", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const ownWinningTile = createTile(
+      "pin",
+      5
+    );
+
+    drawer.discards = [{
+      tile: ownWinningTile,
+      tsumogiri: false,
+      riichiDeclaration: false,
+      faceDown: false,
+      called: false
+    }];
+
+    const ownRecovery = createCandidate(
+      ownWinningTile,
+      {
+        riverOwnerSeat: 2,
+        discardIndex: 0
+      }
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        candidates: [ownRecovery]
+      })
+    ).toBe(ownRecovery);
+  });
 });
