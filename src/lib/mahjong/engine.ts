@@ -39,9 +39,11 @@ import {
   areAkuukanDoraIndicatorsVisible,
   areAkuukanHandTilesVisible
 } from "../akuukan/informationVisibility";
-import type {
-  AkuukanInformationViewer
-} from "../akuukan/informationVisibility";
+import {
+  getAkuukanE28RiverDrawCandidates,
+  selectRandomAkuukanE28FaceDownCandidate,
+  takeAkuukanE28RiverTile
+} from "../akuukan/riverDraw";
 import {
   isAkuukanE27WinInvalidated
 } from "../akuukan/handValueAdjustments";
@@ -967,6 +969,102 @@ function getAkuukanLiveWallDrawIndex(
       player.seat === 2,
     concealedTiles: player.hand,
     liveWall: state.round.liveWall
+  });
+}
+
+export function drawAkuukanE28RiverTile(
+  state: GameState,
+  seat: SeatIndex,
+  riverOwnerSeat: SeatIndex,
+  tileId: string,
+  random: () => number = Math.random
+): GameState {
+  const round = state.round;
+
+  if (
+    !state.akuukan ||
+    round.phase !== "drawing" ||
+    round.currentSeat !== seat
+  ) {
+    return state;
+  }
+
+  const candidates =
+    getAkuukanE28RiverDrawCandidates({
+      akuukan: state.akuukan,
+      drawerIsSelectedEnemy: seat === 2,
+      players: round.players
+    });
+  const requestedCandidate =
+    candidates.find(
+      (candidate) =>
+        candidate.riverOwnerSeat ===
+          riverOwnerSeat &&
+        candidate.tile.id === tileId
+    );
+
+  if (!requestedCandidate) {
+    return state;
+  }
+
+  const selectedCandidate =
+    requestedCandidate.faceDown
+      ? selectRandomAkuukanE28FaceDownCandidate(
+          candidates,
+          random
+        )
+      : requestedCandidate;
+
+  if (!selectedCandidate) {
+    return state;
+  }
+
+  const riverDraw = takeAkuukanE28RiverTile({
+    akuukan: state.akuukan,
+    drawerIsSelectedEnemy: seat === 2,
+    players: round.players,
+    riverOwnerSeat:
+      selectedCandidate.riverOwnerSeat,
+    tileId: selectedCandidate.tile.id
+  });
+
+  if (!riverDraw) {
+    return state;
+  }
+
+  const currentPlayer =
+    riverDraw.players.find(
+      (player) => player.seat === seat
+    );
+
+  if (!currentPlayer) {
+    return state;
+  }
+
+  const updatedPlayer: PlayerState = {
+    ...currentPlayer,
+    hand: sortTiles([
+      ...currentPlayer.hand,
+      riverDraw.drawnTile
+    ]),
+    temporaryFuriten: false,
+    drawnTileId: riverDraw.drawnTile.id,
+    drawnTileSource: "river"
+  };
+
+  return beginAkuukanTurnState({
+    ...state,
+    round: {
+      ...round,
+      players: replacePlayer(
+        riverDraw.players,
+        updatedPlayer
+      ),
+      phase: "discarding",
+      meldCallOptions: []
+    },
+    notice:
+      `${currentPlayer.name}が河から牌をツモりました。`
   });
 }
 
