@@ -1180,6 +1180,7 @@ export function drawCpuTile(
   const selectedCandidate =
     selectAkuukanE28RiverDrawCandidate({
       drawer,
+      players: state.round.players,
       candidates,
       liveWall: state.round.liveWall,
       doraIndicators:
