@@ -8,8 +8,10 @@ import {
 } from "../akuukan/state";
 import {
   createInitialGameState,
+  declarePlayerTsumo,
   drawAkuukanE28RiverTile,
-  drawCpuTile
+  drawCpuTile,
+  playPlayerDiscard
 } from "./engine";
 import type {
   Discard,
@@ -491,5 +493,144 @@ describe("敵15 E-28のエンジン統合", () => {
       result.round.players[0].discards[0]
         .tile
     ).toBe(winningRiverTile);
+  });
+
+    it("CPU進行中に河牌をツモしてそのままツモ和了する", () => {
+    const state = createInitialGameState(
+      () => 0.5,
+      {
+        enemyId: "enemy-15",
+        equippedSkills: []
+      }
+    );
+    const playerDiscard = createTile(
+      "honor",
+      6
+    );
+    const cpuOneDraw = createTile(
+      "honor",
+      7
+    );
+    const remainingWallTile = createTile(
+      "man",
+      9
+    );
+    const winningRiverTile = createTile(
+      "pin",
+      5
+    );
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [playerDiscard],
+      melds: [],
+      discards: [],
+      drawnTileId: playerDiscard.id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: [],
+      melds: [],
+      discards: [],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: createSingleWaitHand(),
+      melds: [],
+      discards: [],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    state.round.players[3] = {
+      ...state.round.players[3],
+      hand: [],
+      melds: [],
+      discards: [
+        createDiscard(winningRiverTile)
+      ],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    state.round.liveWall = [
+      cpuOneDraw,
+      remainingWallTile
+    ];
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.lastDiscard = null;
+    state.round.turnNumber = 8;
+    state.round.doraIndicatorCount = 0;
+
+    const result = playPlayerDiscard(
+      state,
+      playerDiscard.id,
+      () => 0
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "tsumo",
+      winnerSeat: 2,
+      loserSeat: null,
+      winningTile: winningRiverTile
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("門前清自摸和");
+    expect(
+      result.round.winResult?.yakuNames
+    ).not.toContain("海底摸月");
+    expect(result.round.liveWall).toEqual([
+      remainingWallTile
+    ]);
+    expect(
+      result.round.players[3].discards
+    ).toEqual([]);
+  });
+
+  it("河ツモは通常山が空でも海底摸月にならない", () => {
+    const state = createInitialGameState(
+      () => 0.5
+    );
+    const winningTile = createTile(
+      "pin",
+      5
+    );
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        ...createSingleWaitHand(),
+        winningTile
+      ],
+      melds: [],
+      discards: [],
+      drawnTileId: winningTile.id,
+      drawnTileSource: "river"
+    };
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.liveWall = [];
+    state.round.turnNumber = 8;
+    state.round.doraIndicatorCount = 0;
+
+    const result = declarePlayerTsumo(
+      state
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(
+      result.round.winResult?.winMethod
+    ).toBe("tsumo");
+    expect(
+      result.round.winResult?.yakuNames
+    ).not.toContain("海底摸月");
   });
 });
