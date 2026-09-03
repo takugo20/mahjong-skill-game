@@ -14,8 +14,11 @@ import {
   isEnemyAbilityEnabled
 } from "./winningEvaluationEnemyAbilityAdjustments";
 
-export const AKUUKAN_E21_MINIMUM_BASE_POINTS =
+export const AKUUKAN_MANGAN_BASE_POINTS =
   2000;
+
+export const AKUUKAN_E21_MINIMUM_BASE_POINTS =
+  AKUUKAN_MANGAN_BASE_POINTS;
 
 export interface ApplyAkuukanE21MinimumManganInput {
   readonly akuukan: AkuukanGameState;
@@ -23,6 +26,12 @@ export interface ApplyAkuukanE21MinimumManganInput {
   readonly score: ScoreCalculationResult;
   readonly winMethod: WinMethod;
   readonly dealer: boolean;
+}
+
+export interface IsAkuukanE27WinInvalidatedInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winnerIsSelectedEnemy: boolean;
+  readonly score: ScoreCalculationResult;
 }
 
 function getPointUnitCount(
@@ -96,4 +105,18 @@ export function applyAkuukanE21MinimumMangan(
     yakumanMultiplier:
       input.score.yakumanMultiplier
   };
+}
+
+export function isAkuukanE27WinInvalidated(
+  input: IsAkuukanE27WinInvalidatedInput
+): boolean {
+  return (
+    !input.winnerIsSelectedEnemy &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-27"
+    ) &&
+    input.score.basePoints <
+      AKUUKAN_MANGAN_BASE_POINTS
+  );
 }
