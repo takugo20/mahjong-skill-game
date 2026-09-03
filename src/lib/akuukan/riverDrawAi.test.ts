@@ -72,6 +72,28 @@ function createDrawer(
   };
 }
 
+function createRiverOwner(
+  hand: Tile[],
+  discardedTiles: Tile[]
+): PlayerState {
+  return {
+    ...createDrawer(hand),
+    id: "river-owner",
+    name: "河牌の所有者",
+    seat: 0,
+    seatWind: "east",
+    discards: discardedTiles.map(
+      (tile) => ({
+        tile,
+        tsumogiri: false,
+        riichiDeclaration: false,
+        faceDown: false,
+        called: false
+      })
+    )
+  };
+}
+
 function createCandidate(
   tile: Tile,
   options: {
@@ -288,6 +310,141 @@ describe("敵15 E-28の河牌選択AI", () => {
         ]
       })
     ).toBe(redDora);
+  });
+
+    it("小さな改善で他家の捨て牌振聴を解除する河牌は避ける", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const riskyTile = createTile(
+      "pin",
+      6
+    );
+    const riskyCandidate = createCandidate(
+      riskyTile,
+      {
+        riverOwnerSeat: 0,
+        discardIndex: 0
+      }
+    );
+    const riverOwner = createRiverOwner(
+      [
+        ...createTiles("man", [1, 2, 3]),
+        ...createTiles("pin", [1, 2, 3]),
+        ...createTiles("sou", [1, 2, 3]),
+        ...createTiles(
+          "honor",
+          [1, 1, 1]
+        ),
+        createTile("pin", 6)
+      ],
+      [riskyTile]
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        players: [riverOwner, drawer],
+        candidates: [riskyCandidate],
+        liveWall: [
+          createTile("pin", 5),
+          createTile("pin", 4),
+          createTile("pin", 4),
+          createTile("pin", 7),
+          createTile("pin", 7)
+        ]
+      })
+    ).toBeNull();
+  });
+
+  it("向聴数が進むなら他家の振聴解除より手牌改善を優先する", () => {
+    const drawer = createDrawer(
+      createOneShantenHand()
+    );
+    const improvingTile = createTile(
+      "man",
+      4
+    );
+    const improvingCandidate =
+      createCandidate(
+        improvingTile,
+        {
+          riverOwnerSeat: 0,
+          discardIndex: 0
+        }
+      );
+    const riverOwner = createRiverOwner(
+      [
+        ...createTiles("man", [1, 2, 3]),
+        ...createTiles("pin", [1, 2, 3]),
+        ...createTiles("sou", [1, 2, 3]),
+        ...createTiles(
+          "honor",
+          [1, 1, 1]
+        ),
+        createTile("man", 4)
+      ],
+      [improvingTile]
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        players: [riverOwner, drawer],
+        candidates: [
+          improvingCandidate
+        ]
+      })
+    ).toBe(improvingCandidate);
+  });
+
+  it("同じ和了牌の履歴が残るなら受け入れを増やす河牌を選ぶ", () => {
+    const drawer = createDrawer(
+      createSingleWaitHand()
+    );
+    const selectedTile = createTile(
+      "pin",
+      6
+    );
+    const remainingTile = createTile(
+      "pin",
+      6
+    );
+    const candidate = createCandidate(
+      selectedTile,
+      {
+        riverOwnerSeat: 0,
+        discardIndex: 0
+      }
+    );
+    const riverOwner = createRiverOwner(
+      [
+        ...createTiles("man", [1, 2, 3]),
+        ...createTiles("pin", [1, 2, 3]),
+        ...createTiles("sou", [1, 2, 3]),
+        ...createTiles(
+          "honor",
+          [1, 1, 1]
+        ),
+        createTile("pin", 6)
+      ],
+      [selectedTile, remainingTile]
+    );
+
+    expect(
+      selectAkuukanE28RiverDrawCandidate({
+        drawer,
+        players: [riverOwner, drawer],
+        candidates: [candidate],
+        liveWall: [
+          createTile("pin", 5),
+          createTile("pin", 4),
+          createTile("pin", 4),
+          createTile("pin", 7),
+          createTile("pin", 7)
+        ]
+      })
+    ).toBe(candidate);
   });
 
   it("自分の河にある唯一の和了牌を回収候補にできる", () => {
