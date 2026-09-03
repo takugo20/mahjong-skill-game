@@ -745,7 +745,7 @@ describe("敵15 E-28のエンジン統合", () => {
     ).toBeNull();
   });
 
-    it("CPU進行中に河牌をツモしてそのままツモ和了する", () => {
+  it("E-28の河ツモによる敵15本人の満貫未満和了をE-27は無効化しない", () => {
     const state = createInitialGameState(
       () => 0.5,
       {
@@ -766,8 +766,8 @@ describe("敵15 E-28のエンジン統合", () => {
       9
     );
     const winningRiverTile = createTile(
-      "pin",
-      5
+      "man",
+      1
     );
 
     state.round.players[0] = {
@@ -788,7 +788,11 @@ describe("敵15 E-28のエンジン統合", () => {
     };
     state.round.players[2] = {
       ...state.round.players[2],
-      hand: createSingleWaitHand(),
+      hand: [
+        ...createTiles("man", [2, 3, 4, 5, 6]),
+        ...createTiles("pin", [2, 3, 4, 5, 5]),
+        ...createTiles("sou", [6, 7, 8])
+      ],
       melds: [],
       discards: [],
       drawnTileId: null,
@@ -827,8 +831,14 @@ describe("敵15 E-28のエンジン統合", () => {
       winMethod: "tsumo",
       winnerSeat: 2,
       loserSeat: null,
-      winningTile: winningRiverTile
+      winningTile: winningRiverTile,
+      han: 2,
+      fu: 20,
+      totalPoints: 1500
     });
+    expect(
+      result.round.abortiveDrawResult
+    ).toBeNull();
     expect(
       result.round.winResult?.yakuNames
     ).toContain("門前清自摸和");
