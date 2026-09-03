@@ -8,7 +8,8 @@ import {
 } from "../akuukan/state";
 import {
   createInitialGameState,
-  drawAkuukanE28RiverTile
+  drawAkuukanE28RiverTile,
+  drawCpuTile
 } from "./engine";
 import type {
   Discard,
@@ -32,6 +33,25 @@ function createTile(
     rank,
     red
   };
+}
+
+function createTiles(
+  suit: TileSuit,
+  ranks: readonly number[]
+): Tile[] {
+  return ranks.map(
+    (rank) => createTile(suit, rank)
+  );
+}
+
+function createSingleWaitHand(): Tile[] {
+  return [
+    ...createTiles("man", [1, 2, 3]),
+    ...createTiles("pin", [1, 2, 3]),
+    ...createTiles("sou", [1, 2, 3]),
+    ...createTiles("honor", [1, 1, 1]),
+    createTile("pin", 5)
+  ];
 }
 
 function createDiscard(
@@ -347,5 +367,129 @@ describe("敵15 E-28のエンジン統合", () => {
         "missing-tile"
       )
     ).toBe(state);
+  });
+
+    it("CPUツモでは和了できる河牌を通常山より優先する", () => {
+    const state = prepareDrawState();
+    const winningRiverTile = createTile(
+      "pin",
+      5
+    );
+    const wallTile = createTile("man", 9);
+
+    state.round.players[2].hand =
+      createSingleWaitHand();
+    state.round.players[0].discards = [
+      createDiscard(winningRiverTile)
+    ];
+    state.round.liveWall = [wallTile];
+
+    const result = drawCpuTile(
+      state,
+      2,
+      () => 0
+    );
+
+    expect(getDrawnTile(result)).toBe(
+      winningRiverTile
+    );
+    expect(
+      result.round.players[2]
+        .drawnTileSource
+    ).toBe("river");
+    expect(result.round.liveWall).toEqual([
+      wallTile
+    ]);
+    expect(
+      result.round.players[0].discards
+    ).toEqual([]);
+  });
+
+  it("有用な河牌がなければ通常山からツモる", () => {
+    const state = prepareDrawState();
+    const unrelatedRiverTile = createTile(
+      "honor",
+      7
+    );
+    const winningWallTile = createTile(
+      "pin",
+      5
+    );
+
+    state.round.players[2].hand =
+      createSingleWaitHand();
+    state.round.players[0].discards = [
+      createDiscard(unrelatedRiverTile)
+    ];
+    state.round.liveWall = [
+      winningWallTile
+    ];
+    state.round.doraIndicatorCount = 0;
+
+    const result = drawCpuTile(
+      state,
+      2,
+      () => 0
+    );
+
+    expect(getDrawnTile(result)).toBe(
+      winningWallTile
+    );
+    expect(
+      result.round.players[2]
+        .drawnTileSource
+    ).toBe("liveWall");
+    expect(result.round.liveWall).toEqual([]);
+    expect(
+      result.round.players[0].discards[0]
+        .tile
+    ).toBe(unrelatedRiverTile);
+  });
+
+  it("E-28が無効なら和了牌が河にあっても通常山からツモる", () => {
+    const state = prepareDrawState();
+    const winningRiverTile = createTile(
+      "pin",
+      5
+    );
+    const wallTile = createTile("sou", 9);
+
+    state.round.players[2].hand =
+      createSingleWaitHand();
+    state.round.players[0].discards = [
+      createDiscard(winningRiverTile)
+    ];
+    state.round.liveWall = [wallTile];
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間麻雀状態がありません。"
+      );
+    }
+
+    const disabledState: GameState = {
+      ...state,
+      akuukan: disableAkuukanSource(
+        state.akuukan,
+        "enemy-ability:E-28"
+      )
+    };
+    const result = drawCpuTile(
+      disabledState,
+      2,
+      () => 0
+    );
+
+    expect(getDrawnTile(result)).toBe(
+      wallTile
+    );
+    expect(
+      result.round.players[2]
+        .drawnTileSource
+    ).toBe("liveWall");
+    expect(
+      result.round.players[0].discards[0]
+        .tile
+    ).toBe(winningRiverTile);
   });
 });
