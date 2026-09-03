@@ -396,8 +396,7 @@ export function selectAkuukanE28RiverDrawCandidate(
           evaluation
         )
     );
-  const liveWall = input.liveWall ?? [];
-
+  
   const liveWall = input.liveWall ?? [];
 
   if (liveWall.length > 0) {
