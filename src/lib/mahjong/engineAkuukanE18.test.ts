@@ -7,6 +7,9 @@ import {
   grantPlayerSkillMatchExperience
 } from "../akuukan/playerSkillMatchExperience";
 import {
+  areAkuukanHandTilesVisible
+} from "../akuukan/informationVisibility";
+import {
   createInitialPlayerSkillGrowthState
 } from "../akuukan/playerSkillProgress";
 import type {
@@ -186,6 +189,41 @@ describe("敵6 E-18のエンジン統合", () => {
         disabledState
       )
     ).toEqual([]);
+  });
+
+    it("他家能力を無効化しても敵6自身のE-10は維持する", () => {
+    const state = createInitialGameState(
+      () => 0.5,
+      createSetup("enemy-6")
+    );
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態が初期化されていません。"
+      );
+    }
+
+    expect(
+      areAkuukanHandTilesVisible({
+        akuukan: state.akuukan,
+        viewer: "selectedEnemy",
+        viewerIsHandOwner: false
+      })
+    ).toBe(true);
+    expect(
+      areAkuukanHandTilesVisible({
+        akuukan: state.akuukan,
+        viewer: "normalOpponent",
+        viewerIsHandOwner: false
+      })
+    ).toBe(false);
+    expect(
+      areAkuukanHandTilesVisible({
+        akuukan: state.akuukan,
+        viewer: "player",
+        viewerIsHandOwner: false
+      })
+    ).toBe(false);
   });
 
   it("局が変わっても装備スキルの無効化を維持する", () => {
