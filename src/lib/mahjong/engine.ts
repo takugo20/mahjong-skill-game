@@ -6367,14 +6367,15 @@ function resolveNextRoundStart(
     random,
     nextAkuukan
   );
-  applyAkuukanPlayerDealCompletedEffects(
-    nextAkuukan,
-    dealt.players,
-    random
-  );
+  const akuukanAfterPlayerDeal =
+    applyAkuukanPlayerDealCompletedEffects(
+      nextAkuukan,
+      dealt.players,
+      random
+    );
   const dealtAkuukan =
     assignAkuukanDealCompletedEffects(
-      nextAkuukan,
+      akuukanAfterPlayerDeal,
       dealt.players,
       random
     );
