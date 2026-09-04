@@ -16,6 +16,9 @@ import {
   reserveAkuukanE26TenpaiHand
 } from "../akuukan/dealComposition";
 import {
+  getAkuukanPlayerSkill1_5DoraIndicatorCount
+} from "../akuukan/doraIndicatorAddition";
+import {
   reserveAkuukanE29ShantenHands
 } from "../akuukan/shantenDealComposition";
 import {
@@ -576,6 +579,13 @@ export function createInitialGameState(
   );
 
   const deadWall = shuffledTiles.slice(-14);
+  const doraIndicatorCount = akuukan
+    ? getAkuukanPlayerSkill1_5DoraIndicatorCount({
+        akuukan,
+        currentDoraIndicatorCount: 1,
+        random
+      })
+    : 1;
   const availableLiveWall =
     shuffledTiles.slice(0, -14);
   const dealComposition =
@@ -665,7 +675,7 @@ export function createInitialGameState(
       pendingKan: null,
       turnNumber: 0,
       kanCount: 0,
-      doraIndicatorCount: 1,
+      doraIndicatorCount,
       rinshanDrawCount: 0,
       winResult: null,
       doubleRonResult: null,
@@ -6010,6 +6020,7 @@ function dealNextRoundHands(
   players: PlayerState[];
   liveWall: Tile[];
   deadWall: Tile[];
+  doraIndicatorCount: number;
 } {
   const shuffledTiles = shuffleTiles(
     createFullTileSet(),
@@ -6017,6 +6028,13 @@ function dealNextRoundHands(
   );
 
   const deadWall = shuffledTiles.slice(-14);
+  const doraIndicatorCount = akuukan
+    ? getAkuukanPlayerSkill1_5DoraIndicatorCount({
+        akuukan,
+        currentDoraIndicatorCount: 1,
+        random
+      })
+    : 1;
   const availableLiveWall =
     shuffledTiles.slice(0, -14);
   const dealComposition =
@@ -6072,7 +6090,8 @@ function dealNextRoundHands(
   return {
     players,
     liveWall,
-    deadWall
+    deadWall,
+    doraIndicatorCount
   };
 }
 
@@ -6371,7 +6390,8 @@ function resolveNextRoundStart(
       pendingKan: null,
       turnNumber: 0,
       kanCount: 0,
-      doraIndicatorCount: 1,
+      doraIndicatorCount:
+        dealt.doraIndicatorCount,
       rinshanDrawCount: 0,
       winResult: null,
       doubleRonResult: null,
