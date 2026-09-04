@@ -68,6 +68,9 @@ import {
   isAkuukanE20PaymentMultiplierEnabled
 } from "../akuukan/paymentAdjustments";
 import {
+  applyAkuukanPlayerSkill1_6AtDeal
+} from "../akuukan/nextRoundRedTile";
+import {
   applyAkuukanRedTileTransformation
 } from "../akuukan/redTileTransformation";
 import {
@@ -528,9 +531,9 @@ function applyAkuukanPlayerDealCompletedEffects(
   akuukan: AkuukanGameState | undefined,
   players: PlayerState[],
   random: () => number
-): void {
+): AkuukanGameState | undefined {
   if (!akuukan) {
-    return;
+    return undefined;
   }
 
   const player = players.find(
@@ -538,7 +541,7 @@ function applyAkuukanPlayerDealCompletedEffects(
   );
 
   if (!player) {
-    return;
+    return akuukan;
   }
 
   const transformation =
@@ -549,13 +552,28 @@ function applyAkuukanPlayerDealCompletedEffects(
       random
     });
 
-  if (!transformation.transformedTileId) {
-    return;
+  if (transformation.transformedTileId) {
+    player.hand = sortTiles(
+      transformation.tiles
+    );
   }
 
-  player.hand = sortTiles(
-    transformation.tiles
-  );
+  const nextRoundTransformation =
+    applyAkuukanPlayerSkill1_6AtDeal({
+      akuukan,
+      tiles: player.hand,
+      random
+    });
+
+  if (
+    nextRoundTransformation.transformedTileId
+  ) {
+    player.hand = sortTiles(
+      nextRoundTransformation.tiles
+    );
+  }
+
+  return nextRoundTransformation.akuukan;
 }
 
 export function createInitialGameState(
@@ -627,16 +645,16 @@ export function createInitialGameState(
     }
   }
 
-  applyAkuukanPlayerDealCompletedEffects(
-    akuukan,
-    players,
-    random
-  );
-
-  const akuukanAfterDeal =
+  const akuukanAfterPlayerDeal =
+    applyAkuukanPlayerDealCompletedEffects(
+      nextAkuukan,
+      dealt.players,
+      random
+    );
+  const dealtAkuukan =
     assignAkuukanDealCompletedEffects(
-      akuukan,
-      players,
+      akuukanAfterPlayerDeal,
+      dealt.players,
       random
     );
 
