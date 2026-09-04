@@ -647,8 +647,8 @@ export function createInitialGameState(
 
   const akuukanAfterPlayerDeal =
     applyAkuukanPlayerDealCompletedEffects(
-      nextAkuukan,
-      dealt.players,
+      akuukan,
+      players,
       random
     );
   const dealtAkuukan =
