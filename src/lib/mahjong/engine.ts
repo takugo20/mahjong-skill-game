@@ -28,13 +28,13 @@ import {
   activateAkuukanE2DrawRestriction,
   assignAkuukanE5TargetSuit,
   clearAkuukanE2DrawRestriction,
-  getAkuukanE2LiveWallDrawIndex,
-  getAkuukanE5LiveWallDrawIndex,
   getAkuukanE5TargetSuit,
   getAkuukanE11LiveWallTileIndex,
-  getAkuukanE22LiveWallDrawIndex,
-  getAkuukanE23LiveWallDrawIndex
+  getAkuukanLiveWallDrawCandidateIndexes
 } from "../akuukan/drawTileSelection";
+import {
+  getAkuukanPlayerSkill1_4LiveWallDrawIndex
+} from "../akuukan/drawWeight";
 import {
   areAkuukanDoraIndicatorsVisible,
   areAkuukanHandTilesVisible
@@ -954,70 +954,34 @@ function getAkuukanLiveWallDrawIndex(
       : null;
   }
 
-  const e5DrawIndex =
-    getAkuukanE5LiveWallDrawIndex({
+  const candidateIndexes =
+    getAkuukanLiveWallDrawCandidateIndexes({
       akuukan: state.akuukan,
+      playerId: player.id,
       recipientIsSelectedEnemy:
         player.seat === 2,
       targetSuit:
         getAkuukanE5TargetSuit(
           state.akuukan
         ),
-      liveWall: state.round.liveWall
-    });
-
-  if (e5DrawIndex !== 0) {
-    return e5DrawIndex;
-  }
-
-  const e23DrawIndex =
-    getAkuukanE23LiveWallDrawIndex({
-      akuukan: state.akuukan,
-      recipientIsSelectedEnemy:
-        player.seat === 2,
       previousDiscardTile:
         player.discards[
           player.discards.length - 1
         ]?.tile ?? null,
+      concealedTiles: player.hand,
+      melds: player.melds,
       liveWall: state.round.liveWall,
       random
     });
 
-  if (e23DrawIndex !== 0) {
-    return e23DrawIndex;
-  }
-
-  const e2DrawIndex =
-    getAkuukanE2LiveWallDrawIndex({
-      akuukan: state.akuukan,
-      playerId: player.id,
-      concealedTiles: player.hand,
-      melds: player.melds,
-      liveWall: state.round.liveWall
-    });
-
-  if (e2DrawIndex !== 0) {
-    return e2DrawIndex;
-  }
-
-  const e11DrawIndex =
-    getAkuukanE11LiveWallTileIndex({
-      akuukan: state.akuukan,
-      recipientIsSelectedEnemy:
-        player.seat === 2,
-      liveWall: state.round.liveWall
-    });
-
-  if (e11DrawIndex !== 0) {
-    return e11DrawIndex;
-  }
-
-  return getAkuukanE22LiveWallDrawIndex({
+  return getAkuukanPlayerSkill1_4LiveWallDrawIndex({
     akuukan: state.akuukan,
-    recipientIsSelectedEnemy:
-      player.seat === 2,
-    concealedTiles: player.hand,
-    liveWall: state.round.liveWall
+    drawerIsPlayer: player.seat === 0,
+    liveWall: state.round.liveWall,
+    candidateIndexes,
+    doraIndicators:
+      getDoraIndicators(state.round),
+    random
   });
 }
 
