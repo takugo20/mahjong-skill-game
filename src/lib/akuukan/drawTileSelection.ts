@@ -420,3 +420,175 @@ export function getAkuukanE23LiveWallDrawIndex(
     ? sameTileTypeIndex
     : differentTileTypeIndex;
 }
+
+export interface AkuukanLiveWallDrawCandidatesInput {
+  readonly akuukan: AkuukanGameState;
+  readonly playerId: string;
+  readonly recipientIsSelectedEnemy:
+    boolean;
+  readonly targetSuit:
+    AkuukanE5TargetSuit | null;
+  readonly previousDiscardTile: Tile | null;
+  readonly concealedTiles: readonly Tile[];
+  readonly melds: readonly Meld[];
+  readonly liveWall: readonly Tile[];
+  readonly random: () => number;
+}
+
+function useFilteredIndexesWhenAvailable(
+  currentIndexes: readonly number[],
+  predicate: (tile: Tile) => boolean,
+  liveWall: readonly Tile[]
+): number[] {
+  const filteredIndexes =
+    currentIndexes.filter((index) => {
+      const tile = liveWall[index];
+
+      return tile
+        ? predicate(tile)
+        : false;
+    });
+
+  return filteredIndexes.length > 0
+    ? filteredIndexes
+    : [...currentIndexes];
+}
+
+export function getAkuukanLiveWallDrawCandidateIndexes(
+  input: AkuukanLiveWallDrawCandidatesInput
+): number[] {
+  let candidateIndexes =
+    input.liveWall.map(
+      (_tile, index) => index
+    );
+
+  if (candidateIndexes.length === 0) {
+    return [];
+  }
+
+  if (
+    input.recipientIsSelectedEnemy &&
+    input.targetSuit !== null &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-5"
+    )
+  ) {
+    candidateIndexes =
+      useFilteredIndexesWhenAvailable(
+        candidateIndexes,
+        (tile) =>
+          tile.suit === input.targetSuit,
+        input.liveWall
+      );
+  }
+
+  const previousDiscardTile =
+    input.previousDiscardTile;
+
+  if (
+    !input.recipientIsSelectedEnemy &&
+    previousDiscardTile !== null &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-23"
+    )
+  ) {
+    const sameTileTypeIndexes =
+      candidateIndexes.filter((index) => {
+        const tile = input.liveWall[index];
+
+        return tile
+          ? isSameTileType(
+              tile,
+              previousDiscardTile
+            )
+          : false;
+      });
+
+    if (sameTileTypeIndexes.length > 0) {
+      const differentTileTypeIndexes =
+        candidateIndexes.filter(
+          (index) =>
+            !sameTileTypeIndexes.includes(
+              index
+            )
+        );
+
+      candidateIndexes =
+        differentTileTypeIndexes.length ===
+        0 ||
+        input.random() < 0.5
+          ? sameTileTypeIndexes
+          : differentTileTypeIndexes;
+    }
+  }
+
+  if (
+    isAkuukanE2DrawRestricted({
+      akuukan: input.akuukan,
+      playerId: input.playerId
+    })
+  ) {
+    const winningTileTypes =
+      getWinningTileTypes(
+        input.concealedTiles,
+        input.melds
+      );
+
+    if (winningTileTypes.length > 0) {
+      candidateIndexes =
+        useFilteredIndexesWhenAvailable(
+          candidateIndexes,
+          (tile) =>
+            !winningTileTypes.some(
+              (winningTileType) =>
+                isSameTileType(
+                  tile,
+                  winningTileType
+                )
+            ),
+          input.liveWall
+        );
+    }
+  }
+
+  if (
+    !input.recipientIsSelectedEnemy &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-11"
+    )
+  ) {
+    candidateIndexes =
+      useFilteredIndexesWhenAvailable(
+        candidateIndexes,
+        (tile) => !isWindTile(tile),
+        input.liveWall
+      );
+  }
+
+  if (
+    !input.recipientIsSelectedEnemy &&
+    isEnemyAbilityEnabled(
+      input.akuukan,
+      "E-22"
+    )
+  ) {
+    candidateIndexes =
+      useFilteredIndexesWhenAvailable(
+        candidateIndexes,
+        (tile) =>
+          !input.concealedTiles.some(
+            (concealedTile) =>
+              isSameTileType(
+                tile,
+                concealedTile
+              )
+          ),
+        input.liveWall
+      );
+  }
+
+  return candidateIndexes;
+}
