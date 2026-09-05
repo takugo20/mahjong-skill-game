@@ -91,6 +91,7 @@ import {
   shouldStartAkuukanAdditionalNormalAction
 } from "../akuukan/turnCountChange";
 import {
+  createAkuukanWinningCandidateBonusHanEvaluator,
   createAkuukanWinningCandidateScoreAdjuster,
   createAkuukanWinningCandidateYakuEvaluator,
   shouldAkuukanWinningCandidateBeTreatedAsClosed
@@ -1566,6 +1567,13 @@ function createWinInput(
           candidateYakuEvaluator:
             createAkuukanWinningCandidateYakuEvaluator(
               akuukanWinningInput
+            ),
+          candidateBonusHanEvaluator:
+            createAkuukanWinningCandidateBonusHanEvaluator(
+              {
+                ...akuukanWinningInput,
+                discards: player.discards
+              }
             ),
           candidateScoreAdjuster:
             createAkuukanWinningCandidateScoreAdjuster(
