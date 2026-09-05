@@ -33,6 +33,12 @@ export interface AkuukanPlayerSkill1_10PaymentInput {
   readonly paymentPoints: number;
 }
 
+export interface AkuukanPlayerSkill1_11PaymentInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winnerIsPlayer: boolean;
+  readonly paymentPoints: number;
+}
+
 export interface ApplyAkuukanPaymentMultipliersInput
   extends AkuukanPlayerSkill1_10PaymentInput {
   readonly winnerIsSelectedEnemy: boolean;
@@ -102,6 +108,86 @@ function getEnabledAkuukanPlayerSkill1_10Multiplier(
   }
 
   return paymentMultiplier;
+}
+
+function getEnabledAkuukanPlayerSkill1_11AdditionalPoints(
+  akuukan: AkuukanGameState
+): number | null {
+  const equippedSkill =
+    getEquippedPlayerSkill(
+      akuukan,
+      "1-11"
+    );
+
+  if (
+    !equippedSkill ||
+    isAkuukanSourceDisabled(
+      akuukan,
+      "player-skill:1-11"
+    )
+  ) {
+    return null;
+  }
+
+  const additionalPaymentPoints =
+    getPlayerSkillLevelDefinition(
+      getPlayerSkillDefinition("1-11"),
+      equippedSkill.level
+    ).effectValues.additionalPaymentPoints;
+
+  if (
+    typeof additionalPaymentPoints !==
+      "number" ||
+    !Number.isSafeInteger(
+      additionalPaymentPoints
+    ) ||
+    additionalPaymentPoints < 0
+  ) {
+    throw new Error(
+      "スキル1-11の固定加算点が不正です。"
+    );
+  }
+
+  return additionalPaymentPoints;
+}
+
+export function getAkuukanPlayerSkill1_11AdditionalPaymentPoints(
+  input: Omit<
+    AkuukanPlayerSkill1_11PaymentInput,
+    "paymentPoints"
+  >
+): number {
+  if (!input.winnerIsPlayer) {
+    return 0;
+  }
+
+  return (
+    getEnabledAkuukanPlayerSkill1_11AdditionalPoints(
+      input.akuukan
+    ) ?? 0
+  );
+}
+
+export function addAkuukanPlayerSkill1_11PaymentPoints(
+  input: AkuukanPlayerSkill1_11PaymentInput
+): number {
+  assertValidPaymentPoints(
+    input.paymentPoints
+  );
+
+  const adjusted =
+    input.paymentPoints +
+    getAkuukanPlayerSkill1_11AdditionalPaymentPoints(
+      input
+    );
+
+  if (!Number.isSafeInteger(adjusted)) {
+    throw new RangeError(
+      "固定点加算後の支払額が安全な整数になりません。"
+    );
+  }
+
+  return adjusted;
 }
 
 export function getAkuukanPlayerSkill1_10PaymentMultiplier(
