@@ -14,6 +14,7 @@ import type {
 import type {
   InvalidWinningHandEvaluation,
   ValidWinningHandEvaluation,
+  WinningCandidateBonusHanEvaluator,
   WinningCandidateScoreAdjuster,
   WinningCandidateYakuEvaluator,
   WinningHandEvaluationInput,
@@ -46,6 +47,8 @@ export interface RoundWinActionInput {
   treatAsClosed?: boolean;
   candidateYakuEvaluator?:
     WinningCandidateYakuEvaluator;
+  candidateBonusHanEvaluator?:
+    WinningCandidateBonusHanEvaluator;
   candidateScoreAdjuster?:
     WinningCandidateScoreAdjuster;
   doubleRiichi?: boolean;
@@ -340,6 +343,8 @@ function createWinningInput(
       input.treatAsClosed,
     candidateYakuEvaluator:
       input.candidateYakuEvaluator,
+    candidateBonusHanEvaluator:
+      input.candidateBonusHanEvaluator,
     candidateScoreAdjuster:
       input.candidateScoreAdjuster,
     kiriageMangan: true,
