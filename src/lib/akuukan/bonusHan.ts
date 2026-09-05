@@ -41,6 +41,13 @@ export interface AkuukanPlayerSkill1_9BonusHanInput {
   readonly hasValidYaku: boolean;
 }
 
+export interface AkuukanPlayerSkill1_12BonusHanInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winnerIsPlayer: boolean;
+  readonly playerIsFourth: boolean;
+  readonly hasValidYaku: boolean;
+}
+
 interface AkuukanPlayerSkill1_7Effect {
   readonly minimumHonorDiscards: number;
   readonly bonusHan: number;
@@ -51,6 +58,10 @@ interface AkuukanPlayerSkill1_8Effect {
 }
 
 interface AkuukanPlayerSkill1_9Effect {
+  readonly bonusHan: number;
+}
+
+interface AkuukanPlayerSkill1_12Effect {
   readonly bonusHan: number;
 }
 
@@ -187,6 +198,44 @@ function getEnabledAkuukanPlayerSkill1_9Effect(
   return { bonusHan };
 }
 
+function getEnabledAkuukanPlayerSkill1_12Effect(
+  akuukan: AkuukanGameState
+): AkuukanPlayerSkill1_12Effect | null {
+  const equippedSkill =
+    getEquippedPlayerSkill(
+      akuukan,
+      "1-12"
+    );
+
+  if (
+    !equippedSkill ||
+    isAkuukanSourceDisabled(
+      akuukan,
+      "player-skill:1-12"
+    )
+  ) {
+    return null;
+  }
+
+  const bonusHan =
+    getPlayerSkillLevelDefinition(
+      getPlayerSkillDefinition("1-12"),
+      equippedSkill.level
+    ).effectValues.bonusHan;
+
+  if (
+    typeof bonusHan !== "number" ||
+    !Number.isInteger(bonusHan) ||
+    bonusHan < 1
+  ) {
+    throw new Error(
+      "スキル1-12のボーナス翻が不正です。"
+    );
+  }
+
+  return { bonusHan };
+}
+
 export function countAkuukanPhysicalHonorDiscards(
   discards: readonly Discard[]
 ): number {
@@ -257,6 +306,24 @@ export function getAkuukanPlayerSkill1_9BonusHan(
 
   return (
     getEnabledAkuukanPlayerSkill1_9Effect(
+      input.akuukan
+    )?.bonusHan ?? 0
+  );
+}
+
+export function getAkuukanPlayerSkill1_12BonusHan(
+  input: AkuukanPlayerSkill1_12BonusHanInput
+): number {
+  if (
+    !input.winnerIsPlayer ||
+    !input.playerIsFourth ||
+    !input.hasValidYaku
+  ) {
+    return 0;
+  }
+
+  return (
+    getEnabledAkuukanPlayerSkill1_12Effect(
       input.akuukan
     )?.bonusHan ?? 0
   );
