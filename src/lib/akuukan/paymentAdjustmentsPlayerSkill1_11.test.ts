@@ -5,6 +5,7 @@ import {
 } from "vitest";
 import {
   addAkuukanPlayerSkill1_11PaymentPoints,
+  applyAkuukanPaymentMultipliers,
   getAkuukanPlayerSkill1_11AdditionalPaymentPoints
 } from "./paymentAdjustments";
 import {
@@ -126,5 +127,26 @@ describe("プレイヤースキル1-11の固定点加算", () => {
     ).toThrow(
       "固定点加算後の支払額が安全な整数になりません。"
     );
+  });
+
+    it("スキル1-10との併用時は固定点を加算してから倍率を適用する", () => {
+    const akuukan =
+      createInitialAkuukanGameState({
+        enemyId: "enemy-1",
+        equippedSkills: [
+          { id: "1-10", level: 5 },
+          { id: "1-11", level: 5 }
+        ]
+      });
+
+    expect(
+      applyAkuukanPaymentMultipliers({
+        akuukan,
+        winnerIsPlayer: true,
+        payerIsPlayer: false,
+        winnerIsSelectedEnemy: false,
+        paymentPoints: 1300
+      })
+    ).toBe(4200);
   });
 });
