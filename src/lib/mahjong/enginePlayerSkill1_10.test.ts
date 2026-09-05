@@ -334,6 +334,34 @@ function roundUpToHundred(
   return Math.ceil(points / 100) * 100;
 }
 
+function equipPlayerSkill1_11(
+  state: GameState,
+  level: SkillLevel = 5
+): GameState {
+  if (!state.akuukan) {
+    throw new Error(
+      "亜空間対局状態がありません。"
+    );
+  }
+
+  state.akuukan = {
+    ...state.akuukan,
+    setup: {
+      ...state.akuukan.setup,
+      equippedSkills: [
+        ...state.akuukan.setup.equippedSkills
+          .filter(
+            (skill) =>
+              skill.id !== "1-11"
+          ),
+        { id: "1-11", level }
+      ]
+    }
+  };
+
+  return state;
+}
+
 describe("プレイヤースキル1-10のエンジン統合", () => {
   it("プレイヤーのロン受取額へ本場後に倍率を適用し供託点は除外する", () => {
     const normalState =
@@ -511,6 +539,204 @@ describe("プレイヤースキル1-10のエンジン統合", () => {
           -(normalChanges.get(seat) ?? 0) *
             1.5
         )
+      );
+    }
+
+    const expectedPlayerChange =
+      [1, 2, 3].reduce(
+        (total, seat) =>
+          total -
+          (skillChanges.get(
+            seat as SeatIndex
+          ) ?? 0),
+        2000
+      );
+
+    expect(skillChanges.get(0)).toBe(
+      expectedPlayerChange
+    );
+  });
+});
+
+describe("プレイヤースキル1-11のエンジン統合", () => {
+  it("プレイヤーのロン受取額へ本場後に固定点を加算し供託点は除外する", () => {
+    const normalState =
+      preparePlayerRonState(null);
+    const skillState =
+      equipPlayerSkill1_11(
+        preparePlayerRonState(null)
+      );
+    normalState.round.honba = 2;
+    skillState.round.honba = 2;
+    normalState.round.riichiPool = 3000;
+    skillState.round.riichiPool = 3000;
+
+    const normal = declarePlayerRon(
+      normalState
+    );
+    const skill = declarePlayerRon(
+      skillState
+    );
+    const expectedPayment =
+      -getPointChange(normal, 1) + 1500;
+
+    expect(
+      -getPointChange(skill, 1)
+    ).toBe(expectedPayment);
+    expect(getPointChange(skill, 0)).toBe(
+      expectedPayment + 3000
+    );
+  });
+
+  it("プレイヤーのツモ和了では各支払者へ固定点を加算する", () => {
+    const normal = declarePlayerTsumo(
+      preparePlayerTsumoState(null)
+    );
+    const skill = declarePlayerTsumo(
+      equipPlayerSkill1_11(
+        preparePlayerTsumoState(null)
+      )
+    );
+
+    for (
+      const seat of [1, 2, 3] as const
+    ) {
+      expect(
+        -getPointChange(skill, seat)
+      ).toBe(
+        -getPointChange(normal, seat) +
+          1500
+      );
+    }
+  });
+
+  it("CPUの和了には固定点を加算しない", () => {
+    const normal = skipPlayerRon(
+      prepareSelectedEnemyRonState(
+        null,
+        "enemy-1"
+      )
+    );
+    const skill = skipPlayerRon(
+      equipPlayerSkill1_11(
+        prepareSelectedEnemyRonState(
+          null,
+          "enemy-1"
+        )
+      )
+    );
+
+    for (
+      const seat of [0, 1, 2, 3] as const
+    ) {
+      expect(
+        getPointChange(skill, seat)
+      ).toBe(
+        getPointChange(normal, seat)
+      );
+    }
+  });
+
+  it("スキル1-10との併用時は固定点加算後に倍率を適用する", () => {
+    const normal = declarePlayerRon(
+      preparePlayerRonState(null)
+    );
+    const combined = declarePlayerRon(
+      equipPlayerSkill1_11(
+        preparePlayerRonState(5)
+      )
+    );
+    const normalPayment =
+      -getPointChange(normal, 1);
+
+    expect(
+      -getPointChange(combined, 1)
+    ).toBe(
+      roundUpToHundred(
+        (normalPayment + 1500) * 1.5
+      )
+    );
+  });
+
+  it("E-18による無効化中は固定点を加算しない", () => {
+    const normal = declarePlayerRon(
+      preparePlayerRonState(null)
+    );
+    const disabledState =
+      equipPlayerSkill1_11(
+        preparePlayerRonState(
+          null,
+          "enemy-6"
+        )
+      );
+
+    if (!disabledState.akuukan) {
+      throw new Error(
+        "亜空間対局状態がありません。"
+      );
+    }
+
+    disabledState.akuukan =
+      disableAkuukanSource(
+        disabledState.akuukan,
+        "player-skill:1-11"
+      );
+
+    const disabled = declarePlayerRon(
+      disabledState
+    );
+
+    expect(getPointChange(disabled, 0)).toBe(
+      getPointChange(normal, 0)
+    );
+  });
+
+  it("プレイヤーの流し満貫へ本場後に固定点を加算し供託点は除外する", () => {
+    const normalState =
+      preparePlayerNagashiState(null);
+    const skillState =
+      equipPlayerSkill1_11(
+        preparePlayerNagashiState(null)
+      );
+    const normal = playPlayerDiscard(
+      normalState,
+      normalState.round.players[0]
+        .hand[0].id,
+      () => 0.5
+    );
+    const skill = playPlayerDiscard(
+      skillState,
+      skillState.round.players[0]
+        .hand[0].id,
+      () => 0.5
+    );
+    const normalChanges = new Map(
+      normal.round.nagashiManganResult
+        ?.pointChanges.map(
+          ({ seat, change }) => [
+            seat,
+            change
+          ]
+        ) ?? []
+    );
+    const skillChanges = new Map(
+      skill.round.nagashiManganResult
+        ?.pointChanges.map(
+          ({ seat, change }) => [
+            seat,
+            change
+          ]
+        ) ?? []
+    );
+
+    for (
+      const seat of [1, 2, 3] as const
+    ) {
+      expect(
+        -(skillChanges.get(seat) ?? 0)
+      ).toBe(
+        -(normalChanges.get(seat) ?? 0) +
+          1500
       );
     }
 
