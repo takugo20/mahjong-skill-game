@@ -16,7 +16,8 @@ import type {
 } from "../mahjong/yakuman";
 import {
   getAkuukanPlayerSkill1_7BonusHan,
-  getAkuukanPlayerSkill1_8BonusHan
+  getAkuukanPlayerSkill1_8BonusHan,
+  getAkuukanPlayerSkill1_9BonusHan
 } from "./bonusHan";
 import {
   applyAkuukanE21MinimumMangan
@@ -187,6 +188,10 @@ export function createAkuukanWinningCandidateBonusHanEvaluator(
         discards: input.discards
       }) +
       getAkuukanPlayerSkill1_8BonusHan({
+        ...commonInput,
+        waitType: context.waitType
+      }) +
+      getAkuukanPlayerSkill1_9BonusHan({
         ...commonInput,
         waitType: context.waitType
       })
