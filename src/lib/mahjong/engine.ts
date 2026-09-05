@@ -64,8 +64,7 @@ import {
   recoverAkuukanMp
 } from "../akuukan/mp";
 import {
-  applyAkuukanE20PaymentMultiplier,
-  isAkuukanE20PaymentMultiplierEnabled
+  applyAkuukanPaymentMultipliers
 } from "../akuukan/paymentAdjustments";
 import {
   applyAkuukanPlayerSkill1_6AtDeal
@@ -1609,21 +1608,14 @@ function createWinInput(
   };
 }
 
-function applyAkuukanE20ToWinResolution(
+function applyAkuukanPaymentMultipliersToWinResolution(
   state: GameState,
   resolution:
     ValidRoundWinResolution
 ): ValidRoundWinResolution {
   const akuukan = state.akuukan;
 
-  if (
-    !akuukan ||
-    resolution.winnerSeat !== 2 ||
-    !isAkuukanE20PaymentMultiplierEnabled(
-      akuukan,
-      true
-    )
-  ) {
+  if (!akuukan) {
     return resolution;
   }
 
@@ -1672,9 +1664,14 @@ function applyAkuukanE20ToWinResolution(
         }
 
         const paymentPoints =
-          applyAkuukanE20PaymentMultiplier({
+          applyAkuukanPaymentMultipliers({
             akuukan,
-            winnerIsSelectedEnemy: true,
+            winnerIsPlayer:
+              resolution.winnerSeat === 0,
+            payerIsPlayer:
+              change.seat === 0,
+            winnerIsSelectedEnemy:
+              resolution.winnerSeat === 2,
             paymentPoints: -change.change
           });
 
@@ -1732,27 +1729,20 @@ function applyAkuukanE20ToWinResolution(
   };
 }
 
-function applyAkuukanE20ToNagashiSettlement(
+function applyAkuukanPaymentMultipliersToNagashiSettlement(
   state: GameState,
   settlement:
     NagashiManganSettlementResult
 ): NagashiManganSettlementResult {
-  const selectedEnemy =
-    state.round.players[2];
   const akuukan = state.akuukan;
 
-  if (
-    !akuukan ||
-    !settlement.winnerIds.includes(
-      selectedEnemy.id
-    ) ||
-    !isAkuukanE20PaymentMultiplierEnabled(
-      akuukan,
-      true
-    )
-  ) {
+  if (!akuukan) {
     return settlement;
   }
+
+  const player = state.round.players[0];
+  const selectedEnemy =
+    state.round.players[2];
 
   const changesByPlayerId = new Map(
     state.round.players.map(
@@ -1763,19 +1753,17 @@ function applyAkuukanE20ToNagashiSettlement(
     settlement.payments.map(
       (payment) => ({
         ...payment,
-        points:
-          payment.winnerId ===
-          selectedEnemy.id
-            ? applyAkuukanE20PaymentMultiplier(
-                {
-                  akuukan,
-                  winnerIsSelectedEnemy:
-                    true,
-                  paymentPoints:
-                    payment.points
-                }
-              )
-            : payment.points
+        points: applyAkuukanPaymentMultipliers({
+          akuukan,
+          winnerIsPlayer:
+            payment.winnerId === player.id,
+          payerIsPlayer:
+            payment.payerId === player.id,
+          winnerIsSelectedEnemy:
+            payment.winnerId ===
+            selectedEnemy.id,
+          paymentPoints: payment.points
+        })
       })
     );
 
@@ -2537,7 +2525,7 @@ function finishRoundWithExhaustiveDraw(
     });
   const nagashiSettlement =
     baseNagashiSettlement
-      ? applyAkuukanE20ToNagashiSettlement(
+      ? applyAkuukanPaymentMultipliersToNagashiSettlement(
           state,
           baseNagashiSettlement
         )
@@ -2693,7 +2681,10 @@ export function declarePlayerTsumo(
 
   return finishRoundWithWin(
     application.state,
-    resolution
+    applyAkuukanPaymentMultipliersToWinResolution(
+      application.state,
+      resolution
+    )
   );
 }
 
@@ -2793,7 +2784,7 @@ function getValidWinResolution(
     );
 
     return resolution.valid
-      ? applyAkuukanE20ToWinResolution(
+      ? applyAkuukanPaymentMultipliersToWinResolution(
           state,
           resolution
         )
