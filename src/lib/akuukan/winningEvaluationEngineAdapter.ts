@@ -1,8 +1,12 @@
 import type {
+  WinningCandidateBonusHanEvaluator,
   WinningCandidateScoreAdjuster,
   WinningCandidateYakuEvaluation,
   WinningCandidateYakuEvaluator
 } from "../mahjong/winning";
+import type {
+  Discard
+} from "../mahjong/types";
 import type {
   NormalYakuResult,
   WinMethod
@@ -10,6 +14,9 @@ import type {
 import type {
   YakumanResult
 } from "../mahjong/yakuman";
+import {
+  getAkuukanPlayerSkill1_7BonusHan
+} from "./bonusHan";
 import {
   applyAkuukanE21MinimumMangan
 } from "./handValueAdjustments";
@@ -53,6 +60,11 @@ export interface CreateAkuukanWinningCandidateScoreAdjusterInput
   extends CreateAkuukanWinningCandidateYakuEvaluatorInput {
   readonly winMethod: WinMethod;
   readonly dealer: boolean;
+}
+
+export interface CreateAkuukanWinningCandidateBonusHanEvaluatorInput
+  extends CreateAkuukanWinningCandidateYakuEvaluatorInput {
+  readonly discards: readonly Discard[];
 }
 
 export function shouldAkuukanWinningCandidateBeTreatedAsClosed(
@@ -153,6 +165,21 @@ export function createAkuukanWinningCandidateYakuEvaluator(
       resolution
     );
   };
+}
+
+export function createAkuukanWinningCandidateBonusHanEvaluator(
+  input:
+    CreateAkuukanWinningCandidateBonusHanEvaluatorInput
+): WinningCandidateBonusHanEvaluator {
+  return (_context, yakuEvaluation) =>
+    getAkuukanPlayerSkill1_7BonusHan({
+      akuukan: input.akuukan,
+      winnerIsPlayer:
+        input.owner === "player",
+      discards: input.discards,
+      hasValidYaku:
+        yakuEvaluation.hasValidYaku
+    });
 }
 
 export function createAkuukanWinningCandidateScoreAdjuster(
