@@ -15,7 +15,8 @@ import type {
   YakumanResult
 } from "../mahjong/yakuman";
 import {
-  getAkuukanPlayerSkill1_7BonusHan
+  getAkuukanPlayerSkill1_7BonusHan,
+  getAkuukanPlayerSkill1_8BonusHan
 } from "./bonusHan";
 import {
   applyAkuukanE21MinimumMangan
@@ -171,15 +172,26 @@ export function createAkuukanWinningCandidateBonusHanEvaluator(
   input:
     CreateAkuukanWinningCandidateBonusHanEvaluatorInput
 ): WinningCandidateBonusHanEvaluator {
-  return (_context, yakuEvaluation) =>
-    getAkuukanPlayerSkill1_7BonusHan({
+  return (context, yakuEvaluation) => {
+    const commonInput = {
       akuukan: input.akuukan,
       winnerIsPlayer:
         input.owner === "player",
-      discards: input.discards,
       hasValidYaku:
         yakuEvaluation.hasValidYaku
-    });
+    };
+
+    return (
+      getAkuukanPlayerSkill1_7BonusHan({
+        ...commonInput,
+        discards: input.discards
+      }) +
+      getAkuukanPlayerSkill1_8BonusHan({
+        ...commonInput,
+        waitType: context.waitType
+      })
+    );
+  };
 }
 
 export function createAkuukanWinningCandidateScoreAdjuster(
