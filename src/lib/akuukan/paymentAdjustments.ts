@@ -33,6 +33,11 @@ export interface AkuukanPlayerSkill1_10PaymentInput {
   readonly paymentPoints: number;
 }
 
+export interface ApplyAkuukanPaymentMultipliersInput
+  extends AkuukanPlayerSkill1_10PaymentInput {
+  readonly winnerIsSelectedEnemy: boolean;
+}
+
 function assertValidPaymentPoints(
   paymentPoints: number
 ): void {
@@ -134,6 +139,32 @@ export function applyAkuukanPlayerSkill1_10PaymentMultiplier(
   );
 }
 
+export function applyAkuukanPaymentMultipliers(
+  input: ApplyAkuukanPaymentMultipliersInput
+): number {
+  assertValidPaymentPoints(
+    input.paymentPoints
+  );
+
+  const playerSkillMultiplier =
+    getAkuukanPlayerSkill1_10PaymentMultiplier(
+      input
+    );
+  const enemyAbilityMultiplier =
+    isAkuukanE20PaymentMultiplierEnabled(
+      input.akuukan,
+      input.winnerIsSelectedEnemy
+    )
+      ? AKUUKAN_E20_PAYMENT_MULTIPLIER
+      : 1;
+
+  return roundUpToHundred(
+    input.paymentPoints *
+      playerSkillMultiplier *
+      enemyAbilityMultiplier
+  );
+}
+
 export function isAkuukanE20PaymentMultiplierEnabled(
   akuukan: AkuukanGameState,
   winnerIsSelectedEnemy: boolean
@@ -151,21 +182,9 @@ export function applyAkuukanE20PaymentMultiplier(
   input:
     ApplyAkuukanE20PaymentMultiplierInput
 ): number {
-  assertValidPaymentPoints(
-    input.paymentPoints
-  );
-
-  if (
-    !isAkuukanE20PaymentMultiplierEnabled(
-      input.akuukan,
-      input.winnerIsSelectedEnemy
-    )
-  ) {
-    return input.paymentPoints;
-  }
-
-  return roundUpToHundred(
-    input.paymentPoints *
-      AKUUKAN_E20_PAYMENT_MULTIPLIER
-  );
+  return applyAkuukanPaymentMultipliers({
+    ...input,
+    winnerIsPlayer: false,
+    payerIsPlayer: false
+  });
 }
