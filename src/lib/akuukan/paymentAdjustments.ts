@@ -2,6 +2,18 @@ import type {
   AkuukanGameState
 } from "./types";
 import {
+  getEquippedPlayerSkill
+} from "./equipment";
+import {
+  getPlayerSkillDefinition
+} from "./playerSkillCatalog";
+import {
+  getPlayerSkillLevelDefinition
+} from "./playerSkillCatalogTypes";
+import {
+  isAkuukanSourceDisabled
+} from "./state";
+import {
   isEnemyAbilityEnabled
 } from "./winningEvaluationEnemyAbilityAdjustments";
 
@@ -11,6 +23,13 @@ export const AKUUKAN_E20_PAYMENT_MULTIPLIER =
 export interface ApplyAkuukanE20PaymentMultiplierInput {
   readonly akuukan: AkuukanGameState;
   readonly winnerIsSelectedEnemy: boolean;
+  readonly paymentPoints: number;
+}
+
+export interface AkuukanPlayerSkill1_10PaymentInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winnerIsPlayer: boolean;
+  readonly payerIsPlayer: boolean;
   readonly paymentPoints: number;
 }
 
@@ -40,6 +59,79 @@ function roundUpToHundred(
   }
 
   return rounded;
+}
+
+function getEnabledAkuukanPlayerSkill1_10Multiplier(
+  akuukan: AkuukanGameState
+): number | null {
+  const equippedSkill =
+    getEquippedPlayerSkill(
+      akuukan,
+      "1-10"
+    );
+
+  if (
+    !equippedSkill ||
+    isAkuukanSourceDisabled(
+      akuukan,
+      "player-skill:1-10"
+    )
+  ) {
+    return null;
+  }
+
+  const paymentMultiplier =
+    getPlayerSkillLevelDefinition(
+      getPlayerSkillDefinition("1-10"),
+      equippedSkill.level
+    ).effectValues.paymentMultiplier;
+
+  if (
+    typeof paymentMultiplier !== "number" ||
+    !Number.isFinite(paymentMultiplier) ||
+    paymentMultiplier <= 0
+  ) {
+    throw new Error(
+      "スキル1-10の支払倍率が不正です。"
+    );
+  }
+
+  return paymentMultiplier;
+}
+
+export function getAkuukanPlayerSkill1_10PaymentMultiplier(
+  input: Omit<
+    AkuukanPlayerSkill1_10PaymentInput,
+    "paymentPoints"
+  >
+): number {
+  if (
+    !input.winnerIsPlayer &&
+    !input.payerIsPlayer
+  ) {
+    return 1;
+  }
+
+  return (
+    getEnabledAkuukanPlayerSkill1_10Multiplier(
+      input.akuukan
+    ) ?? 1
+  );
+}
+
+export function applyAkuukanPlayerSkill1_10PaymentMultiplier(
+  input: AkuukanPlayerSkill1_10PaymentInput
+): number {
+  assertValidPaymentPoints(
+    input.paymentPoints
+  );
+
+  return roundUpToHundred(
+    input.paymentPoints *
+      getAkuukanPlayerSkill1_10PaymentMultiplier(
+        input
+      )
+  );
 }
 
 export function isAkuukanE20PaymentMultiplierEnabled(
