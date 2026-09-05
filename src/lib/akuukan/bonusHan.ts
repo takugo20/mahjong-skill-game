@@ -1,4 +1,7 @@
 import type {
+  WaitType
+} from "../mahjong/hand";
+import type {
   Discard
 } from "../mahjong/types";
 import {
@@ -24,8 +27,19 @@ export interface AkuukanPlayerSkill1_7BonusHanInput {
   readonly hasValidYaku: boolean;
 }
 
+export interface AkuukanPlayerSkill1_8BonusHanInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winnerIsPlayer: boolean;
+  readonly waitType: WaitType;
+  readonly hasValidYaku: boolean;
+}
+
 interface AkuukanPlayerSkill1_7Effect {
   readonly minimumHonorDiscards: number;
+  readonly bonusHan: number;
+}
+
+interface AkuukanPlayerSkill1_8Effect {
   readonly bonusHan: number;
 }
 
@@ -86,6 +100,44 @@ function getEnabledAkuukanPlayerSkill1_7Effect(
   };
 }
 
+function getEnabledAkuukanPlayerSkill1_8Effect(
+  akuukan: AkuukanGameState
+): AkuukanPlayerSkill1_8Effect | null {
+  const equippedSkill =
+    getEquippedPlayerSkill(
+      akuukan,
+      "1-8"
+    );
+
+  if (
+    !equippedSkill ||
+    isAkuukanSourceDisabled(
+      akuukan,
+      "player-skill:1-8"
+    )
+  ) {
+    return null;
+  }
+
+  const bonusHan =
+    getPlayerSkillLevelDefinition(
+      getPlayerSkillDefinition("1-8"),
+      equippedSkill.level
+    ).effectValues.bonusHan;
+
+  if (
+    typeof bonusHan !== "number" ||
+    !Number.isInteger(bonusHan) ||
+    bonusHan < 1
+  ) {
+    throw new Error(
+      "スキル1-8のボーナス翻が不正です。"
+    );
+  }
+
+  return { bonusHan };
+}
+
 export function countAkuukanPhysicalHonorDiscards(
   discards: readonly Discard[]
 ): number {
@@ -120,4 +172,22 @@ export function getAkuukanPlayerSkill1_7BonusHan(
   ) >= effect.minimumHonorDiscards
     ? effect.bonusHan
     : 0;
+}
+
+export function getAkuukanPlayerSkill1_8BonusHan(
+  input: AkuukanPlayerSkill1_8BonusHanInput
+): number {
+  if (
+    !input.winnerIsPlayer ||
+    !input.hasValidYaku ||
+    input.waitType !== "tanki"
+  ) {
+    return 0;
+  }
+
+  return (
+    getEnabledAkuukanPlayerSkill1_8Effect(
+      input.akuukan
+    )?.bonusHan ?? 0
+  );
 }
