@@ -232,6 +232,14 @@ export function applyAkuukanPaymentMultipliers(
     input.paymentPoints
   );
 
+  const paymentPointsAfterAddition =
+    addAkuukanPlayerSkill1_11PaymentPoints({
+      akuukan: input.akuukan,
+      winnerIsPlayer:
+        input.winnerIsPlayer,
+      paymentPoints: input.paymentPoints
+    });
+
   const playerSkillMultiplier =
     getAkuukanPlayerSkill1_10PaymentMultiplier(
       input
@@ -245,7 +253,7 @@ export function applyAkuukanPaymentMultipliers(
       : 1;
 
   return roundUpToHundred(
-    input.paymentPoints *
+    paymentPointsAfterAddition *
       playerSkillMultiplier *
       enemyAbilityMultiplier
   );
