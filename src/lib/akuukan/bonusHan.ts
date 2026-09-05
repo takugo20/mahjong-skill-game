@@ -34,12 +34,23 @@ export interface AkuukanPlayerSkill1_8BonusHanInput {
   readonly hasValidYaku: boolean;
 }
 
+export interface AkuukanPlayerSkill1_9BonusHanInput {
+  readonly akuukan: AkuukanGameState;
+  readonly winnerIsPlayer: boolean;
+  readonly waitType: WaitType;
+  readonly hasValidYaku: boolean;
+}
+
 interface AkuukanPlayerSkill1_7Effect {
   readonly minimumHonorDiscards: number;
   readonly bonusHan: number;
 }
 
 interface AkuukanPlayerSkill1_8Effect {
+  readonly bonusHan: number;
+}
+
+interface AkuukanPlayerSkill1_9Effect {
   readonly bonusHan: number;
 }
 
@@ -138,6 +149,44 @@ function getEnabledAkuukanPlayerSkill1_8Effect(
   return { bonusHan };
 }
 
+function getEnabledAkuukanPlayerSkill1_9Effect(
+  akuukan: AkuukanGameState
+): AkuukanPlayerSkill1_9Effect | null {
+  const equippedSkill =
+    getEquippedPlayerSkill(
+      akuukan,
+      "1-9"
+    );
+
+  if (
+    !equippedSkill ||
+    isAkuukanSourceDisabled(
+      akuukan,
+      "player-skill:1-9"
+    )
+  ) {
+    return null;
+  }
+
+  const bonusHan =
+    getPlayerSkillLevelDefinition(
+      getPlayerSkillDefinition("1-9"),
+      equippedSkill.level
+    ).effectValues.bonusHan;
+
+  if (
+    typeof bonusHan !== "number" ||
+    !Number.isInteger(bonusHan) ||
+    bonusHan < 1
+  ) {
+    throw new Error(
+      "スキル1-9のボーナス翻が不正です。"
+    );
+  }
+
+  return { bonusHan };
+}
+
 export function countAkuukanPhysicalHonorDiscards(
   discards: readonly Discard[]
 ): number {
@@ -187,6 +236,27 @@ export function getAkuukanPlayerSkill1_8BonusHan(
 
   return (
     getEnabledAkuukanPlayerSkill1_8Effect(
+      input.akuukan
+    )?.bonusHan ?? 0
+  );
+}
+
+export function getAkuukanPlayerSkill1_9BonusHan(
+  input: AkuukanPlayerSkill1_9BonusHanInput
+): number {
+  if (
+    !input.winnerIsPlayer ||
+    !input.hasValidYaku ||
+    (
+      input.waitType !== "penchan" &&
+      input.waitType !== "kanchan"
+    )
+  ) {
+    return 0;
+  }
+
+  return (
+    getEnabledAkuukanPlayerSkill1_9Effect(
       input.akuukan
     )?.bonusHan ?? 0
   );
