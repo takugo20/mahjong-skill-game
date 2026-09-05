@@ -59,6 +59,12 @@ export type WinningCandidateYakuEvaluator = (
   context: YakumanContext
 ) => WinningCandidateYakuEvaluation;
 
+export type WinningCandidateBonusHanEvaluator = (
+  context: YakumanContext,
+  yakuEvaluation:
+    WinningCandidateYakuEvaluation
+) => number;
+
 export type WinningCandidateScoreAdjuster = (
   score: ScoreCalculationResult
 ) => ScoreCalculationResult;
@@ -88,6 +94,8 @@ export interface WinningHandEvaluationInput {
   kazoeYakuman?: boolean;
   candidateYakuEvaluator?:
     WinningCandidateYakuEvaluator;
+  candidateBonusHanEvaluator?:
+    WinningCandidateBonusHanEvaluator;
   candidateScoreAdjuster?:
     WinningCandidateScoreAdjuster;
 }
@@ -203,6 +211,30 @@ function adjustCandidateScore(
   return input.candidateScoreAdjuster
     ? input.candidateScoreAdjuster(score)
     : score;
+}
+
+function evaluateCandidateBonusHan(
+  input: WinningHandEvaluationInput,
+  context: YakumanContext,
+  yakuEvaluation:
+    WinningCandidateYakuEvaluation
+): number {
+  const bonusHan =
+    input.candidateBonusHanEvaluator?.(
+      context,
+      yakuEvaluation
+    ) ?? 0;
+
+  if (
+    !Number.isInteger(bonusHan) ||
+    bonusHan < 0
+  ) {
+    throw new Error(
+      "和了候補のボーナス翻は0以上の整数で指定してください。"
+    );
+  }
+
+  return bonusHan;
 }
 
 function compareCandidates(
@@ -386,8 +418,16 @@ export function evaluateWinningHand(
         continue;
       }
 
+      const skillBonusHan =
+        evaluateCandidateBonusHan(
+          input,
+          context,
+          yakuEvaluation
+        );
+      const bonusHan =
+        skillBonusHan + dora.totalHan;
       const totalHan =
-        yakuHan + dora.totalHan;
+        yakuHan + bonusHan;
 
       const score = adjustCandidateScore(
         input,
@@ -417,7 +457,7 @@ export function evaluateWinningHand(
         yakuman: [],
         dora,
         yakuHan,
-        bonusHan: dora.totalHan,
+        bonusHan,
         totalHan,
         yakumanMultiplier: 0,
         fu,
