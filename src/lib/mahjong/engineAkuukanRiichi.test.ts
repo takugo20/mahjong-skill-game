@@ -7,6 +7,7 @@ import type {
   AkuukanMatchSetup
 } from "../akuukan/types";
 import {
+  createPlayerRiichiProgression,
   createInitialGameState,
   getPlayerRiichiDiscardTileIds,
   playPlayerDiscard
@@ -442,6 +443,63 @@ describe("亜空間麻雀の副露立直", () => {
       hand[9].id,
       hand[10].id
     ]);
+  });
+
+    it("2-7装備中のプレイヤーが副露後に立直を成立させる", () => {
+    const state =
+      createPlayerOpenRiichiState({
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-7",
+            level: 1
+          }
+        ]
+      });
+    const candidateTileId =
+      getPlayerRiichiDiscardTileIds(
+        state
+      )[0];
+
+    if (!candidateTileId) {
+      throw new Error(
+        "副露立直の候補牌が見つかりません。"
+      );
+    }
+
+    const progression =
+      createPlayerRiichiProgression(
+        state,
+        candidateTileId,
+        () => 0.5
+      );
+    const declaredPlayer =
+      progression.stateAfterDeclaration
+        .round.players[0];
+    const declarationDiscard =
+      declaredPlayer.discards[
+        declaredPlayer.discards.length - 1
+      ];
+
+    expect(declaredPlayer.riichi).toBe(true);
+    expect(declaredPlayer.doubleRiichi).toBe(
+      false
+    );
+    expect(declaredPlayer.ippatsu).toBe(true);
+    expect(declaredPlayer.score).toBe(24000);
+    expect(
+      progression.stateAfterDeclaration
+        .round.riichiPool
+    ).toBe(1000);
+    expect(declarationDiscard?.tile.id).toBe(
+      candidateTileId
+    );
+    expect(
+      declarationDiscard?.riichiDeclaration
+    ).toBe(true);
+    expect(
+      progression.stateAfterDeclaration.notice
+    ).toBe("立直が成立しました。");
   });
 
   it("発動中の1-15だけでは副露立直を許可しない", () => {
