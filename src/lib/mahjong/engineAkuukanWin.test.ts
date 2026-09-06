@@ -1933,4 +1933,58 @@ describe("ゲーム本体の亜空間和了判定", () => {
         .totalPoints
     ).toBe(5800);
   });
+
+    it("混全帯強化Lv.5でプレイヤーの副露チャンタへ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-10",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenChantaWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "chanta",
+        name: "混全帯么九",
+        han: 3
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(7700);
+  });
 });
