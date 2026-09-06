@@ -91,6 +91,7 @@ import {
 } from "../akuukan/turnCountChange";
 import {
   createAkuukanWinningCandidateBonusHanEvaluator,
+  createAkuukanWinningCandidateHanFuAdjuster,
   createAkuukanWinningCandidateScoreAdjuster,
   createAkuukanWinningCandidateYakuEvaluator,
   shouldAkuukanWinningCandidateBeTreatedAsClosed
@@ -1614,6 +1615,10 @@ function createWinInput(
                     state
                   )
               }
+            ),
+          candidateHanFuAdjuster:
+            createAkuukanWinningCandidateHanFuAdjuster(
+              akuukanWinningInput
             ),
           candidateScoreAdjuster:
             createAkuukanWinningCandidateScoreAdjuster(
