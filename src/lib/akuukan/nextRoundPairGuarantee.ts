@@ -1,4 +1,5 @@
 import type {
+  NumberSuit,
   Tile
 } from "../mahjong/types";
 import {
@@ -43,6 +44,7 @@ export interface ReservePlayerSkill2_19Input {
 export interface ApplyPlayerSkill2_19AtDealInput {
   readonly akuukan: AkuukanGameState;
   readonly availableTiles: readonly Tile[];
+  readonly preferredSuit?: NumberSuit;
 }
 
 export interface PlayerSkill2_19DealResult {
@@ -56,9 +58,14 @@ export interface PlayerSkill2_19DealResult {
 
 function selectPairTileTypeIndices(
   availableTiles: readonly Tile[],
-  minimumPairCount: number
+  minimumPairCount: number,
+  preferredSuit?: NumberSuit
 ): number[] {
   const counts = new Map<number, number>();
+  const suits = new Map<
+    number,
+    Tile["suit"]
+  >();
   const encounterOrder: number[] = [];
 
   for (const tile of availableTiles) {
@@ -67,6 +74,7 @@ function selectPairTileTypeIndices(
 
     if (!counts.has(tileTypeIndex)) {
       encounterOrder.push(tileTypeIndex);
+      suits.set(tileTypeIndex, tile.suit);
     }
 
     counts.set(
@@ -75,12 +83,30 @@ function selectPairTileTypeIndices(
     );
   }
 
-  return encounterOrder
-    .filter(
-      (tileTypeIndex) =>
-        (counts.get(tileTypeIndex) ?? 0) >= 2
-    )
-    .slice(0, minimumPairCount);
+  const candidates = encounterOrder.filter(
+    (tileTypeIndex) =>
+      (counts.get(tileTypeIndex) ?? 0) >= 2
+  );
+  const prioritizedCandidates =
+    preferredSuit
+      ? [
+          ...candidates.filter(
+            (tileTypeIndex) =>
+              suits.get(tileTypeIndex) ===
+              preferredSuit
+          ),
+          ...candidates.filter(
+            (tileTypeIndex) =>
+              suits.get(tileTypeIndex) !==
+              preferredSuit
+          )
+        ]
+      : candidates;
+
+  return prioritizedCandidates.slice(
+    0,
+    minimumPairCount
+  );
 }
 
 export function applyPlayerSkill2_19AtDeal(
@@ -126,7 +152,8 @@ export function applyPlayerSkill2_19AtDeal(
   const selectedTileTypeIndices =
     selectPairTileTypeIndices(
       input.availableTiles,
-      minimumPairCount
+      minimumPairCount,
+      input.preferredSuit
     );
   const remainingRequiredCounts = new Map(
     selectedTileTypeIndices.map(
