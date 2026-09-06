@@ -2415,9 +2415,23 @@ function finishRoundWithWin(
       state,
       [resolution]
     );
+    const playerMp =
+    state.akuukan &&
+    resolution.winnerSeat === 0
+      ? recoverPlayerSkill2_18Mp({
+          akuukan: state.akuukan,
+          playerMp: state.playerMp,
+          maxMp: state.maxMp,
+          normalYakuIds:
+            resolution.evaluation.best.normalYaku.map(
+              (yaku) => yaku.id
+            )
+        })
+      : state.playerMp;
 
   return {
     ...state,
+    playerMp,
     ...(akuukan ? { akuukan } : {}),
     round: {
       ...state.round,
