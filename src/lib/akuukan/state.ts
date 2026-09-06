@@ -305,7 +305,9 @@ export function advanceAkuukanTurnEffects(
         effect.sourceId ===
           "player-skill:1-15" ||
         effect.sourceId ===
-          "player-skill:3-9"
+          "player-skill:3-9" ||
+        effect.sourceId ===
+          "player-skill:3-10"
       ) {
         return [effect];
       }
@@ -376,7 +378,9 @@ export function beginAkuukanRound(
       state.activeEffects.filter(
         (effect) =>
           effect.sourceId !==
-          "player-skill:3-9"
+            "player-skill:3-9" &&
+          effect.sourceId !==
+            "player-skill:3-10"
       ),
     playerSkill3_3DamatenPlayerIds: [],
     playerSkill3_7RonImmunityActive:
