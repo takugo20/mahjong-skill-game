@@ -80,6 +80,9 @@ import {
   applyAkuukanPlayerSkill1_6AtDeal
 } from "../akuukan/nextRoundRedTile";
 import {
+  reservePlayerSkill2_19AfterWin
+} from "../akuukan/nextRoundPairGuarantee";
+import {
   applyAkuukanRedTileTransformation
 } from "../akuukan/redTileTransformation";
 import {
@@ -2410,22 +2413,35 @@ function finishRoundWithWin(
     resolution.winMethod === "tsumo"
       ? `${winner.name}がツモ和了しました。`
       : `${winner.name}が${loser?.name ?? "他家"}からロン和了しました。`;
-  const akuukan =
+  const recordedAkuukan =
     recordAkuukanE6AfterWins(
       state,
       [resolution]
     );
-    const playerMp =
-    state.akuukan &&
+  const akuukan =
+    recordedAkuukan &&
+    resolution.winnerSeat === 0
+      ? reservePlayerSkill2_19AfterWin({
+          akuukan: recordedAkuukan,
+          normalYakuIds:
+            resolution.evaluation.best
+              .evaluatedNormalYaku.map(
+                (yaku) => yaku.id
+              )
+        })
+      : recordedAkuukan;
+  const playerMp =
+    akuukan &&
     resolution.winnerSeat === 0
       ? recoverPlayerSkill2_18Mp({
-          akuukan: state.akuukan,
+          akuukan,
           playerMp: state.playerMp,
           maxMp: state.maxMp,
           normalYakuIds:
-            resolution.evaluation.best.normalYaku.map(
-              (yaku) => yaku.id
-            )
+            resolution.evaluation.best
+              .evaluatedNormalYaku.map(
+                (yaku) => yaku.id
+              )
         })
       : state.playerMp;
 
@@ -2485,7 +2501,7 @@ function finishRoundWithRonCandidates(
     );
   }
 
-  const akuukan =
+  const recordedAkuukan =
     result.kind === "singleRon" ||
     result.kind === "doubleRon"
       ? recordAkuukanE6AfterWins(
@@ -2494,7 +2510,7 @@ function finishRoundWithRonCandidates(
         )
       : state.akuukan;
 
-    const playerResolution =
+  const playerResolution =
     result.kind === "singleRon" ||
     result.kind === "doubleRon"
       ? candidates.find(
@@ -2502,16 +2518,28 @@ function finishRoundWithRonCandidates(
             candidate.winnerSeat === 0
         )
       : undefined;
+  const akuukan =
+    recordedAkuukan && playerResolution
+      ? reservePlayerSkill2_19AfterWin({
+          akuukan: recordedAkuukan,
+          normalYakuIds:
+            playerResolution.evaluation.best
+              .evaluatedNormalYaku.map(
+                (yaku) => yaku.id
+              )
+        })
+      : recordedAkuukan;
   const playerMp =
-    state.akuukan && playerResolution
+    akuukan && playerResolution
       ? recoverPlayerSkill2_18Mp({
-          akuukan: state.akuukan,
+          akuukan,
           playerMp: state.playerMp,
           maxMp: state.maxMp,
           normalYakuIds:
-            playerResolution.evaluation.best.normalYaku.map(
-              (yaku) => yaku.id
-            )
+            playerResolution.evaluation.best
+              .evaluatedNormalYaku.map(
+                (yaku) => yaku.id
+              )
         })
       : state.playerMp;
 
