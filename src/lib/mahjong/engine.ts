@@ -74,6 +74,9 @@ import {
   recoverAkuukanMp
 } from "../akuukan/mp";
 import {
+  applyPlayerSkill3_1ToDrawSettlement
+} from "../akuukan/notenPenaltyReduction";
+import {
   applyAkuukanPaymentMultipliers
 } from "../akuukan/paymentAdjustments";
 import {
@@ -2944,11 +2947,20 @@ function finishRoundWithExhaustiveDraw(
       )
       .map((player) => player.id);
 
-  const settlement =
+  const baseSettlement =
     resolveExhaustiveDrawSettlement({
       players: settlementPlayers,
       tenpaiPlayerIds
     });
+  const settlement = state.akuukan
+    ? applyPlayerSkill3_1ToDrawSettlement({
+        akuukan: state.akuukan,
+        players: settlementPlayers,
+        playerId:
+          state.round.players[0].id,
+        settlement: baseSettlement
+      })
+    : baseSettlement;
   const playersAfter = applyPointChanges(
     settlement.pointChanges
   );
