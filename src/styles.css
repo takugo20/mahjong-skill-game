@@ -3235,6 +3235,31 @@ body {
   white-space: nowrap;
 }
 
+.active-skill-status-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border: 1px solid rgb(144 232 255 / 72%);
+  border-radius: 999px;
+  color: #effcff;
+  background:
+    linear-gradient(
+      180deg,
+      #268fb5,
+      #14516e
+    );
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 34%),
+    0 0 9px rgb(82 209 255 / 24%);
+  font-size: 0.72em;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .table-actions .riichi-button {
   border-color: #ffb0aa;
   color: #fffaf6;
