@@ -17,7 +17,8 @@ import type {
 import {
   getAkuukanPlayerSkill1_7BonusHan,
   getAkuukanPlayerSkill1_8BonusHan,
-  getAkuukanPlayerSkill1_9BonusHan
+  getAkuukanPlayerSkill1_9BonusHan,
+  getAkuukanPlayerSkill1_12BonusHan
 } from "./bonusHan";
 import {
   applyAkuukanE21MinimumMangan
@@ -67,6 +68,7 @@ export interface CreateAkuukanWinningCandidateScoreAdjusterInput
 export interface CreateAkuukanWinningCandidateBonusHanEvaluatorInput
   extends CreateAkuukanWinningCandidateYakuEvaluatorInput {
   readonly discards: readonly Discard[];
+  readonly playerIsFourth: boolean;
 }
 
 export function shouldAkuukanWinningCandidateBeTreatedAsClosed(
@@ -194,6 +196,11 @@ export function createAkuukanWinningCandidateBonusHanEvaluator(
       getAkuukanPlayerSkill1_9BonusHan({
         ...commonInput,
         waitType: context.waitType
+      }) +
+      getAkuukanPlayerSkill1_12BonusHan({
+        ...commonInput,
+        playerIsFourth:
+          input.playerIsFourth
       })
     );
   };
