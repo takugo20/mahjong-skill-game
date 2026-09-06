@@ -181,6 +181,70 @@ function createOpenIttsuuWait(): {
   };
 }
 
+function createOpenChantaWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 4);
+
+  return {
+    hand: [
+      ...createTiles(
+        "pin",
+        [7, 8, 9]
+      ),
+      ...createTiles(
+        "honor",
+        [3, 3, 3, 4, 4, 2, 2]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
+}
+
+function createOpenJunchanWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("pin", 9);
+
+  return {
+    hand: [
+      ...createTiles(
+        "pin",
+        [7, 8, 9, 9]
+      ),
+      ...createTiles(
+        "sou",
+        [1, 1, 1]
+      ),
+      ...createTiles(
+        "man",
+        [7, 8, 9]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
+}
+
 function createNonWinningHand(): Tile[] {
   return [
     ...createTiles(
@@ -1142,5 +1206,113 @@ describe("ゲーム本体の亜空間和了判定", () => {
       candidate?.evaluation.best.score
         .totalPoints
     ).toBe(2900);
+  });
+
+    it("全帯名人でプレイヤーの副露混全帯么九を2翻にする", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-3",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenChantaWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "chanta",
+        name: "混全帯么九",
+        han: 2
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(3900);
+  });
+
+  it("全帯名人でプレイヤーの副露純全帯么九を3翻にする", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-3",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenJunchanWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "junchan",
+        name: "純全帯么九",
+        han: 3
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(5800);
   });
 });
