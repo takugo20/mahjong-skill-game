@@ -1905,7 +1905,12 @@ export function discardTile(
         discardedTile.id ||
       canChangeRiichiHand,
     riichiDeclaration,
-    faceDown: false,
+    faceDown:
+      seat === 0 &&
+      state.akuukan !== undefined &&
+      hasAkuukanPlayerSkill3_11DiscardProtection(
+        state.akuukan
+      ),
     called: false,
     drawnTileSource:
       currentPlayer.drawnTileSource ??
@@ -3672,6 +3677,14 @@ export function getRonCandidates(
     return [];
   }
 
+  if (
+    !chankanSource &&
+    state.round.lastDiscard?.discard
+      .faceDown
+  ) {
+    return [];
+  }
+
   const discarderSeat =
     chankanSource?.declarerSeat ??
     state.round.lastDiscard?.seat;
@@ -4214,7 +4227,8 @@ function createPlayerMeldCallOptions(
 
   if (
     !lastDiscard ||
-    lastDiscard.seat === 0
+    lastDiscard.seat === 0 ||
+    lastDiscard.discard.faceDown
   ) {
     return [];
   }
@@ -4264,7 +4278,8 @@ export function getPlayerOpenKanCallOptions(
 
   if (
     !lastDiscard ||
-    lastDiscard.seat === 0
+    lastDiscard.seat === 0 ||
+    lastDiscard.discard.faceDown
   ) {
     return [];
   }
@@ -4384,7 +4399,10 @@ function getCpuCallDecisions(
   const lastDiscard =
     state.round.lastDiscard;
 
-  if (!lastDiscard) {
+  if (
+    !lastDiscard ||
+    lastDiscard.discard.faceDown
+  ) {
     return [];
   }
 
