@@ -255,6 +255,8 @@ export interface AkuukanGameState {
     string[];
   playerSkill3_4VisibleTileIdsByPlayerId?:
     Record<string, string[]>;
+  playerSkill3_7RonImmunityActive?:
+    boolean;
   e19DiscardRestrictions?:
     AkuukanE19DiscardRestriction[];
   disabledSources:
