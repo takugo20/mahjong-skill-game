@@ -409,6 +409,73 @@ describe("対局画面", () => {
     expect(html).not.toContain("配り直し");
   });
 
+    it("透牌で指定された他家の物理牌だけを表向き表示する", () => {
+    const state = createInitialGameState(
+      () => 0.5,
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [{
+          id: "3-4",
+          level: 1
+        }]
+      }
+    );
+    const rightPlayer =
+      state.round.players[1];
+    const rightHand = createTiles(
+      "man",
+      [1, 2, 3]
+    );
+
+    state.round.players[1] = {
+      ...rightPlayer,
+      hand: rightHand
+    };
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態がありません。"
+      );
+    }
+
+    state.akuukan = {
+      ...state.akuukan,
+      playerSkill3_4VisibleTileIdsByPlayerId: {
+        [rightPlayer.id]: [rightHand[1].id]
+      }
+    };
+
+    const html = renderToStaticMarkup(
+      <GameBoard initialState={state} />
+    );
+    const rightAreaStart = html.indexOf(
+      'aria-label="CPU・右"'
+    );
+    const rightAreaEnd = html.indexOf(
+      "</section>",
+      rightAreaStart
+    );
+    const rightArea = html.slice(
+      rightAreaStart,
+      rightAreaEnd
+    );
+
+    expect(rightArea).toContain(
+      'aria-label="二萬"'
+    );
+    expect(rightArea).not.toContain(
+      'aria-label="一萬"'
+    );
+    expect(rightArea).not.toContain(
+      'aria-label="三萬"'
+    );
+    expect(
+      rightArea.match(
+        /aria-label="裏向きの牌"/g
+      )
+    ).toHaveLength(2);
+  });
+
     it("暗槓候補を牌名付きのボタンで表示する", () => {
     const html = renderToStaticMarkup(
       <GameBoard
