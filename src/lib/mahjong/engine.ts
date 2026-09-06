@@ -615,6 +615,71 @@ function assignAkuukanDealCompletedEffects(
   });
 }
 
+interface DamatenDetectionApplication {
+  state: GameState;
+  detectionNotice: string | null;
+}
+
+function applyAkuukanDamatenDetection(
+  state: GameState,
+  random: () => number,
+  riichiDeclarationSeat:
+    SeatIndex | null = null
+): DamatenDetectionApplication {
+  if (!state.akuukan) {
+    return {
+      state,
+      detectionNotice: null
+    };
+  }
+
+  const detection =
+    detectPlayerSkill3_3DamatenTransitions({
+      akuukan: state.akuukan,
+      players: state.round.players.map(
+        (player) =>
+          player.seat ===
+          riichiDeclarationSeat
+            ? {
+                ...player,
+                riichi: true
+              }
+            : player
+      ),
+      random
+    });
+  const detectedNames =
+    detection.detectedPlayerIds
+      .map(
+        (playerId) =>
+          state.round.players.find(
+            (player) =>
+              player.id === playerId
+          )?.name
+      )
+      .filter(
+        (name): name is string =>
+          name !== undefined
+      );
+  const detectionNotice =
+    detectedNames.length > 0
+      ? `【闇聴察知】${detectedNames.join(
+          "と"
+        )}の闇聴を察知しました。`
+      : null;
+
+  return {
+    state: {
+      ...state,
+      akuukan: detection.akuukan,
+      notice: detectionNotice
+        ? `${state.notice}${detectionNotice}`
+        : state.notice
+    },
+    detectionNotice
+  };
+}
+
 function applyAkuukanPlayerDealCompletedEffects(
   akuukan: AkuukanGameState | undefined,
   players: PlayerState[],
@@ -765,7 +830,7 @@ export function createInitialGameState(
     player.hand = sortTiles(player.hand);
   }
 
-  return {
+  const initialState: GameState = {
     round: {
       prevailingWind: "east",
       handNumber: 1,
@@ -798,6 +863,11 @@ export function createInitialGameState(
       : {}),
     notice: "東1局を開始しました。捨てる牌を選んでください。"
   };
+
+  return applyAkuukanDamatenDetection(
+    initialState,
+    random
+  ).state;
 }
 
 export function canActivatePlayerSkill1_14(
@@ -6833,15 +6903,21 @@ function resolveNextRoundStart(
     notice: "次局を開始します。"
   };
 
+  const dealDetection =
+    applyAkuukanDamatenDetection(
+      dealtState,
+      random
+    );
+
   const startedState =
     nextDealerSeat === 0
       ? drawTile(
-          dealtState,
+          dealDetection.state,
           0,
           random
         )
       : completeCpuTurns(
-          dealtState,
+          dealDetection.state,
           random,
           false,
           onCpuProgress
@@ -6855,7 +6931,7 @@ function resolveNextRoundStart(
       stateAfterStart:
         nextDealerSeat === 0
           ? startedState
-          : dealtState,
+          : dealDetection.state,
       finalState: startedState
     };
   }
@@ -6864,6 +6940,7 @@ function resolveNextRoundStart(
     ...startedState,
     notice:
       `${getRoundLabel(startedState.round)}を開始しました。` +
+      (dealDetection.detectionNotice ?? "") +
       startedState.notice
   };
 
@@ -6871,7 +6948,7 @@ function resolveNextRoundStart(
     stateAfterStart:
       nextDealerSeat === 0
         ? finalState
-        : dealtState,
+        : dealDetection.state,
     finalState
   };
 }
