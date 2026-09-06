@@ -3736,6 +3736,12 @@ function applyCallAfterEffects(
       seat
     );
 
+  stateAfterEffects =
+    applyAkuukanTransparentTiles(
+      stateAfterEffects,
+      random
+    );
+
   const akuukan = stateAfterEffects.akuukan;
 
   if (!akuukan) {
