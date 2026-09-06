@@ -67,6 +67,47 @@ function createPonHand(
   ];
 }
 
+function createPinfuWait(): {
+  hand: Tile[];
+  winningTile: Tile;
+} {
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [3, 4, 5, 6, 7]
+      ),
+      ...createTiles(
+        "pin",
+        [2, 3, 4]
+      ),
+      ...createTiles(
+        "sou",
+        [6, 7, 8]
+      ),
+      ...createTiles(
+        "honor",
+        [3, 3]
+      )
+    ],
+    winningTile: createTile("man", 2)
+  };
+}
+
+function createNonWinningHand(): Tile[] {
+  return [
+    ...createTiles(
+      "man",
+      [1, 2, 4, 5, 7, 8]
+    ),
+    ...createTiles(
+      "pin",
+      [1, 2, 4, 5, 7, 8]
+    ),
+    createTile("honor", 1)
+  ];
+}
+
 function emptyCpuHand(
   state: GameState,
   seat: SeatIndex
@@ -187,5 +228,52 @@ describe("プレイヤースキル3-5 防御結界【序】のエンジン統合
       result.round.players[0]
         .discards[3].called
     ).toBe(true);
+  });
+
+    it("保護期間中でもプレイヤーの捨て牌をCPUがロンできる", () => {
+    const {
+      state
+    } = createState(0);
+    const {
+      hand,
+      winningTile
+    } = createPinfuWait();
+
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        winningTile,
+        ...createNonWinningHand()
+      ],
+      discards: [],
+      drawnTileId: winningTile.id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand,
+      melds: [],
+      discards: [],
+      drawnTileId: null,
+      drawnTileSource: null
+    };
+    state.round.liveWall = [
+      createTile("honor", 1)
+    ];
+
+    const result = playPlayerDiscard(
+      state,
+      winningTile.id,
+      () => 0.5
+    );
+
+    expect(result.round.phase).toBe(
+      "roundEnd"
+    );
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "ron",
+      winnerSeat: 1,
+      loserSeat: 0
+    });
   });
 });
