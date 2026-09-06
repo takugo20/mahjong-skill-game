@@ -37,6 +37,9 @@ import {
   isPlayerSkill3_5CallBlocked
 } from "../akuukan/discardCallProtection";
 import {
+  isPlayerSkill3_6NakedSingleProtected
+} from "../akuukan/nakedSingleProtection";
+import {
   activateAkuukanE2DrawRestriction,
   assignAkuukanE5TargetSuit,
   clearAkuukanE2DrawRestriction,
@@ -3578,6 +3581,27 @@ function getAkuukanCallOwner(
     : "normalOpponent";
 }
 
+function isPlayerSkill3_6DiscardProtected(
+  state: GameState,
+  discarderSeat: SeatIndex
+): boolean {
+  if (
+    !state.akuukan ||
+    discarderSeat !== 0
+  ) {
+    return false;
+  }
+
+  const player =
+    state.round.players[discarderSeat];
+
+  return isPlayerSkill3_6NakedSingleProtected({
+    akuukan: state.akuukan,
+    concealedTiles: player.hand,
+    melds: player.melds
+  });
+}
+
 function isCallAllowed(
   state: GameState,
   seat: SeatIndex,
@@ -3586,6 +3610,16 @@ function isCallAllowed(
 ): boolean {
   if (!state.akuukan) {
     return true;
+  }
+
+  if (
+    discarderSeat !== undefined &&
+    isPlayerSkill3_6DiscardProtected(
+      state,
+      discarderSeat
+    )
+  ) {
+    return false;
   }
 
   const caller =
