@@ -487,6 +487,55 @@ function preparePlayerTsumoState(
   return state;
 }
 
+function preparePlayerOpenRiichiTsumoState(): {
+  state: GameState;
+  uraIndicator: Tile;
+} {
+  const state = createBaseState({
+    enemyId: "enemy-1",
+    equippedSkills: [
+      {
+        id: "2-7",
+        level: 1
+      }
+    ]
+  });
+  const {
+    hand,
+    meld,
+    winningTile
+  } = createOpenPinfuWait();
+  const uraIndicator =
+    createTile("man", 5);
+
+  setPlayerHand(
+    state,
+    0,
+    [...hand, winningTile]
+  );
+  state.round.players[0] = {
+    ...state.round.players[0],
+    melds: [meld],
+    riichi: true,
+    doubleRiichi: false,
+    ippatsu: true,
+    drawnTileId: winningTile.id,
+    drawnTileSource: "liveWall"
+  };
+  state.round.deadWall[5] =
+    uraIndicator;
+  state.round.doraIndicatorCount = 1;
+  state.round.currentSeat = 0;
+  state.round.phase = "discarding";
+  state.round.turnNumber = 4;
+  state.round.lastDiscard = null;
+
+  return {
+    state,
+    uraIndicator
+  };
+}
+
 function prepareRonState(
   setup: AkuukanMatchSetup,
   discarderSeat: SeatIndex
@@ -632,6 +681,41 @@ function prepareE4SelectedEnemyTsumoState(
 }
 
 describe("ゲーム本体の亜空間和了判定", () => {
+    it("立直名人の副露立直ツモへ立直・一発・門前清自摸和・裏ドラを適用する", () => {
+    const {
+      state,
+      uraIndicator
+    } = preparePlayerOpenRiichiTsumoState();
+
+    expect(canPlayerTsumo(state)).toBe(true);
+
+    const result =
+      declarePlayerTsumo(state);
+
+    expect(result.round.winResult).toMatchObject({
+      winnerSeat: 0,
+      winMethod: "tsumo",
+      han: 4,
+      fu: 30,
+      doraCount: 1,
+      totalPoints: 12000
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toEqual([
+      "立直",
+      "一発",
+      "門前清自摸和"
+    ]);
+    expect(
+      result.round.winResult?.yakuNames
+    ).not.toContain("平和");
+    expect(
+      result.round.winResult
+        ?.uraDoraIndicatorTiles
+    ).toEqual([uraIndicator]);
+  });
+  
   it("E-4で手替わり後に和了してもダブル立直と裏ドラを適用する", () => {
     const {
       state,
