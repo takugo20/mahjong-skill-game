@@ -520,4 +520,68 @@ describe("CPU手番中のロン待ち", () => {
         .totalPoints
     ).toBe(5800);
   });
+
+    it("盃口強化Lv.5でプレイヤーの二盃口へ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-5",
+            level: 1
+          },
+          {
+            id: "2-15",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenRyanpeikouWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "ryanpeikou",
+        name: "二盃口",
+        han: 5
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.normalYaku.some(
+        (yaku) =>
+          yaku.id === "iipeikou"
+      )
+    ).toBe(false);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(12000);
+  });
 });
