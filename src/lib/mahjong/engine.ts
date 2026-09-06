@@ -19,6 +19,9 @@ import {
   reserveAkuukanE26TenpaiHand
 } from "../akuukan/dealComposition";
 import {
+  detectPlayerSkill3_3DamatenTransitions
+} from "../akuukan/damatenDetection";
+import {
   getAkuukanPlayerSkill1_5DoraIndicatorCount
 } from "../akuukan/doraIndicatorAddition";
 import {
