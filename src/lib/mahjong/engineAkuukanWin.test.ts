@@ -2741,4 +2741,58 @@ describe("ゲーム本体の亜空間和了判定", () => {
       result.round.winResult?.yakuNames
     ).toEqual(["海底摸月"]);
   });
+
+    it("花天月地Lv.5でプレイヤーの嶺上開花へ2翻加算する", () => {
+    const state = createBaseState({
+      enemyId: "enemy-1",
+      equippedSkills: [
+        {
+          id: "2-17",
+          level: 5
+        }
+      ]
+    });
+    const {
+      hand,
+      winningTile
+    } = createOpenPinfuWait();
+    const rinshanMeld: Meld = {
+      kind: "openKan",
+      tiles: createTiles(
+        "honor",
+        [2, 2, 2, 2]
+      )
+    };
+
+    setPlayerHand(
+      state,
+      0,
+      [...hand, winningTile]
+    );
+    state.round.players[0] = {
+      ...state.round.players[0],
+      melds: [rinshanMeld],
+      drawnTileId: winningTile.id,
+      drawnTileSource: "rinshan"
+    };
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.turnNumber = 20;
+    state.round.lastDiscard = null;
+
+    expect(canPlayerTsumo(state)).toBe(true);
+
+    const result =
+      declarePlayerTsumo(state);
+
+    expect(result.round.winResult).toMatchObject({
+      winnerSeat: 0,
+      winMethod: "tsumo",
+      han: 3,
+      totalPoints: 7800
+    });
+    expect(
+      result.round.winResult?.yakuNames
+    ).toEqual(["嶺上開花"]);
+  });
 });
