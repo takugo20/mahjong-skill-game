@@ -167,6 +167,49 @@ function createSanankouWait(): {
   };
 }
 
+function createSankantsuWait(): {
+  hand: Tile[];
+  melds: Meld[];
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 1);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [4, 5, 6]
+      ),
+      createTile("honor", 1)
+    ],
+    melds: [
+      {
+        kind: "openKan",
+        tiles: createTiles(
+          "man",
+          [1, 1, 1, 1]
+        )
+      },
+      {
+        kind: "closedKan",
+        tiles: createTiles(
+          "pin",
+          [2, 2, 2, 2]
+        )
+      },
+      {
+        kind: "addedKan",
+        tiles: createTiles(
+          "sou",
+          [3, 3, 3, 3]
+        )
+      }
+    ],
+    winningTile
+  };
+}
+
 function createSevenPairsHand(): {
   hand: Tile[];
   winningTile: Tile;
@@ -2530,6 +2573,60 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "sanankou",
         name: "三暗刻",
+        han: 4
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(12000);
+  });
+
+    it("対刻槓強化Lv.5でプレイヤーの三槓子へ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-16",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      melds,
+      winningTile
+    } = createSankantsuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = melds;
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sankantsu",
+        name: "三槓子",
         han: 4
       }
     ]);
