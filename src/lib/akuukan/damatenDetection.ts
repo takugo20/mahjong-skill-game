@@ -103,6 +103,19 @@ function getDetectionChancePercent(
 export function detectPlayerSkill3_3DamatenTransitions(
   input: DetectPlayerSkill3_3Input
 ): PlayerSkill3_3DetectionResult {
+  if (
+    !getEquippedPlayerSkill(
+      input.akuukan,
+      "3-3"
+    )
+  ) {
+    return {
+      akuukan: input.akuukan,
+      newlyDamatenPlayerIds: [],
+      detectedPlayerIds: []
+    };
+  }
+
   const currentDamatenPlayerIds =
     getDamatenPlayerIds(input.players);
   const previousDamatenPlayerIds =
