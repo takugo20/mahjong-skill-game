@@ -261,4 +261,39 @@ describe("恩恵享受【縦】の次局予約", () => {
     );
     expect(result.consumed).toBe(false);
   });
+
+    it("後続の色保証があれば同じ色の対子を優先する", () => {
+    const reserved =
+      reservePlayerSkill2_19AfterWin({
+        akuukan: createAkuukan(
+          true,
+          1
+        ),
+        normalYakuIds: ["toitoi"]
+      });
+    const active = beginAkuukanRound(
+      reserved
+    );
+
+    const result =
+      applyPlayerSkill2_19AtDeal({
+        akuukan: active,
+        availableTiles: [
+          ...createTiles("pin", 1, 2),
+          ...createTiles("sou", 2, 2),
+          ...createTiles("man", 3, 2),
+          ...createTiles("man", 4, 2)
+        ],
+        preferredSuit: "man"
+      });
+
+    expect(
+      result.reservedTiles.every(
+        (tile) => tile.suit === "man"
+      )
+    ).toBe(true);
+    expect(result.reservedTiles).toHaveLength(
+      4
+    );
+  });
 });
