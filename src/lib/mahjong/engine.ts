@@ -3380,6 +3380,16 @@ export function getRonCandidates(
     return [];
   }
 
+  if (
+    !chankanSource &&
+    isPlayerSkill3_6DiscardProtected(
+      state,
+      discarderSeat
+    )
+  ) {
+    return [];
+  }
+
   const candidates:
     ValidRoundWinResolution[] = [];
 
