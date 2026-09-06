@@ -628,6 +628,25 @@ function assignAkuukanDealCompletedEffects(
   });
 }
 
+function applyAkuukanTransparentTiles(
+  state: GameState,
+  random: () => number
+): GameState {
+  if (!state.akuukan) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan:
+      synchronizePlayerSkill3_4VisibleTiles({
+        akuukan: state.akuukan,
+        players: state.round.players,
+        random
+      })
+  };
+}
+
 interface DamatenDetectionApplication {
   state: GameState;
   detectionNotice: string | null;
@@ -1664,11 +1683,17 @@ export function discardTile(
       : `${currentPlayer.name}が牌を捨てました。`
   };
 
-  return applyAkuukanDamatenDetection(
-    discardedState,
-    random,
-    riichiDeclaration ? seat : null
-  ).state;
+  const detection =
+    applyAkuukanDamatenDetection(
+      discardedState,
+      random,
+      riichiDeclaration ? seat : null
+    );
+
+  return applyAkuukanTransparentTiles(
+    detection.state,
+    random
+  );
 }
 
 function calculateDiscardPriority(
