@@ -20,10 +20,12 @@ import {
   activatePlayerSkill1_15,
   activatePlayerSkill3_8,
   activatePlayerSkill3_9,
+  activatePlayerSkill3_10,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
   canActivatePlayerSkill3_9,
+  canActivatePlayerSkill3_10,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1092,6 +1094,12 @@ export function GameBoard({
       gameState
     );
 
+  const canUsePlayerSkill3_10 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill3_10(
+      gameState
+    );
+
   const playerSkill1_15RemainingTurns =
     gameState.akuukan?.activeEffects.find(
       (effect) =>
@@ -1104,6 +1112,13 @@ export function GameBoard({
       (effect) =>
         effect.sourceId ===
         "player-skill:3-9"
+    )?.remainingTurns ?? null;
+  
+  const playerSkill3_10RemainingTurns =
+    gameState.akuukan?.activeEffects.find(
+      (effect) =>
+        effect.sourceId ===
+        "player-skill:3-10"
     )?.remainingTurns ?? null;
 
   const canTsumo =
@@ -1625,6 +1640,14 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill3_10() {
+    setGameState((currentState) =>
+      activatePlayerSkill3_10(
+        currentState
+      )
+    );
+  }
+
 
   function handleRon() {
     if (winPresentingRef.current) {
@@ -2086,6 +2109,14 @@ export function GameBoard({
                     巡
                   </span>
                 )}
+                {playerSkill3_10RemainingTurns !==
+                  null && (
+                  <span className="active-skill-status-badge">
+                    防御結界【急】 残り
+                    {playerSkill3_10RemainingTurns}
+                    巡
+                  </span>
+                )}                
               </div>
 
               <strong>
@@ -2334,6 +2365,15 @@ export function GameBoard({
                     onClick={handlePlayerSkill3_9}
                   >
                     防御結界【破】
+                  </button>
+                )}
+                {canUsePlayerSkill3_10 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill3_10}
+                  >
+                    防御結界【急】
                   </button>
                 )}                
                 
