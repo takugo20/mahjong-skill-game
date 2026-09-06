@@ -242,6 +242,18 @@ export interface AkuukanE19DiscardRestriction {
   tileId: string;
 }
 
+export interface AkuukanPlayerSkill3_12SnapshotTile {
+  id: string;
+  suit: NumberSuit | "honor";
+  rank: number;
+  red: boolean;
+}
+
+export interface AkuukanPlayerSkill3_12Snapshot {
+  playerId: string;
+  tiles: AkuukanPlayerSkill3_12SnapshotTile[];
+}
+
 export interface AkuukanGameState {
   setup: AkuukanMatchSetup;
   e2DrawRestriction?:
@@ -255,6 +267,8 @@ export interface AkuukanGameState {
     string[];
   playerSkill3_4VisibleTileIdsByPlayerId?:
     Record<string, string[]>;
+  playerSkill3_12Snapshot?:
+    AkuukanPlayerSkill3_12Snapshot;  
   playerSkill3_7RonImmunityActive?:
     boolean;
   e19DiscardRestrictions?:
