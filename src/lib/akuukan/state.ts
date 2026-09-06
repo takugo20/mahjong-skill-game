@@ -368,9 +368,10 @@ export function resetAkuukanRoundUsage(
 export function beginAkuukanRound(
   state: AkuukanGameState
 ): AkuukanGameState {
-  const reset = resetAkuukanRoundUsage(
-    state
-  );
+  const reset = {
+    ...resetAkuukanRoundUsage(state),
+    playerSkill3_3DamatenPlayerIds: []
+  };
 
   if (reset.nextRoundEffects.length === 0) {
     return reset;
