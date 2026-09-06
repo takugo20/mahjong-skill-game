@@ -253,6 +253,8 @@ export interface AkuukanGameState {
     NumberSuit;
   playerSkill3_3DamatenPlayerIds?:
     string[];
+  playerSkill3_4VisibleTileIdsByPlayerId?:
+    Record<string, string[]>;
   e19DiscardRestrictions?:
     AkuukanE19DiscardRestriction[];
   disabledSources:
