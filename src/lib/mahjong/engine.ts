@@ -70,6 +70,9 @@ import {
   tryActivateAkuukanPlayerSkill1_14
 } from "../akuukan/honbaIncrease";
 import {
+  synchronizePlayerSkill3_4VisibleTiles
+} from "../akuukan/transparentTiles";
+import {
   AKUUKAN_DRAW_MP_RECOVERY,
   AKUUKAN_INITIAL_MP,
   AKUUKAN_MAX_MP,
@@ -607,13 +610,20 @@ function assignAkuukanDealCompletedEffects(
     return undefined;
   }
 
-  return assignAkuukanE19DiscardRestrictions({
-    akuukan,
-    players: players.map((player) => ({
-      playerId: player.id,
-      isSelectedEnemy: player.seat === 2,
-      concealedTiles: player.hand
-    })),
+  const akuukanAfterE19 =
+    assignAkuukanE19DiscardRestrictions({
+      akuukan,
+      players: players.map((player) => ({
+        playerId: player.id,
+        isSelectedEnemy: player.seat === 2,
+        concealedTiles: player.hand
+      })),
+      random
+    });
+
+  return synchronizePlayerSkill3_4VisibleTiles({
+    akuukan: akuukanAfterE19,
+    players,
     random
   });
 }
