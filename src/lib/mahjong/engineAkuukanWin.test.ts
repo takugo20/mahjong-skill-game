@@ -2843,4 +2843,51 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toEqual(["平和"]);
     expect(result.playerMp).toBe(510);
   });
+
+    it("恩恵享受【横】Lv.5でツモ和了後に90MP回復する", () => {
+    const state = createBaseState({
+      enemyId: "enemy-1",
+      equippedSkills: [
+        {
+          id: "2-6",
+          level: 1
+        },
+        {
+          id: "2-18",
+          level: 5
+        }
+      ]
+    });
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenPinfuWait();
+
+    setPlayerHand(
+      state,
+      0,
+      [...hand, winningTile]
+    );
+    state.round.players[0] = {
+      ...state.round.players[0],
+      melds: [meld],
+      drawnTileId: winningTile.id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.turnNumber = 20;
+    state.round.lastDiscard = null;
+
+    expect(state.playerMp).toBe(420);
+
+    const result =
+      declarePlayerTsumo(state);
+
+    expect(
+      result.round.winResult?.yakuNames
+    ).toEqual(["平和"]);
+    expect(result.playerMp).toBe(510);
+  });
 });
