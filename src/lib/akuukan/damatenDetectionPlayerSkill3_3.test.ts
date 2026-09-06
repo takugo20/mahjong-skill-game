@@ -267,7 +267,7 @@ describe("プレイヤースキル3-3 闇聴察知", () => {
     ).toEqual([]);
   });
 
-  it("未装備または無効化中でも闇聴状態の追跡だけは更新する", () => {
+  it("未装備なら状態を変更しない", () => {
     const unequipped =
       createInitialAkuukanGameState({
         enemyId: "enemy-1",
@@ -276,28 +276,39 @@ describe("プレイヤースキル3-3 闇聴察知", () => {
     const player = createPlayer(1, {
       hand: createTenpaiHand()
     });
+    const result =
+      detectPlayerSkill3_3DamatenTransitions({
+        akuukan: unequipped,
+        players: [player],
+        random: () => 0
+      });
 
-    for (const akuukan of [
-      unequipped,
-      disableAkuukanSource(
-        createAkuukan(),
-        "player-skill:3-3"
-      )
-    ]) {
-      const result =
-        detectPlayerSkill3_3DamatenTransitions({
-          akuukan,
-          players: [player],
-          random: () => 0
-        });
+    expect(result.akuukan).toBe(unequipped);
+    expect(
+      result.detectedPlayerIds
+    ).toEqual([]);
+  });
 
-      expect(
-        result.detectedPlayerIds
-      ).toEqual([]);
-      expect(
-        result.akuukan
-          .playerSkill3_3DamatenPlayerIds
-      ).toEqual(["player-1"]);
-    }
+  it("無効化中でも闇聴状態の追跡だけは更新する", () => {
+    const player = createPlayer(1, {
+      hand: createTenpaiHand()
+    });
+    const result =
+      detectPlayerSkill3_3DamatenTransitions({
+        akuukan: disableAkuukanSource(
+          createAkuukan(),
+          "player-skill:3-3"
+        ),
+        players: [player],
+        random: () => 0
+      });
+
+    expect(
+      result.detectedPlayerIds
+    ).toEqual([]);
+    expect(
+      result.akuukan
+        .playerSkill3_3DamatenPlayerIds
+    ).toEqual(["player-1"]);
   });
 });
