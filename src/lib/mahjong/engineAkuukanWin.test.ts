@@ -245,6 +245,128 @@ function createOpenJunchanWait(): {
   };
 }
 
+function createOpenHonitsuWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("man", 5);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [3, 4, 5, 6, 7, 8, 5]
+      ),
+      ...createTiles(
+        "honor",
+        [3, 3, 3]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [2, 3, 4]
+      )
+    },
+    winningTile
+  };
+}
+
+function createOpenChinitsuWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("man", 5);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [3, 4, 5, 6, 7, 8, 9, 9, 9, 5]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [2, 3, 4]
+      )
+    },
+    winningTile
+  };
+}
+
+function createOpenIipeikouWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 3);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [1, 2, 3]
+      ),
+      ...createTiles(
+        "pin",
+        [4, 5, 6]
+      ),
+      ...createTiles(
+        "sou",
+        [7, 8, 9]
+      ),
+      createTile("honor", 3)
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
+}
+
+function createOpenRyanpeikouWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 3);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [1, 2, 3]
+      ),
+      ...createTiles(
+        "pin",
+        [4, 5, 6, 4, 5, 6]
+      ),
+      createTile("honor", 3)
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
+}
+
 function createNonWinningHand(): Tile[] {
   return [
     ...createTiles(
@@ -1314,5 +1436,214 @@ describe("ゲーム本体の亜空間和了判定", () => {
       candidate?.evaluation.best.score
         .totalPoints
     ).toBe(5800);
+  });
+
+    it("染手名人でプレイヤーの副露混一色を3翻にする", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-4",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenHonitsuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+    const honitsu =
+      candidate?.evaluation.best.normalYaku.find(
+        (yaku) => yaku.id === "honitsu"
+      );
+
+    expect(honitsu).toEqual({
+      id: "honitsu",
+      name: "混一色",
+      han: 3
+    });
+  });
+
+  it("染手名人でプレイヤーの副露清一色を6翻にする", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-4",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenChinitsuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+    const chinitsu =
+      candidate?.evaluation.best.normalYaku.find(
+        (yaku) => yaku.id === "chinitsu"
+      );
+
+    expect(chinitsu).toEqual({
+      id: "chinitsu",
+      name: "清一色",
+      han: 6
+    });
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(18000);
+  });
+
+    it("盃口名人でプレイヤーの副露手に一盃口を成立させる", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-5",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenIipeikouWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "iipeikou",
+        name: "一盃口",
+        han: 1
+      }
+    ]);
+  });
+
+  it("盃口名人でプレイヤーの副露手に二盃口を成立させ一盃口を重複させない", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-5",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenRyanpeikouWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "ryanpeikou",
+        name: "二盃口",
+        han: 3
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.normalYaku.some(
+        (yaku) => yaku.id === "iipeikou"
+      )
+    ).toBe(false);
   });
 });
