@@ -2986,5 +2986,105 @@ describe("ゲーム本体の亜空間和了判定", () => {
       sourceId: "player-skill:2-19",
       remainingTurns: null
     });
+  })
+    it("恩恵享受【色】で混一色ロン後に使用色を予約する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [{
+          id: "2-20",
+          level: 5
+        }]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenHonitsuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const result =
+      declarePlayerRon(state);
+
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("混一色");
+    expect(
+      result.akuukan
+        ?.playerSkill2_20ReservedSuit
+    ).toBe("man");
+    expect(
+      result.akuukan?.nextRoundEffects
+    ).toContainEqual({
+      instanceId:
+        "player-skill:2-20:next-round-suit",
+      sourceId: "player-skill:2-20",
+      remainingTurns: null
+    });
+  });
+
+  it("恩恵享受【色】で清一色ツモ後に使用色を予約する", () => {
+    const state = createBaseState({
+      enemyId: "enemy-1",
+      equippedSkills: [{
+        id: "2-20",
+        level: 5
+      }]
+    });
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenChinitsuWait();
+
+    setPlayerHand(
+      state,
+      0,
+      [...hand, winningTile]
+    );
+    state.round.players[0] = {
+      ...state.round.players[0],
+      melds: [meld],
+      drawnTileId: winningTile.id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.turnNumber = 20;
+    state.round.lastDiscard = null;
+
+    const result =
+      declarePlayerTsumo(state);
+
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("清一色");
+    expect(
+      result.akuukan
+        ?.playerSkill2_20ReservedSuit
+    ).toBe("man");
+    expect(
+      result.akuukan?.nextRoundEffects
+    ).toContainEqual({
+      instanceId:
+        "player-skill:2-20:next-round-suit",
+      sourceId: "player-skill:2-20",
+      remainingTurns: null
+    });
   });
 });
