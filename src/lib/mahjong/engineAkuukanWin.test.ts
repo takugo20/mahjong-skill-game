@@ -147,6 +147,40 @@ function createOpenSanshokuWait(): {
   };
 }
 
+function createOpenIttsuuWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("man", 9);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [4, 5, 6, 7, 8]
+      ),
+      ...createTiles(
+        "pin",
+        [2, 3, 4]
+      ),
+      ...createTiles(
+        "honor",
+        [6, 6]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
+}
+
 function createNonWinningHand(): Tile[] {
   return [
     ...createTiles(
@@ -937,5 +971,176 @@ describe("ゲーム本体の亜空間和了判定", () => {
       candidate?.evaluation.best.score
         .totalPoints
     ).toBe(3900);
+  });
+
+    it("三色名人でプレイヤーの副露三色同順を2翻にする", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-1",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenSanshokuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sanshokuDoujun",
+        name: "三色同順",
+        han: 2
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.fu?.fu
+    ).toBe(30);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(2900);
+  });
+
+  it("E-18で無効化された三色名人は喰い下がりを無効にしない", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-6",
+        equippedSkills: [
+          {
+            id: "2-1",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenSanshokuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      state.akuukan?.disabledSources
+    ).toContain("player-skill:2-1");
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sanshokuDoujun",
+        name: "三色同順",
+        han: 1
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(1500);
+  });
+
+    it("一通名人でプレイヤーの副露一気通貫を2翻にする", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-2",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenIttsuuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "ittsuu",
+        name: "一気通貫",
+        han: 2
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.fu?.fu
+    ).toBe(30);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(2900);
   });
 });
