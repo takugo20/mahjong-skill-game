@@ -18,8 +18,10 @@ import {
 import {
   activatePlayerSkill1_14,
   activatePlayerSkill1_15,
+  activatePlayerSkill3_8,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
+  canActivatePlayerSkill3_8,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1076,6 +1078,12 @@ export function GameBoard({
       gameState
     );
 
+  const canUsePlayerSkill3_8 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill3_8(
+      gameState
+    );
+
   const playerSkill1_15RemainingTurns =
     gameState.akuukan?.activeEffects.find(
       (effect) =>
@@ -1580,6 +1588,14 @@ export function GameBoard({
   function handlePlayerSkill1_15() {
     setGameState((currentState) =>
       activatePlayerSkill1_15(
+        currentState
+      )
+    );
+  }
+
+  function handlePlayerSkill3_8() {
+    setGameState((currentState) =>
+      activatePlayerSkill3_8(
         currentState
       )
     );
@@ -2267,6 +2283,15 @@ export function GameBoard({
                     onClick={handlePlayerSkill1_15}
                   >
                     門前回帰
+                  </button>
+                )}
+                {canUsePlayerSkill3_8 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill3_8}
+                  >
+                    山牌封印
                   </button>
                 )}
                 
