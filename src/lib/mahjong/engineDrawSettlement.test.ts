@@ -285,4 +285,70 @@ describe("荒牌流局のゲーム内精算", () => {
       23500
     ]);
   });
+
+    it("罰符軽減でプレイヤーの支払と聴牌者の受取を減らす", () => {
+    const state = createInitialGameState(
+      () => 0.5,
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [{
+          id: "3-1",
+          level: 1
+        }]
+      }
+    );
+
+    state.round.phase = "reaction";
+    state.round.liveWall = [];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        createTile("honor", 7)
+      )
+    };
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: createNonTenpaiHand(),
+      drawnTileId: null
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand: createTenpaiHand(),
+      drawnTileId: null
+    };
+    state.round.players[2] = {
+      ...state.round.players[2],
+      hand: createNonTenpaiHand(),
+      drawnTileId: null
+    };
+    state.round.players[3] = {
+      ...state.round.players[3],
+      hand: createTenpaiHand(),
+      drawnTileId: null
+    };
+
+    const result = skipPlayerRon(state);
+
+    expect(
+      result.round.drawResult
+        ?.pointChanges.map(
+          (change) => change.change
+        )
+    ).toEqual([
+      -800,
+      1200,
+      -1500,
+      1100
+    ]);
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      24200,
+      26200,
+      23500,
+      26100
+    ]);
+  });
 });
