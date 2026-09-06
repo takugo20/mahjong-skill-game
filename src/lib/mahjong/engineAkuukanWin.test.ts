@@ -62,6 +62,49 @@ function createDiscard(
   };
 }
 
+function createOpenToitoiWait(): {
+  hand: Tile[];
+  melds: Meld[];
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 1);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [6, 6, 6]
+      ),
+      createTile("honor", 1)
+    ],
+    melds: [
+      {
+        kind: "pon",
+        tiles: createTiles(
+          "man",
+          [2, 2, 2]
+        )
+      },
+      {
+        kind: "pon",
+        tiles: createTiles(
+          "pin",
+          [3, 3, 3]
+        )
+      },
+      {
+        kind: "pon",
+        tiles: createTiles(
+          "sou",
+          [4, 4, 4]
+        )
+      }
+    ],
+    winningTile
+  };
+}
+
 function createSevenPairsHand(): {
   hand: Tile[];
   winningTile: Tile;
@@ -2149,5 +2192,59 @@ describe("ゲーム本体の亜空間和了判定", () => {
       candidate?.evaluation.best.score
         .totalPoints
     ).toBe(18000);
+  });
+
+    it("対刻槓強化Lv.5でプレイヤーの対々和へ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-16",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      melds,
+      winningTile
+    } = createOpenToitoiWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = melds;
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "toitoi",
+        name: "対々和",
+        han: 4
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(12000);
   });
 });
