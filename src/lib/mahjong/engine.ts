@@ -80,6 +80,7 @@ import {
   applyAkuukanPlayerSkill1_6AtDeal
 } from "../akuukan/nextRoundRedTile";
 import {
+  applyPlayerSkill2_19AtDeal,
   reservePlayerSkill2_19AfterWin
 } from "../akuukan/nextRoundPairGuarantee";
 import {
@@ -417,6 +418,8 @@ export function getRoundLabel(
 }
 
 interface AkuukanDealComposition {
+  readonly akuukan:
+    AkuukanGameState | undefined;
   readonly liveWall: Tile[];
   readonly reservedTilesBySeat:
     readonly Tile[][];
@@ -429,6 +432,7 @@ function prepareAkuukanDealComposition(
 ): AkuukanDealComposition {
   if (!akuukan) {
     return {
+      akuukan,
       liveWall,
       reservedTilesBySeat: [
         [],
@@ -448,23 +452,30 @@ function prepareAkuukanDealComposition(
     );
   }
 
+  const pairReservation =
+    applyPlayerSkill2_19AtDeal({
+      akuukan,
+      availableTiles: liveWall
+    });
+
   const doraTripletReservation =
     reserveAkuukanE16DoraTriplet({
-      akuukan,
+      akuukan: pairReservation.akuukan,
       doraIndicator:
         initialDoraIndicator,
-      availableTiles: liveWall
+      availableTiles:
+        pairReservation.remainingTiles
     });
   const tenpaiHandReservation =
     reserveAkuukanE26TenpaiHand({
-      akuukan,
+      akuukan: pairReservation.akuukan,
       availableTiles:
         doraTripletReservation
           .remainingTiles
     });
   const shantenHandsReservation =
     reserveAkuukanE29ShantenHands({
-      akuukan,
+      akuukan: pairReservation.akuukan,
       availableTiles:
         tenpaiHandReservation
           .remainingTiles
@@ -475,22 +486,60 @@ function prepareAkuukanDealComposition(
     ...tenpaiHandReservation
       .reservedTiles
   ];
+  const playerReservedTiles =
+    pairReservation.reservedTiles;
+
+  if (
+    shantenHandsReservation
+      .constraintsSatisfied
+  ) {
+    const playerSupplementCount =
+      Math.max(
+        0,
+        13 - playerReservedTiles.length
+      );
+    const playerShantenTiles =
+      shantenHandsReservation
+        .reservedTilesBySeat[0];
+
+    return {
+      akuukan: pairReservation.akuukan,
+      liveWall: [
+        ...shantenHandsReservation
+          .remainingTiles,
+        ...playerShantenTiles.slice(
+          playerSupplementCount
+        )
+      ],
+      reservedTilesBySeat: [
+        [
+          ...playerReservedTiles,
+          ...playerShantenTiles.slice(
+            0,
+            playerSupplementCount
+          )
+        ],
+        shantenHandsReservation
+          .reservedTilesBySeat[1],
+        shantenHandsReservation
+          .reservedTilesBySeat[2],
+        shantenHandsReservation
+          .reservedTilesBySeat[3]
+      ]
+    };
+  }
 
   return {
+    akuukan: pairReservation.akuukan,
     liveWall:
       shantenHandsReservation
         .remainingTiles,
-    reservedTilesBySeat:
-      shantenHandsReservation
-        .constraintsSatisfied
-        ? shantenHandsReservation
-            .reservedTilesBySeat
-        : [
-            [],
-            [],
-            selectedEnemyReservedTiles,
-            []
-          ]
+    reservedTilesBySeat: [
+      playerReservedTiles,
+      [],
+      selectedEnemyReservedTiles,
+      []
+    ]
   };
 }
 
@@ -646,7 +695,7 @@ export function createInitialGameState(
       const tile =
         reservedTile ??
         takeAkuukanLiveWallTile(
-          akuukan,
+          dealComposition.akuukan,
           liveWall,
           seat === 2
         );
@@ -661,7 +710,7 @@ export function createInitialGameState(
 
   const akuukanAfterPlayerDeal =
     applyAkuukanPlayerDealCompletedEffects(
-      akuukan,
+      dealComposition.akuukan,
       players,
       random
     );
@@ -6272,6 +6321,7 @@ function dealNextRoundHands(
   liveWall: Tile[];
   deadWall: Tile[];
   doraIndicatorCount: number;
+  akuukan: AkuukanGameState | undefined;
 } {
   const shuffledTiles = shuffleTiles(
     createFullTileSet(),
@@ -6319,7 +6369,7 @@ function dealNextRoundHands(
       const tile =
         reservedTile ??
         takeAkuukanLiveWallTile(
-          akuukan,
+          dealComposition.akuukan,
           liveWall,
           seat === 2
         );
@@ -6342,7 +6392,8 @@ function dealNextRoundHands(
     players,
     liveWall,
     deadWall,
-    doraIndicatorCount
+    doraIndicatorCount,
+    akuukan: dealComposition.akuukan
   };
 }
 
@@ -6602,7 +6653,7 @@ function resolveNextRoundStart(
   );
   const akuukanAfterPlayerDeal =
     applyAkuukanPlayerDealCompletedEffects(
-      nextAkuukan,
+      dealt.akuukan,
       dealt.players,
       random
     );
