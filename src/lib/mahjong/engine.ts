@@ -57,6 +57,10 @@ import {
   isAkuukanE27WinInvalidated
 } from "../akuukan/handValueAdjustments";
 import {
+  advanceAkuukanPlayerSkill1_15AfterDiscard,
+  tryActivateAkuukanPlayerSkill1_15
+} from "../akuukan/closedHandRestoration";
+import {
   tryActivateAkuukanPlayerSkill1_14
 } from "../akuukan/honbaIncrease";
 import {
@@ -771,6 +775,55 @@ export function activatePlayerSkill1_14(
   };
 }
 
+export function canActivatePlayerSkill1_15(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill1_15({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  }).succeeded;
+}
+
+export function activatePlayerSkill1_15(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill1_15({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "門前回帰を発動しました。効果中の和了は門前扱いになります。"
+  };
+}
+
 function beginAkuukanTurnState(
   state: GameState
 ): GameState {
@@ -1412,9 +1465,18 @@ export function discardTile(
 
   const wallIsEmpty = round.liveWall.length === 0;
   const followingSeat = nextSeat(seat);
+  const akuukanAfterDiscard =
+    seat === 0 && state.akuukan
+      ? advanceAkuukanPlayerSkill1_15AfterDiscard(
+          state.akuukan
+        )
+      : state.akuukan;
 
   return {
     ...state,
+    ...(akuukanAfterDiscard
+      ? { akuukan: akuukanAfterDiscard }
+      : {}),
     round: {
       ...round,
       players: replacePlayer(
