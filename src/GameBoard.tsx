@@ -14,7 +14,9 @@ import {
 } from "./lib/gameAudio";
 import {
   activatePlayerSkill1_14,
+  activatePlayerSkill1_15,
   canActivatePlayerSkill1_14,
+  canActivatePlayerSkill1_15,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1057,6 +1059,19 @@ export function GameBoard({
       gameState
     );
 
+  const canUsePlayerSkill1_15 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill1_15(
+      gameState
+    );
+
+  const playerSkill1_15RemainingTurns =
+    gameState.akuukan?.activeEffects.find(
+      (effect) =>
+        effect.sourceId ===
+        "player-skill:1-15"
+    )?.remainingTurns ?? null;
+
   const canTsumo =
     canPlayerTsumo(gameState);
 
@@ -1551,6 +1566,14 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill1_15() {
+    setGameState((currentState) =>
+      activatePlayerSkill1_15(
+        currentState
+      )
+    );
+  }
+
   function handleRon() {
     if (winPresentingRef.current) {
       return;
@@ -1971,6 +1994,14 @@ export function GameBoard({
                     {getRiichiStatusLabel(player)}
                   </span>
                 )}
+                {playerSkill1_15RemainingTurns !==
+                  null && (
+                  <span className="active-skill-status-badge">
+                    門前回帰 残り
+                    {playerSkill1_15RemainingTurns}
+                    巡
+                  </span>
+                )}
               </div>
 
               <strong>
@@ -2192,6 +2223,15 @@ export function GameBoard({
                     onClick={handlePlayerSkill1_14}
                   >
                     心頭滅却
+                  </button>
+                )}
+                {canUsePlayerSkill1_15 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill1_15}
+                  >
+                    門前回帰
                   </button>
                 )}
                 
