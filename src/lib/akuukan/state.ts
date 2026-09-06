@@ -372,6 +372,12 @@ export function beginAkuukanRound(
 ): AkuukanGameState {
   const reset = {
     ...resetAkuukanRoundUsage(state),
+    activeEffects:
+      state.activeEffects.filter(
+        (effect) =>
+          effect.sourceId !==
+          "player-skill:3-9"
+      ),
     playerSkill3_3DamatenPlayerIds: [],
     playerSkill3_7RonImmunityActive:
       false
