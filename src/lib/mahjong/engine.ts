@@ -80,9 +80,8 @@ import {
   applyAkuukanPlayerSkill1_6AtDeal
 } from "../akuukan/nextRoundRedTile";
 import {
-  applyPlayerSkill2_19AtDeal,
-  reservePlayerSkill2_19AfterWin
-} from "../akuukan/nextRoundPairGuarantee";
+  reservePlayerSkill2_20AfterWin
+} from "../akuukan/nextRoundSuitGuarantee";
 import {
   applyAkuukanRedTileTransformation
 } from "../akuukan/redTileTransformation";
@@ -2467,7 +2466,7 @@ function finishRoundWithWin(
       state,
       [resolution]
     );
-  const akuukan =
+  const akuukanAfterPairReservation =
     recordedAkuukan &&
     resolution.winnerSeat === 0
       ? reservePlayerSkill2_19AfterWin({
@@ -2479,6 +2478,26 @@ function finishRoundWithWin(
               )
         })
       : recordedAkuukan;
+  const akuukan =
+    akuukanAfterPairReservation &&
+    resolution.winnerSeat === 0
+      ? reservePlayerSkill2_20AfterWin({
+          akuukan:
+            akuukanAfterPairReservation,
+          normalYakuIds:
+            resolution.evaluation.best
+              .evaluatedNormalYaku.map(
+                (yaku) => yaku.id
+              ),
+          winningTiles: [
+            ...winner.hand,
+            ...winner.melds.flatMap(
+              (meld) => meld.tiles
+            ),
+            resolution.winningTile
+          ]
+        })
+      : akuukanAfterPairReservation;
   const playerMp =
     akuukan &&
     resolution.winnerSeat === 0
@@ -2567,7 +2586,7 @@ function finishRoundWithRonCandidates(
             candidate.winnerSeat === 0
         )
       : undefined;
-  const akuukan =
+  const akuukanAfterPairReservation =
     recordedAkuukan && playerResolution
       ? reservePlayerSkill2_19AfterWin({
           akuukan: recordedAkuukan,
@@ -2578,6 +2597,32 @@ function finishRoundWithRonCandidates(
               )
         })
       : recordedAkuukan;
+  const player = playerResolution
+    ? state.round.players[
+        playerResolution.winnerSeat
+      ]
+    : undefined;
+  const akuukan =
+    akuukanAfterPairReservation &&
+    playerResolution &&
+    player
+      ? reservePlayerSkill2_20AfterWin({
+          akuukan:
+            akuukanAfterPairReservation,
+          normalYakuIds:
+            playerResolution.evaluation.best
+              .evaluatedNormalYaku.map(
+                (yaku) => yaku.id
+              ),
+          winningTiles: [
+            ...player.hand,
+            ...player.melds.flatMap(
+              (meld) => meld.tiles
+            ),
+            playerResolution.winningTile
+          ]
+        })
+      : akuukanAfterPairReservation;
   const playerMp =
     akuukan && playerResolution
       ? recoverPlayerSkill2_18Mp({
