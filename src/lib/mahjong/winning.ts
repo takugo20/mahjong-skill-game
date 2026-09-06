@@ -65,6 +65,18 @@ export type WinningCandidateBonusHanEvaluator = (
     WinningCandidateYakuEvaluation
 ) => number;
 
+export interface WinningCandidateHanFuAdjustment {
+  readonly fu: FuCalculationResult;
+  readonly bonusHan: number;
+}
+
+export type WinningCandidateHanFuAdjuster = (
+  context: YakumanContext,
+  yakuEvaluation:
+    WinningCandidateYakuEvaluation,
+  fu: FuCalculationResult
+) => WinningCandidateHanFuAdjustment;
+
 export type WinningCandidateScoreAdjuster = (
   score: ScoreCalculationResult
 ) => ScoreCalculationResult;
@@ -96,6 +108,8 @@ export interface WinningHandEvaluationInput {
     WinningCandidateYakuEvaluator;
   candidateBonusHanEvaluator?:
     WinningCandidateBonusHanEvaluator;
+  candidateHanFuAdjuster?:
+    WinningCandidateHanFuAdjuster;
   candidateScoreAdjuster?:
     WinningCandidateScoreAdjuster;
 }
@@ -235,6 +249,48 @@ function evaluateCandidateBonusHan(
   }
 
   return bonusHan;
+}
+
+function adjustCandidateHanFu(
+  input: WinningHandEvaluationInput,
+  context: YakumanContext,
+  yakuEvaluation:
+    WinningCandidateYakuEvaluation,
+  fu: FuCalculationResult
+): WinningCandidateHanFuAdjustment {
+  const adjustment =
+    input.candidateHanFuAdjuster?.(
+      context,
+      yakuEvaluation,
+      fu
+    ) ?? {
+      fu,
+      bonusHan: 0
+    };
+
+  if (
+    !Number.isInteger(
+      adjustment.fu.fu
+    ) ||
+    adjustment.fu.fu < 1
+  ) {
+    throw new Error(
+      "和了候補の調整後符は1以上の整数で指定してください。"
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      adjustment.bonusHan
+    ) ||
+    adjustment.bonusHan < 0
+  ) {
+    throw new Error(
+      "和了候補の符調整ボーナス翻は0以上の整数で指定してください。"
+    );
+  }
+
+  return adjustment;
 }
 
 function compareCandidates(
@@ -410,20 +466,29 @@ export function evaluateWinningHand(
         continue;
       }
 
-      const fu = calculateFu(
+      const calculatedFu = calculateFu(
         normalContext
       );
 
-      if (!fu) {
+      if (!calculatedFu) {
         continue;
       }
+
+      const hanFuAdjustment =
+        adjustCandidateHanFu(
+          input,
+          context,
+          yakuEvaluation,
+          calculatedFu
+        );
+      const fu = hanFuAdjustment.fu;
 
       const skillBonusHan =
         evaluateCandidateBonusHan(
           input,
           context,
           yakuEvaluation
-        );
+        ) + hanFuAdjustment.bonusHan;
       const bonusHan =
         skillBonusHan + dora.totalHan;
       const totalHan =
