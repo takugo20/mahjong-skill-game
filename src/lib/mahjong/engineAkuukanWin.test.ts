@@ -2890,4 +2890,101 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toEqual(["平和"]);
     expect(result.playerMp).toBe(510);
   });
+
+    it("恩恵享受【縦】でロン和了後に次局の対子保証を予約する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-19",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      melds,
+      winningTile
+    } = createOpenToitoiWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = melds;
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const result =
+      declarePlayerRon(state);
+
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("対々和");
+    expect(
+      result.akuukan?.nextRoundEffects
+    ).toContainEqual({
+      instanceId:
+        "player-skill:2-19:next-round-pairs",
+      sourceId: "player-skill:2-19",
+      remainingTurns: null
+    });
+  });
+
+  it("恩恵享受【縦】でツモ和了後に次局の対子保証を予約する", () => {
+    const state = createBaseState({
+      enemyId: "enemy-1",
+      equippedSkills: [
+        {
+          id: "2-19",
+          level: 5
+        }
+      ]
+    });
+    const {
+      hand,
+      melds,
+      winningTile
+    } = createOpenToitoiWait();
+
+    setPlayerHand(
+      state,
+      0,
+      [...hand, winningTile]
+    );
+    state.round.players[0] = {
+      ...state.round.players[0],
+      melds,
+      drawnTileId: winningTile.id,
+      drawnTileSource: "liveWall"
+    };
+    state.round.currentSeat = 0;
+    state.round.phase = "discarding";
+    state.round.turnNumber = 20;
+    state.round.lastDiscard = null;
+
+    const result =
+      declarePlayerTsumo(state);
+
+    expect(
+      result.round.winResult?.yakuNames
+    ).toContain("対々和");
+    expect(
+      result.akuukan?.nextRoundEffects
+    ).toContainEqual({
+      instanceId:
+        "player-skill:2-19:next-round-pairs",
+      sourceId: "player-skill:2-19",
+      remainingTurns: null
+    });
+  });
 });
