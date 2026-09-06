@@ -13,6 +13,8 @@ import {
   unlockGameAudio
 } from "./lib/gameAudio";
 import {
+  activatePlayerSkill1_14,
+  canActivatePlayerSkill1_14,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1049,6 +1051,12 @@ export function GameBoard({
     round.currentSeat === 0 &&
     round.phase === "discarding";
 
+  const canUsePlayerSkill1_14 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill1_14(
+      gameState
+    );
+
   const canTsumo =
     canPlayerTsumo(gameState);
 
@@ -1533,6 +1541,14 @@ export function GameBoard({
     );
 
     setSelectedTileId(null);
+  }
+
+  function handlePlayerSkill1_14() {
+    setGameState((currentState) =>
+      activatePlayerSkill1_14(
+        currentState
+      )
+    );
   }
 
   function handleRon() {
@@ -2166,6 +2182,16 @@ export function GameBoard({
                     onClick={handleNineTerminals}
                   >
                     九種九牌
+                  </button>
+                )}
+
+                {canUsePlayerSkill1_14 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill1_14}
+                  >
+                    心頭滅却
                   </button>
                 )}
                 
