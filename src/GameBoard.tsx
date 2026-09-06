@@ -21,11 +21,13 @@ import {
   activatePlayerSkill3_8,
   activatePlayerSkill3_9,
   activatePlayerSkill3_10,
+  activatePlayerSkill3_11,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
   canActivatePlayerSkill3_9,
   canActivatePlayerSkill3_10,
+  canActivatePlayerSkill3_11,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1100,6 +1102,12 @@ export function GameBoard({
       gameState
     );
 
+  const canUsePlayerSkill3_11 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill3_11(
+      gameState
+    );  
+
   const playerSkill1_15RemainingTurns =
     gameState.akuukan?.activeEffects.find(
       (effect) =>
@@ -1120,6 +1128,13 @@ export function GameBoard({
         effect.sourceId ===
         "player-skill:3-10"
     )?.remainingTurns ?? null;
+
+  const playerSkill3_11RemainingTurns =
+    gameState.akuukan?.activeEffects.find(
+      (effect) =>
+        effect.sourceId ===
+        "player-skill:3-11"
+    )?.remainingTurns ?? null;  
 
   const canTsumo =
     canPlayerTsumo(gameState);
@@ -1648,6 +1663,13 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill3_11() {
+    setGameState((currentState) =>
+      activatePlayerSkill3_11(
+        currentState
+      )
+    );
+  }
 
   function handleRon() {
     if (winPresentingRef.current) {
@@ -2116,7 +2138,15 @@ export function GameBoard({
                     {playerSkill3_10RemainingTurns}
                     巡
                   </span>
-                )}                
+                )}
+                {playerSkill3_11RemainingTurns !==
+                  null && (
+                  <span className="active-skill-status-badge">
+                    防御結界【改】 残り
+                    {playerSkill3_11RemainingTurns}
+                    巡
+                  </span>
+                )}
               </div>
 
               <strong>
@@ -2374,6 +2404,15 @@ export function GameBoard({
                     onClick={handlePlayerSkill3_10}
                   >
                     防御結界【急】
+                  </button>
+                )}
+                {canUsePlayerSkill3_11 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill3_11}
+                  >
+                    防御結界【改】
                   </button>
                 )}                
                 
