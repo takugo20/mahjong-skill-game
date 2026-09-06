@@ -93,6 +93,11 @@ import {
   tryActivateAkuukanPlayerSkill3_10
 } from "../akuukan/ronPaymentCap";
 import {
+  advanceAkuukanPlayerSkill3_11BeforePlayerAction,
+  hasAkuukanPlayerSkill3_11DiscardProtection,
+  tryActivateAkuukanPlayerSkill3_11
+} from "../akuukan/faceDownDiscard";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1187,6 +1192,55 @@ export function activatePlayerSkill3_10(
   };
 }
 
+export function canActivatePlayerSkill3_11(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill3_11({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  }).succeeded;
+}
+
+export function activatePlayerSkill3_11(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill3_11({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "防御結界【改】を発動しました。効果中の捨て牌を裏向きにします。"
+  };
+}
+
 function beginAkuukanTurnState(
   state: GameState,
   advancePlayerTimedSkills = true
@@ -1198,21 +1252,56 @@ function beginAkuukanTurnState(
   const begunAkuukan = beginAkuukanTurn(
     state.akuukan
   );
+  const playerSkill3_11WasActive =
+    hasAkuukanPlayerSkill3_11DiscardProtection(
+      begunAkuukan
+    );
   const akuukan =
     advancePlayerTimedSkills &&
     state.round.currentSeat === 0
-      ? advanceAkuukanPlayerSkill3_10BeforePlayerAction(
-          advanceAkuukanPlayerSkill3_9BeforePlayerAction(
-            begunAkuukan
+      ? advanceAkuukanPlayerSkill3_11BeforePlayerAction(
+          advanceAkuukanPlayerSkill3_10BeforePlayerAction(
+            advanceAkuukanPlayerSkill3_9BeforePlayerAction(
+              begunAkuukan
+            )
           )
         )
       : begunAkuukan;
+  const playerSkill3_11Ended =
+    advancePlayerTimedSkills &&
+    state.round.currentSeat === 0 &&
+    playerSkill3_11WasActive &&
+    !hasAkuukanPlayerSkill3_11DiscardProtection(
+      akuukan
+    );
+  const players = playerSkill3_11Ended
+    ? replacePlayer(
+        state.round.players,
+        {
+          ...state.round.players[0],
+          discards:
+            state.round.players[0].discards.map(
+              (discard) => ({
+                ...discard,
+                faceDown: false
+              })
+            )
+        }
+      )
+    : state.round.players;
 
-  return akuukan === state.akuukan
+  return (
+    akuukan === state.akuukan &&
+    players === state.round.players
+  )
     ? state
     : {
         ...state,
-        akuukan
+        akuukan,
+        round: {
+          ...state.round,
+          players
+        }
       };
 }
 
