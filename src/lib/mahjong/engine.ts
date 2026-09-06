@@ -40,6 +40,10 @@ import {
   isPlayerSkill3_6NakedSingleProtected
 } from "../akuukan/nakedSingleProtection";
 import {
+  activatePlayerSkill3_7RonImmunity,
+  hasPlayerSkill3_7RonImmunity
+} from "../akuukan/kanRonImmunity";
+import {
   activateAkuukanE2DrawRestriction,
   assignAkuukanE5TargetSuit,
   clearAkuukanE2DrawRestriction,
@@ -3381,6 +3385,16 @@ export function getRonCandidates(
   }
 
   if (
+    discarderSeat === 0 &&
+    state.akuukan &&
+    hasPlayerSkill3_7RonImmunity(
+      state.akuukan
+    )
+  ) {
+    return [];
+  }
+
+  if (
     !chankanSource &&
     isPlayerSkill3_6DiscardProtected(
       state,
@@ -4859,14 +4873,24 @@ export function declarePlayerOpenKan(
     return cpuRonState;
   }
 
+  const kanDeclarationState =
+    callState.akuukan
+      ? {
+          ...callState,
+          akuukan:
+            activatePlayerSkill3_7RonImmunity(
+              callState.akuukan
+            )
+        }
+      : callState;
   const execution = executeKan({
-    round: callState.round,
+    round: kanDeclarationState.round,
     option
   });
   const kanState = beginAkuukanTurnState(
     applyCallAfterEffects(
       {
-        ...callState,
+        ...kanDeclarationState,
         round: execution.round,
         notice:
           "大明槓が成立し、" +
@@ -6157,7 +6181,18 @@ export function declarePlayerSelfKan(
     };
   }
 
-  const player = state.round.players[0];
+  const kanDeclarationState =
+    state.akuukan
+      ? {
+          ...state,
+          akuukan:
+            activatePlayerSkill3_7RonImmunity(
+              state.akuukan
+            )
+        }
+      : state;
+  const player =
+    kanDeclarationState.round.players[0];
 
   const pendingKan: PendingKan =
     option.kind === "closedKan"
@@ -6179,9 +6214,9 @@ export function declarePlayerSelfKan(
         };
 
   return {
-    ...state,
+    ...kanDeclarationState,
     round: {
-      ...state.round,
+      ...kanDeclarationState.round,
       phase: "reaction",
       pendingKan,
       meldCallOptions: [],
