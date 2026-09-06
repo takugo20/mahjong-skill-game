@@ -16,14 +16,61 @@ import {
 } from "./playerSkillCatalogTypes";
 import {
   activateAkuukanEffect,
+  endAkuukanEffect,
   hasAkuukanEffectInstance
 } from "./state";
+import type {
+  AkuukanGameState
+} from "./types";
 
 export const AKUUKAN_PLAYER_SKILL_1_15_INSTANCE_ID =
   "player-skill:1-15:closed-hand-restoration";
 
 export interface AkuukanPlayerSkill1_15State
   extends AkuukanAbilityUseState {}
+
+export function advanceAkuukanPlayerSkill1_15AfterDiscard(
+  state: AkuukanGameState
+): AkuukanGameState {
+  const activeEffect =
+    state.activeEffects.find(
+      (effect) =>
+        effect.instanceId ===
+        AKUUKAN_PLAYER_SKILL_1_15_INSTANCE_ID
+    );
+
+  if (
+    !activeEffect ||
+    activeEffect.remainingTurns === null
+  ) {
+    return state;
+  }
+
+  const remainingTurns =
+    activeEffect.remainingTurns;
+
+  if (remainingTurns <= 1) {
+    return endAkuukanEffect(
+      state,
+      AKUUKAN_PLAYER_SKILL_1_15_INSTANCE_ID
+    );
+  }
+
+  return {
+    ...state,
+    activeEffects: state.activeEffects.map(
+      (effect) =>
+        effect.instanceId ===
+        AKUUKAN_PLAYER_SKILL_1_15_INSTANCE_ID
+          ? {
+              ...effect,
+              remainingTurns:
+                remainingTurns - 1
+            }
+          : effect
+    )
+  };
+}
 
 interface AkuukanPlayerSkill1_15Config {
   readonly mpCost: number;
