@@ -9,6 +9,9 @@ import {
   areAkuukanRiverTilesVisible
 } from "./lib/akuukan/informationVisibility";
 import {
+  getPlayerSkill3_4VisibleTileIds
+} from "./lib/akuukan/transparentTiles";
+import {
   playGameSound,
   unlockGameAudio
 } from "./lib/gameAudio";
@@ -241,6 +244,7 @@ interface OpponentAreaProps {
   player: PlayerState;
   position: OpponentPosition;
   isDeclaring: boolean;
+  visibleTileIds: readonly string[];
   declarationTargetTileIds:
     readonly string[];
 }
@@ -734,6 +738,7 @@ function OpponentArea({
   player,
   position,
   isDeclaring,
+  visibleTileIds,
   declarationTargetTileIds
 }: OpponentAreaProps) {
   return (
@@ -756,15 +761,21 @@ function OpponentArea({
         data-count={`${player.hand.length}枚`}
         aria-label={`${player.name}の手牌${player.hand.length}枚`}
       >
-        {Array.from({
-          length: player.hand.length
-        }).map((_, index) => (
-          <TileView
-            key={`${player.id}-hidden-${index}`}
-            faceDown
-            compact
-          />
-        ))}
+        {player.hand.map((tile) => {
+          const isVisible =
+            visibleTileIds.includes(tile.id);
+
+          return (
+            <TileView
+              key={tile.id}
+              tile={
+                isVisible ? tile : undefined
+              }
+              faceDown={!isVisible}
+              compact
+            />
+          );
+        })}
       </div>
 
       <MeldArea
@@ -1830,6 +1841,14 @@ export function GameBoard({
           isDeclaring={
             activeDeclarationSeat === 2
           }
+          visibleTileIds={
+            gameState.akuukan
+              ? getPlayerSkill3_4VisibleTileIds(
+                  gameState.akuukan,
+                  round.players[2].id
+                )
+              : []
+          }
           declarationTargetTileIds={
             declarationTargetTileIds
           }
@@ -1841,6 +1860,14 @@ export function GameBoard({
           isDeclaring={
             activeDeclarationSeat === 3
           }
+          visibleTileIds={
+            gameState.akuukan
+              ? getPlayerSkill3_4VisibleTileIds(
+                  gameState.akuukan,
+                  round.players[3].id
+                )
+              : []
+          }
           declarationTargetTileIds={
             declarationTargetTileIds
           }
@@ -1851,6 +1878,14 @@ export function GameBoard({
           position="right"
           isDeclaring={
             activeDeclarationSeat === 1
+          }
+          visibleTileIds={
+            gameState.akuukan
+              ? getPlayerSkill3_4VisibleTileIds(
+                  gameState.akuukan,
+                  round.players[1].id
+                )
+              : []
           }
           declarationTargetTileIds={
             declarationTargetTileIds
