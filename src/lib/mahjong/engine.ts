@@ -4354,7 +4354,9 @@ function applyCpuMeldCall(
     );
   const discardedState = discardTile(
     callState,
-    selectedTile.id
+    selectedTile.id,
+    false,
+    random
   );
 
   if (
@@ -4461,7 +4463,9 @@ function applyCpuOpenKanCall(
   );
   const discardedState = discardTile(
     kanState,
-    selectedTile.id
+    selectedTile.id,
+    false,
+    random
   );
 
   if (
@@ -4965,7 +4969,8 @@ function playCpuDiscardingTurn(
     return playCpuRiichiDeclaration(
       state,
       cpuSeat,
-      riichiDecision
+      riichiDecision,
+      random
     );
   }
 
@@ -5021,7 +5026,9 @@ function playCpuDiscardingTurn(
 
   return discardTile(
     state,
-    selectedTile.id
+    selectedTile.id,
+    false,
+    random
   );
 }
 
@@ -5387,7 +5394,8 @@ function establishCpuRiichi(
 function playCpuRiichiDeclaration(
   state: GameState,
   cpuSeat: SeatIndex,
-  decision: CpuRiichiDecision
+  decision: CpuRiichiDecision,
+  random: () => number
 ): GameState {
   const doubleRiichi =
     isCpuDoubleRiichiDeclaration(
@@ -5397,7 +5405,8 @@ function playCpuRiichiDeclaration(
   const discardedState = discardTile(
     state,
     decision.discardTileId,
-    true
+    true,
+    random
   );
 
   if (
@@ -6242,7 +6251,8 @@ function resolvePlayerRiichi(
   const discardedState = discardTile(
     state,
     tileId,
-    true
+    true,
+    random
   );
 
   if (
@@ -6374,7 +6384,9 @@ function resolvePlayerDiscard(
 
   const discardedState = discardTile(
     state,
-    tileId
+    tileId,
+    false,
+    random
   );
 
   if (
