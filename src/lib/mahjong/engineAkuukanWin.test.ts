@@ -140,6 +140,33 @@ function createOpenSanshokuDoukouWait(): {
   };
 }
 
+function createSanankouWait(): {
+  hand: Tile[];
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 1);
+
+  return {
+    hand: [
+      ...createTiles(
+        "man",
+        [2, 2, 2, 6, 7, 8]
+      ),
+      ...createTiles(
+        "pin",
+        [3, 3, 3]
+      ),
+      ...createTiles(
+        "sou",
+        [4, 4, 4]
+      ),
+      createTile("honor", 1)
+    ],
+    winningTile
+  };
+}
+
 function createSevenPairsHand(): {
   hand: Tile[];
   winningTile: Tile;
@@ -2451,6 +2478,58 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "sanshokuDoukou",
         name: "三色同刻",
+        han: 4
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(12000);
+  });
+
+    it("対刻槓強化Lv.5でプレイヤーの三暗刻へ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-16",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      winningTile
+    } = createSanankouWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sanankou",
+        name: "三暗刻",
         han: 4
       }
     ]);
