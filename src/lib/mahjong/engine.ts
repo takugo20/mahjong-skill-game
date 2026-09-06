@@ -1,4 +1,7 @@
 import {
+  recoverPlayerSkill2_18Mp
+} from "../akuukan/afterWinMpRecovery";
+import {
   getAkuukanCallDeposit,
   isAkuukanCallAllowed,
   isAkuukanRonAllowed
@@ -2477,6 +2480,27 @@ function finishRoundWithRonCandidates(
         )
       : state.akuukan;
 
+    const playerResolution =
+    result.kind === "singleRon" ||
+    result.kind === "doubleRon"
+      ? candidates.find(
+          (candidate) =>
+            candidate.winnerSeat === 0
+        )
+      : undefined;
+  const playerMp =
+    state.akuukan && playerResolution
+      ? recoverPlayerSkill2_18Mp({
+          akuukan: state.akuukan,
+          playerMp: state.playerMp,
+          maxMp: state.maxMp,
+          normalYakuIds:
+            playerResolution.evaluation.best.normalYaku.map(
+              (yaku) => yaku.id
+            )
+        })
+      : state.playerMp;
+
   if (result.kind === "singleRon") {
     const winner =
       state.round.players[
@@ -2491,6 +2515,7 @@ function finishRoundWithRonCandidates(
 
     return {
       ...state,
+      playerMp,
       ...(akuukan ? { akuukan } : {}),
       round: {
         ...state.round,
@@ -2529,6 +2554,7 @@ function finishRoundWithRonCandidates(
 
     return {
       ...state,
+      playerMp,
       ...(akuukan ? { akuukan } : {}),
       round: {
         ...state.round,
