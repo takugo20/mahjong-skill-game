@@ -84,6 +84,7 @@ import {
   reservePlayerSkill2_19AfterWin
 } from "../akuukan/nextRoundPairGuarantee";
 import {
+  applyPlayerSkill2_20AtDeal,
   reservePlayerSkill2_20AfterWin
 } from "../akuukan/nextRoundSuitGuarantee";
 import {
@@ -458,27 +459,37 @@ function prepareAkuukanDealComposition(
   const pairReservation =
     applyPlayerSkill2_19AtDeal({
       akuukan,
-      availableTiles: liveWall
+      availableTiles: liveWall,
+      preferredSuit:
+        akuukan.playerSkill2_20ReservedSuit
+    });
+  const suitReservation =
+    applyPlayerSkill2_20AtDeal({
+      akuukan: pairReservation.akuukan,
+      availableTiles:
+        pairReservation.remainingTiles,
+      alreadyReservedTiles:
+        pairReservation.reservedTiles
     });
 
   const doraTripletReservation =
     reserveAkuukanE16DoraTriplet({
-      akuukan: pairReservation.akuukan,
+      akuukan: suitReservation.akuukan,
       doraIndicator:
         initialDoraIndicator,
       availableTiles:
-        pairReservation.remainingTiles
+        suitReservation.remainingTiles
     });
   const tenpaiHandReservation =
     reserveAkuukanE26TenpaiHand({
-      akuukan: pairReservation.akuukan,
+      akuukan: suitReservation.akuukan,
       availableTiles:
         doraTripletReservation
           .remainingTiles
     });
   const shantenHandsReservation =
     reserveAkuukanE29ShantenHands({
-      akuukan: pairReservation.akuukan,
+      akuukan: suitReservation.akuukan,
       availableTiles:
         tenpaiHandReservation
           .remainingTiles
@@ -489,8 +500,10 @@ function prepareAkuukanDealComposition(
     ...tenpaiHandReservation
       .reservedTiles
   ];
-  const playerReservedTiles =
-    pairReservation.reservedTiles;
+  const playerReservedTiles = [
+    ...pairReservation.reservedTiles,
+    ...suitReservation.reservedTiles
+  ];
 
   if (
     shantenHandsReservation
@@ -506,7 +519,7 @@ function prepareAkuukanDealComposition(
         .reservedTilesBySeat[0];
 
     return {
-      akuukan: pairReservation.akuukan,
+      akuukan: suitReservation.akuukan,
       liveWall: [
         ...shantenHandsReservation
           .remainingTiles,
@@ -533,7 +546,7 @@ function prepareAkuukanDealComposition(
   }
 
   return {
-    akuukan: pairReservation.akuukan,
+    akuukan: suitReservation.akuukan,
     liveWall:
       shantenHandsReservation
         .remainingTiles,
