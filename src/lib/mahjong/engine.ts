@@ -1528,6 +1528,43 @@ function getAkuukanWinningCandidateOwner(
     : "normalOpponent";
 }
 
+function getSeatOrderFromInitialDealer(
+  seat: SeatIndex,
+  initialDealerSeat: SeatIndex
+): number {
+  return (
+    seat - initialDealerSeat + 4
+  ) % 4;
+}
+
+function isPlayerCurrentlyFourth(
+  state: GameState
+): boolean {
+  const currentRanking = [
+    ...state.round.players
+  ].sort((first, second) => {
+    const scoreDifference =
+      second.score - first.score;
+
+    if (scoreDifference !== 0) {
+      return scoreDifference;
+    }
+
+    return (
+      getSeatOrderFromInitialDealer(
+        first.seat,
+        state.initialDealerSeat
+      ) -
+      getSeatOrderFromInitialDealer(
+        second.seat,
+        state.initialDealerSeat
+      )
+    );
+  });
+
+  return currentRanking[3]?.seat === 0;
+}
+
 function createWinInput(
   state: GameState,
   winnerSeat: SeatIndex,
@@ -1571,7 +1608,11 @@ function createWinInput(
             createAkuukanWinningCandidateBonusHanEvaluator(
               {
                 ...akuukanWinningInput,
-                discards: player.discards
+                discards: player.discards,
+                playerIsFourth:
+                  isPlayerCurrentlyFourth(
+                    state
+                  )
               }
             ),
           candidateScoreAdjuster:
