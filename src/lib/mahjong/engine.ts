@@ -88,6 +88,11 @@ import {
   tryActivateAkuukanPlayerSkill3_9
 } from "../akuukan/ronImmunity";
 import {
+  advanceAkuukanPlayerSkill3_10BeforePlayerAction,
+  applyAkuukanPlayerSkill3_10PaymentCap,
+  tryActivateAkuukanPlayerSkill3_10
+} from "../akuukan/ronPaymentCap";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1133,9 +1138,58 @@ export function activatePlayerSkill3_9(
   };
 }
 
+export function canActivatePlayerSkill3_10(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill3_10({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  }).succeeded;
+}
+
+export function activatePlayerSkill3_10(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill3_10({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "防御結界【急】を発動しました。効果中の満貫以上の放銃支払いを制限します。"
+  };
+}
+
 function beginAkuukanTurnState(
   state: GameState,
-  advancePlayerSkill3_9 = true
+  advancePlayerTimedSkills = true
 ): GameState {
   if (!state.akuukan) {
     return state;
@@ -1145,10 +1199,12 @@ function beginAkuukanTurnState(
     state.akuukan
   );
   const akuukan =
-    advancePlayerSkill3_9 &&
+    advancePlayerTimedSkills &&
     state.round.currentSeat === 0
-      ? advanceAkuukanPlayerSkill3_9BeforePlayerAction(
-          begunAkuukan
+      ? advanceAkuukanPlayerSkill3_10BeforePlayerAction(
+          advanceAkuukanPlayerSkill3_9BeforePlayerAction(
+            begunAkuukan
+          )
         )
       : begunAkuukan;
 
@@ -2165,6 +2221,30 @@ function applyAkuukanPaymentMultipliersToWinResolution(
           state.round.players[
             resolution.winnerSeat
           ];
+                const honbaPoints =
+          resolution.winMethod === "ron" &&
+          change.seat ===
+            resolution.loserSeat
+            ? state.round.honba * 300
+            : 0;
+        const paymentBasePoints =
+          -change.change - honbaPoints;
+        const cappedPaymentBasePoints =
+          applyAkuukanPlayerSkill3_10PaymentCap({
+            akuukan,
+            winMethod: resolution.winMethod,
+            winnerIsDealer:
+              winner.isDealer,
+            payerIsPlayer:
+              change.seat === 0,
+            payerIsLoser:
+              change.seat ===
+              resolution.loserSeat,
+            handBasePoints:
+              resolution.evaluation.best
+                .score.basePoints,
+            paymentBasePoints
+          });
         const paymentPointsAfterMultipliers =
           applyAkuukanPaymentMultipliers({
             akuukan,
@@ -2174,7 +2254,9 @@ function applyAkuukanPaymentMultipliersToWinResolution(
               change.seat === 0,
             winnerIsSelectedEnemy:
               resolution.winnerSeat === 2,
-            paymentPoints: -change.change
+            paymentPoints:
+              cappedPaymentBasePoints +
+              honbaPoints
           });
         const responsibilityPaymentBeforeMultipliers =
           resolution.winMethod === "tsumo" &&
