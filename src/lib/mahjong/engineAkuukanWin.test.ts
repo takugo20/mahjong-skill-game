@@ -105,6 +105,41 @@ function createOpenToitoiWait(): {
   };
 }
 
+function createOpenSanshokuDoukouWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("honor", 1);
+
+  return {
+    hand: [
+      ...createTiles(
+        "pin",
+        [5, 5, 5]
+      ),
+      ...createTiles(
+        "sou",
+        [5, 5, 5]
+      ),
+      ...createTiles(
+        "man",
+        [1, 2, 3]
+      ),
+      createTile("honor", 1)
+    ],
+    meld: {
+      kind: "pon",
+      tiles: createTiles(
+        "man",
+        [5, 5, 5]
+      )
+    },
+    winningTile
+  };
+}
+
 function createSevenPairsHand(): {
   hand: Tile[];
   winningTile: Tile;
@@ -2362,6 +2397,60 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "toitoi",
         name: "対々和",
+        han: 4
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(12000);
+  });
+
+    it("対刻槓強化Lv.5でプレイヤーの三色同刻へ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-16",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenSanshokuDoukouWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "sanshokuDoukou",
+        name: "三色同刻",
         han: 4
       }
     ]);
