@@ -1511,7 +1511,8 @@ export function drawCpuTile(
 export function discardTile(
   state: GameState,
   tileId: string,
-  riichiDeclaration = false
+  riichiDeclaration = false,
+  random: () => number = Math.random
 ): GameState {
   const round = state.round;
 
@@ -1625,7 +1626,7 @@ export function discardTile(
         )
       : state.akuukan;
 
-  return {
+  const discardedState: GameState = {
     ...state,
     ...(akuukanAfterDiscard
       ? { akuukan: akuukanAfterDiscard }
@@ -1652,6 +1653,12 @@ export function discardTile(
       ? "最後の牌が捨てられました。荒牌平局です。"
       : `${currentPlayer.name}が牌を捨てました。`
   };
+
+  return applyAkuukanDamatenDetection(
+    discardedState,
+    random,
+    riichiDeclaration ? seat : null
+  ).state;
 }
 
 function calculateDiscardPriority(
