@@ -1,5 +1,6 @@
 import type {
   WinningCandidateBonusHanEvaluator,
+  WinningCandidateHanFuAdjuster,
   WinningCandidateScoreAdjuster,
   WinningCandidateYakuEvaluation,
   WinningCandidateYakuEvaluator
@@ -23,6 +24,9 @@ import {
 import {
   applyAkuukanE21MinimumMangan
 } from "./handValueAdjustments";
+import {
+  adjustAkuukanPlayerSkill1_13HanFu
+} from "./hanFuAdjustments";
 import {
   getAkuukanNormalYakuFinalHan,
   getAkuukanYakumanMultiplier
@@ -204,6 +208,21 @@ export function createAkuukanWinningCandidateBonusHanEvaluator(
       })
     );
   };
+}
+
+export function createAkuukanWinningCandidateHanFuAdjuster(
+  input:
+    CreateAkuukanWinningCandidateYakuEvaluatorInput
+): WinningCandidateHanFuAdjuster {
+  return (_context, yakuEvaluation, fu) =>
+    adjustAkuukanPlayerSkill1_13HanFu({
+      akuukan: input.akuukan,
+      winnerIsPlayer:
+        input.owner === "player",
+      hasValidYaku:
+        yakuEvaluation.hasValidYaku,
+      fu
+    });
 }
 
 export function createAkuukanWinningCandidateScoreAdjuster(
