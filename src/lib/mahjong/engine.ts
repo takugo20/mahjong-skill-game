@@ -80,6 +80,10 @@ import {
   applyAkuukanPlayerSkill1_6AtDeal
 } from "../akuukan/nextRoundRedTile";
 import {
+  applyPlayerSkill2_19AtDeal,
+  reservePlayerSkill2_19AfterWin
+} from "../akuukan/nextRoundPairGuarantee";
+import {
   reservePlayerSkill2_20AfterWin
 } from "../akuukan/nextRoundSuitGuarantee";
 import {
