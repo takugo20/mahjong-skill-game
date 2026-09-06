@@ -79,9 +79,20 @@ function createNonWinningHand(): Tile[] {
   ];
 }
 
-function prepareState(): GameState {
+function prepareState(
+  withParentTsumoReduction = false
+): GameState {
   const state = createInitialGameState(
-    () => 0.5
+    () => 0.5,
+    withParentTsumoReduction
+      ? {
+          enemyId: "enemy-1",
+          equippedSkills: [{
+            id: "3-2",
+            level: 1
+          }]
+        }
+      : undefined
   );
 
   state.round.deadWall = Array.from(
@@ -228,5 +239,68 @@ describe("CPUの和了", () => {
     expect(result.notice).toBe(
       "CPU・右がツモ和了しました。"
     );
+  });
+
+    it("親被軽減で子のCPUツモ時のプレイヤー支払を半減する", () => {
+    const state = prepareState(true);
+    const {
+      hand,
+      winningTile
+    } = createPinfuWait();
+    const discardedTile =
+      createTile("honor", 7);
+
+    state.round.honba = 1;
+    state.round.turnNumber = 4;
+    state.round.players[0] = {
+      ...state.round.players[0],
+      hand: [
+        discardedTile,
+        ...createNonWinningHand()
+      ],
+      drawnTileId: discardedTile.id
+    };
+    state.round.players[1] = {
+      ...state.round.players[1],
+      hand,
+      drawnTileId: null
+    };
+    state.round.liveWall = [
+      winningTile,
+      createTile("honor", 1)
+    ];
+
+    const result = playPlayerDiscard(
+      state,
+      discardedTile.id,
+      () => 0.5
+    );
+
+    expect(result.round.winResult).toMatchObject({
+      winMethod: "tsumo",
+      winnerSeat: 1,
+      loserSeat: null
+    });
+    expect(
+      result.round.winResult
+        ?.pointChanges.map(
+          (change) => change.change
+        )
+    ).toEqual([
+      -400,
+      1400,
+      -500,
+      -500
+    ]);
+    expect(
+      result.round.players.map(
+        (player) => player.score
+      )
+    ).toEqual([
+      24600,
+      26400,
+      24500,
+      24500
+    ]);
   });
 });
