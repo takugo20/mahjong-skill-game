@@ -11,6 +11,7 @@ import {
 } from "./ronImmunity";
 import {
   advanceAkuukanTurnEffects,
+  beginAkuukanRound,
   createInitialAkuukanGameState,
   disableAkuukanSource,
   resetAkuukanTurnUsage
@@ -174,6 +175,23 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
       advanced.activeEffects[0]
         ?.remainingTurns
     ).toBe(3);
+  });
+
+  it("局が終了したら残り巡数にかかわらず効果を終了する", () => {
+    const activated =
+      tryActivateAkuukanPlayerSkill3_9(
+        createState(5)
+      );
+    const nextRound = beginAkuukanRound(
+      activated.state.akuukan
+    );
+
+    expect(
+      hasAkuukanPlayerSkill3_9RonImmunity(
+        nextRound
+      )
+    ).toBe(false);
+    expect(nextRound.activeEffects).toEqual([]);
   });
 
   it("MP不足では発動せず使用済みにしない", () => {
