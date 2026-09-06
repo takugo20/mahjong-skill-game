@@ -5,6 +5,7 @@ import {
 } from "vitest";
 import {
   createInitialGameState,
+  discardTile,
   startNextRound
 } from "./engine";
 import type {
@@ -134,5 +135,66 @@ describe("プレイヤースキル3-4 透牌のエンジン統合", () => {
     ).not.toContain(
       "stale-transparent-tile"
     );
+  });
+
+    it("他家が公開牌を捨てたら残る手牌から1枚補充する", () => {
+    const state = createState();
+
+    if (!state.akuukan) {
+      throw new Error(
+        "亜空間状態がありません。"
+      );
+    }
+
+    const rightPlayer =
+      state.round.players[1];
+    const visibleTileIds =
+      state.akuukan
+        .playerSkill3_4VisibleTileIdsByPlayerId?.[
+          rightPlayer.id
+        ];
+    const discardedVisibleTileId =
+      visibleTileIds?.[0];
+
+    if (!discardedVisibleTileId) {
+      throw new Error(
+        "公開牌が選択されていません。"
+      );
+    }
+
+    const discardableState: GameState = {
+      ...state,
+      round: {
+        ...state.round,
+        currentSeat: 1,
+        phase: "discarding"
+      }
+    };
+    const result = discardTile(
+      discardableState,
+      discardedVisibleTileId,
+      false,
+      () => 0
+    );
+    const nextVisibleTileIds =
+      result.akuukan
+        ?.playerSkill3_4VisibleTileIdsByPlayerId?.[
+          rightPlayer.id
+        ] ?? [];
+    const remainingHandTileIds = new Set(
+      result.round.players[1].hand.map(
+        (tile) => tile.id
+      )
+    );
+
+    expect(nextVisibleTileIds).toHaveLength(2);
+    expect(nextVisibleTileIds).not.toContain(
+      discardedVisibleTileId
+    );
+    expect(
+      nextVisibleTileIds.every((tileId) =>
+        remainingHandTileIds.has(tileId)
+      )
+    ).toBe(true);
   });
 });
