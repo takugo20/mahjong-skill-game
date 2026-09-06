@@ -57,6 +57,9 @@ import {
   isAkuukanE27WinInvalidated
 } from "../akuukan/handValueAdjustments";
 import {
+  tryActivateAkuukanPlayerSkill1_14
+} from "../akuukan/honbaIncrease";
+import {
   AKUUKAN_DRAW_MP_RECOVERY,
   AKUUKAN_INITIAL_MP,
   AKUUKAN_MAX_MP,
@@ -710,6 +713,61 @@ export function createInitialGameState(
       ? { akuukan: akuukanAfterDeal }
       : {}),
     notice: "東1局を開始しました。捨てる牌を選んでください。"
+  };
+}
+
+export function canActivatePlayerSkill1_14(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill1_14({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp,
+    honba: state.round.honba
+  }).succeeded;
+}
+
+export function activatePlayerSkill1_14(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill1_14({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp,
+      honba: state.round.honba
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    round: {
+      ...state.round,
+      honba: activation.state.honba
+    },
+    notice:
+      `心頭滅却を発動し、本場を${activation.state.honba}本に増やしました。`
   };
 }
 
