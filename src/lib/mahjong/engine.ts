@@ -83,6 +83,11 @@ import {
   tryActivateAkuukanPlayerSkill3_8
 } from "../akuukan/liveWallSeal";
 import {
+  advanceAkuukanPlayerSkill3_9BeforePlayerAction,
+  hasAkuukanPlayerSkill3_9RonImmunity,
+  tryActivateAkuukanPlayerSkill3_9
+} from "../akuukan/ronImmunity";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1079,16 +1084,73 @@ export function activatePlayerSkill3_8(
   };
 }
 
-function beginAkuukanTurnState(
+export function canActivatePlayerSkill3_9(
   state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill3_9({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  }).succeeded;
+}
+
+export function activatePlayerSkill3_9(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill3_9({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "防御結界【破】を発動しました。効果中はロンされません。"
+  };
+}
+
+function beginAkuukanTurnState(
+  state: GameState,
+  advancePlayerSkill3_9 = true
 ): GameState {
   if (!state.akuukan) {
     return state;
   }
 
-  const akuukan = beginAkuukanTurn(
+  const begunAkuukan = beginAkuukanTurn(
     state.akuukan
   );
+  const akuukan =
+    advancePlayerSkill3_9 &&
+    state.round.currentSeat === 0
+      ? advanceAkuukanPlayerSkill3_9BeforePlayerAction(
+          begunAkuukan
+        )
+      : begunAkuukan;
 
   return akuukan === state.akuukan
     ? state
@@ -3450,8 +3512,13 @@ export function getRonCandidates(
   if (
     discarderSeat === 0 &&
     state.akuukan &&
-    hasPlayerSkill3_7RonImmunity(
-      state.akuukan
+    (
+      hasPlayerSkill3_7RonImmunity(
+        state.akuukan
+      ) ||
+      hasAkuukanPlayerSkill3_9RonImmunity(
+        state.akuukan
+      )
     )
   ) {
     return [];
@@ -6335,7 +6402,8 @@ export function completePlayerSelfKan(
           )}を嶺上牌としてツモりました。`
       },
       0
-    )
+    ),
+    false
   );
 
   return kanState;
