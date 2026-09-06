@@ -19,9 +19,11 @@ import {
   activatePlayerSkill1_14,
   activatePlayerSkill1_15,
   activatePlayerSkill3_8,
+  activatePlayerSkill3_9,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
+  canActivatePlayerSkill3_9,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1084,11 +1086,24 @@ export function GameBoard({
       gameState
     );
 
+  const canUsePlayerSkill3_9 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill3_9(
+      gameState
+    );
+
   const playerSkill1_15RemainingTurns =
     gameState.akuukan?.activeEffects.find(
       (effect) =>
         effect.sourceId ===
         "player-skill:1-15"
+    )?.remainingTurns ?? null;
+
+  const playerSkill3_9RemainingTurns =
+    gameState.akuukan?.activeEffects.find(
+      (effect) =>
+        effect.sourceId ===
+        "player-skill:3-9"
     )?.remainingTurns ?? null;
 
   const canTsumo =
@@ -1601,6 +1616,16 @@ export function GameBoard({
     );
   }
 
+  
+  function handlePlayerSkill3_9() {
+    setGameState((currentState) =>
+      activatePlayerSkill3_9(
+        currentState
+      )
+    );
+  }
+
+
   function handleRon() {
     if (winPresentingRef.current) {
       return;
@@ -2053,6 +2078,14 @@ export function GameBoard({
                     巡
                   </span>
                 )}
+                {playerSkill3_9RemainingTurns !==
+                  null && (
+                  <span className="active-skill-status-badge">
+                    防御結界【破】 残り
+                    {playerSkill3_9RemainingTurns}
+                    巡
+                  </span>
+                )}
               </div>
 
               <strong>
@@ -2294,6 +2327,15 @@ export function GameBoard({
                     山牌封印
                   </button>
                 )}
+                {canUsePlayerSkill3_9 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill3_9}
+                  >
+                    防御結界【破】
+                  </button>
+                )}                
                 
                 {selfKanOptions.map(
                   (option) => (
