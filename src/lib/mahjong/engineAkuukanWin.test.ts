@@ -2635,4 +2635,61 @@ describe("ゲーム本体の亜空間和了判定", () => {
         .totalPoints
     ).toBe(12000);
   });
+
+    it("花天月地Lv.5でプレイヤーの河底撈魚へ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-17",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenPinfuWait();
+    const houteiDiscard: Discard = {
+      ...createDiscard(winningTile),
+      drawnTileSource: "liveWall"
+    };
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      houteiDiscard
+    ];
+    state.round.liveWall = [];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: houteiDiscard
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "houtei",
+        name: "河底撈魚",
+        han: 3
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(5800);
+  });
 });
