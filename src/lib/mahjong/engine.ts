@@ -80,6 +80,9 @@ import {
   tryActivateAkuukanPlayerSkill1_14
 } from "../akuukan/honbaIncrease";
 import {
+  tryActivateAkuukanPlayerSkill3_8
+} from "../akuukan/liveWallSeal";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1013,6 +1016,66 @@ export function activatePlayerSkill1_15(
     playerMp: activation.state.playerMp,
     notice:
       "門前回帰を発動しました。効果中の和了は門前扱いになります。"
+  };
+}
+
+export function canActivatePlayerSkill3_8(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill3_8({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp,
+    liveWall: state.round.liveWall
+  }).succeeded;
+}
+
+export function activatePlayerSkill3_8(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill3_8({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp,
+      liveWall: state.round.liveWall
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  const removedCount =
+    state.round.liveWall.length -
+    activation.state.liveWall.length;
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    round: {
+      ...state.round,
+      liveWall: activation.state.liveWall
+    },
+    notice:
+      "山牌封印を発動し、" +
+      `通常山から${removedCount}枚を除外しました。`
   };
 }
 
