@@ -307,7 +307,9 @@ export function advanceAkuukanTurnEffects(
         effect.sourceId ===
           "player-skill:3-9" ||
         effect.sourceId ===
-          "player-skill:3-10"
+          "player-skill:3-10" ||
+        effect.sourceId ===
+          "player-skill:3-11"
       ) {
         return [effect];
       }
@@ -380,7 +382,9 @@ export function beginAkuukanRound(
           effect.sourceId !==
             "player-skill:3-9" &&
           effect.sourceId !==
-            "player-skill:3-10"
+            "player-skill:3-10" &&
+          effect.sourceId !==
+            "player-skill:3-11"
       ),
     playerSkill3_3DamatenPlayerIds: [],
     playerSkill3_7RonImmunityActive:
