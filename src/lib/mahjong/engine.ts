@@ -77,6 +77,9 @@ import {
   applyPlayerSkill3_1ToDrawSettlement
 } from "../akuukan/notenPenaltyReduction";
 import {
+  applyPlayerSkill3_2ToPayment
+} from "../akuukan/parentTsumoPaymentReduction";
+import {
   applyAkuukanPaymentMultipliers
 } from "../akuukan/paymentAdjustments";
 import {
@@ -222,6 +225,9 @@ import type {
   ChankanWinSource,
   ValidRoundWinResolution
 } from "./roundWin";
+import {
+  calculateScore
+} from "./score";
 import {
   isTenpai
 } from "./hand";
@@ -1903,7 +1909,13 @@ function applyAkuukanPaymentMultipliersToWinResolution(
           return { ...change };
         }
 
-        const paymentPoints =
+        const payer =
+          state.round.players[change.seat];
+        const winner =
+          state.round.players[
+            resolution.winnerSeat
+          ];
+        const paymentPointsAfterMultipliers =
           applyAkuukanPaymentMultipliers({
             akuukan,
             winnerIsPlayer:
@@ -1913,6 +1925,48 @@ function applyAkuukanPaymentMultipliersToWinResolution(
             winnerIsSelectedEnemy:
               resolution.winnerSeat === 2,
             paymentPoints: -change.change
+          });
+        const responsibilityPaymentBeforeMultipliers =
+          resolution.winMethod === "tsumo" &&
+          resolution.responsibility
+            ?.responsiblePlayerId ===
+            change.playerId
+            ? calculateScore({
+                han: 0,
+                fu: 20,
+                winMethod: "tsumo",
+                dealer: winner.isDealer,
+                yakumanMultiplier:
+                  resolution.responsibility
+                    .yakumanMultiplier
+              }).handPoints
+            : 0;
+        const responsibilityPaymentPoints =
+          responsibilityPaymentBeforeMultipliers >
+          0
+            ? applyAkuukanPaymentMultipliers({
+                akuukan,
+                winnerIsPlayer:
+                  resolution.winnerSeat === 0,
+                payerIsPlayer:
+                  change.seat === 0,
+                winnerIsSelectedEnemy:
+                  resolution.winnerSeat === 2,
+                paymentPoints:
+                  responsibilityPaymentBeforeMultipliers
+              })
+            : 0;
+        const paymentPoints =
+          applyPlayerSkill3_2ToPayment({
+            akuukan,
+            winMethod: resolution.winMethod,
+            winnerIsDealer: winner.isDealer,
+            payerIsPlayer:
+              change.seat === 0,
+            payerIsDealer: payer.isDealer,
+            paymentPoints:
+              paymentPointsAfterMultipliers,
+            responsibilityPaymentPoints
           });
 
         paymentPointsAfter += paymentPoints;
