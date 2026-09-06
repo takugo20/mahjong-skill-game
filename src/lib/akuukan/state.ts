@@ -301,6 +301,13 @@ export function advanceAkuukanTurnEffects(
 
   const activeEffects =
     state.activeEffects.flatMap((effect) => {
+      if (
+        effect.sourceId ===
+        "player-skill:1-15"
+      ) {
+        return [effect];
+      }
+
       if (effect.remainingTurns === null) {
         return [effect];
       }
