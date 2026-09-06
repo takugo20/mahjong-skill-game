@@ -1987,4 +1987,58 @@ describe("ゲーム本体の亜空間和了判定", () => {
         .totalPoints
     ).toBe(7700);
   });
+
+    it("純全帯強化Lv.5でプレイヤーの副露純チャンへ2翻加算する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-11",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenJunchanWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "junchan",
+        name: "純全帯么九",
+        han: 4
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(12000);
+  });
 });
