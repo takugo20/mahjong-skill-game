@@ -367,6 +367,44 @@ function createOpenRyanpeikouWait(): {
   };
 }
 
+function createOpenPinfuWait(): {
+  hand: Tile[];
+  meld: Meld;
+  winningTile: Tile;
+} {
+  const winningTile =
+    createTile("man", 8);
+
+  return {
+    hand: [
+      ...createTiles(
+        "pin",
+        [2, 3, 4]
+      ),
+      ...createTiles(
+        "sou",
+        [2, 3, 4]
+      ),
+      ...createTiles(
+        "man",
+        [6, 7]
+      ),
+      ...createTiles(
+        "honor",
+        [3, 3]
+      )
+    ],
+    meld: {
+      kind: "chi",
+      tiles: createTiles(
+        "man",
+        [1, 2, 3]
+      )
+    },
+    winningTile
+  };
+}
+
 function createNonWinningHand(): Tile[] {
   return [
     ...createTiles(
@@ -1645,5 +1683,62 @@ describe("ゲーム本体の亜空間和了判定", () => {
         (yaku) => yaku.id === "iipeikou"
       )
     ).toBe(false);
+  });
+
+    it("平和名人でプレイヤーの副露手に平和を成立させる", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-6",
+            level: 1
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenPinfuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    const candidate =
+      getRonCandidates(state).find(
+        (result) =>
+          result.winnerSeat === 0
+      );
+
+    expect(
+      candidate?.evaluation.best.normalYaku
+    ).toEqual([
+      {
+        id: "pinfu",
+        name: "平和",
+        han: 1
+      }
+    ]);
+    expect(
+      candidate?.evaluation.best.fu?.fu
+    ).toBe(30);
+    expect(
+      candidate?.evaluation.best.score
+        .totalPoints
+    ).toBe(1500);
   });
 });
