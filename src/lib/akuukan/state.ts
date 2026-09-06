@@ -303,7 +303,9 @@ export function advanceAkuukanTurnEffects(
     state.activeEffects.flatMap((effect) => {
       if (
         effect.sourceId ===
-        "player-skill:1-15"
+          "player-skill:1-15" ||
+        effect.sourceId ===
+          "player-skill:3-9"
       ) {
         return [effect];
       }
