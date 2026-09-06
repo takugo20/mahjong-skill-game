@@ -2795,4 +2795,52 @@ describe("ゲーム本体の亜空間和了判定", () => {
       result.round.winResult?.yakuNames
     ).toEqual(["嶺上開花"]);
   });
+
+    it("恩恵享受【横】Lv.5でロン和了後に90MP回復する", () => {
+    const {
+      state
+    } = prepareRonState(
+      {
+        enemyId: "enemy-1",
+        equippedSkills: [
+          {
+            id: "2-6",
+            level: 1
+          },
+          {
+            id: "2-18",
+            level: 5
+          }
+        ]
+      },
+      1
+    );
+    const {
+      hand,
+      meld,
+      winningTile
+    } = createOpenPinfuWait();
+
+    setPlayerHand(state, 0, hand);
+    state.round.players[0].melds = [meld];
+    state.round.players[1].discards = [
+      createDiscard(winningTile)
+    ];
+    state.round.lastDiscard = {
+      seat: 1,
+      discard: createDiscard(
+        winningTile
+      )
+    };
+
+    expect(state.playerMp).toBe(420);
+
+    const result =
+      declarePlayerRon(state);
+
+    expect(
+      result.round.winResult?.yakuNames
+    ).toEqual(["平和"]);
+    expect(result.playerMp).toBe(510);
+  });
 });
