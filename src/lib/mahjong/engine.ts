@@ -34,6 +34,9 @@ import {
   synchronizeAkuukanE19PlayerHandRestrictions
 } from "../akuukan/discardLegality";
 import {
+  isPlayerSkill3_5CallBlocked
+} from "../akuukan/discardCallProtection";
+import {
   activateAkuukanE2DrawRestriction,
   assignAkuukanE5TargetSuit,
   clearAkuukanE2DrawRestriction,
@@ -3587,6 +3590,24 @@ function isCallAllowed(
 
   const caller =
     state.round.players[seat];
+  const discardOwner =
+    discarderSeat === undefined
+      ? undefined
+      : state.round.players[discarderSeat];
+
+  if (
+    discardOwner &&
+    isPlayerSkill3_5CallBlocked({
+      akuukan: state.akuukan,
+      discardOwnerIsPlayer:
+        discarderSeat === 0,
+      discardNumber:
+        discardOwner.discards.length,
+      kind
+    })
+  ) {
+    return false;
+  }
 
   return (
     caller !== undefined &&
