@@ -251,6 +251,8 @@ export interface AkuukanGameState {
     NormalYakuId[];
   playerSkill2_20ReservedSuit?:
     NumberSuit;
+  playerSkill3_3DamatenPlayerIds?:
+    string[];
   e19DiscardRestrictions?:
     AkuukanE19DiscardRestriction[];
   disabledSources:
