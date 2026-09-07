@@ -5,6 +5,7 @@ import {
 } from "vitest";
 import {
   AKUUKAN_PLAYER_SKILL_3_14_INSTANCE_ID,
+  advanceAkuukanPlayerSkill3_14AfterOpponentCycle,
   getAkuukanPlayerSkill3_14RemainingTurns,
   hasAkuukanPlayerSkill3_14Restriction,
   isAkuukanPlayerSkill3_14OpponentRestricted,
@@ -118,6 +119,42 @@ describe("プレイヤースキル3-14 色即是空", () => {
     }
   });
 
+    it("卓が一周するたびに残り巡数を減らして終了する", () => {
+    const activated =
+      tryActivateAkuukanPlayerSkill3_14(
+        createState(2)
+      );
+    const afterFirstCycle =
+      advanceAkuukanPlayerSkill3_14AfterOpponentCycle(
+        activated.state.akuukan
+      );
+    const afterSecondCycle =
+      advanceAkuukanPlayerSkill3_14AfterOpponentCycle(
+        afterFirstCycle
+      );
+
+    expect(
+      getAkuukanPlayerSkill3_14RemainingTurns(
+        afterFirstCycle
+      )
+    ).toBe(1);
+    expect(
+      hasAkuukanPlayerSkill3_14Restriction(
+        afterFirstCycle
+      )
+    ).toBe(true);
+    expect(
+      hasAkuukanPlayerSkill3_14Restriction(
+        afterSecondCycle
+      )
+    ).toBe(false);
+    expect(
+      getAkuukanPlayerSkill3_14RemainingTurns(
+        afterSecondCycle
+      )
+    ).toBeNull();
+  });
+
   it("同じ局では再発動できない", () => {
     const first =
       tryActivateAkuukanPlayerSkill3_14(
@@ -188,5 +225,28 @@ describe("プレイヤースキル3-14 色即是空", () => {
       disabledResult.state.akuukan
         .activeEffects
     ).toEqual([]);
+  });
+
+    it("発動後に無効化された場合は他家を制限しない", () => {
+    const activated =
+      tryActivateAkuukanPlayerSkill3_14(
+        createState(1)
+      );
+    const disabled = disableAkuukanSource(
+      activated.state.akuukan,
+      "player-skill:3-14"
+    );
+
+    expect(
+      hasAkuukanPlayerSkill3_14Restriction(
+        disabled
+      )
+    ).toBe(false);
+    expect(
+      isAkuukanPlayerSkill3_14OpponentRestricted(
+        disabled,
+        1
+      )
+    ).toBe(false);
   });
 });
