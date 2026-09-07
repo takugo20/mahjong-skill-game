@@ -16,7 +16,9 @@ import {
 } from "./playerSkillCatalogTypes";
 import {
   activateAkuukanEffect,
-  hasAkuukanEffectInstance
+  endAkuukanEffect,
+  hasAkuukanEffectInstance,
+  isAkuukanSourceDisabled
 } from "./state";
 import type {
   AkuukanGameState
@@ -95,10 +97,59 @@ function getAkuukanPlayerSkill3_14Config(
 export function hasAkuukanPlayerSkill3_14Restriction(
   state: AkuukanGameState
 ): boolean {
-  return hasAkuukanEffectInstance(
-    state,
-    AKUUKAN_PLAYER_SKILL_3_14_INSTANCE_ID
+  return (
+    !isAkuukanSourceDisabled(
+      state,
+      "player-skill:3-14"
+    ) &&
+    hasAkuukanEffectInstance(
+      state,
+      AKUUKAN_PLAYER_SKILL_3_14_INSTANCE_ID
+    )
   );
+}
+
+export function advanceAkuukanPlayerSkill3_14AfterOpponentCycle(
+  state: AkuukanGameState
+): AkuukanGameState {
+  const activeEffect =
+    state.activeEffects.find(
+      (effect) =>
+        effect.instanceId ===
+        AKUUKAN_PLAYER_SKILL_3_14_INSTANCE_ID
+    );
+
+  if (
+    !activeEffect ||
+    activeEffect.remainingTurns === null
+  ) {
+    return state;
+  }
+
+  const remainingTurns =
+    activeEffect.remainingTurns;
+
+  if (remainingTurns <= 1) {
+    return endAkuukanEffect(
+      state,
+      AKUUKAN_PLAYER_SKILL_3_14_INSTANCE_ID
+    );
+  }
+
+  return {
+    ...state,
+    activeEffects: state.activeEffects.map(
+      (effect) =>
+        effect.instanceId ===
+        AKUUKAN_PLAYER_SKILL_3_14_INSTANCE_ID
+          ? {
+              ...effect,
+              remainingTurns:
+                remainingTurns - 1
+            }
+          : effect
+    )
+  };
 }
 
 export function getAkuukanPlayerSkill3_14RemainingTurns(
