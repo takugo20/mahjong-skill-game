@@ -27,6 +27,7 @@ import {
   activatePlayerSkill3_11,
   activatePlayerSkill3_12,
   activatePlayerSkill3_13,
+  activatePlayerSkill3_14,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
@@ -35,6 +36,7 @@ import {
   canActivatePlayerSkill3_11,
   canActivatePlayerSkill3_12,
   canActivatePlayerSkill3_13,
+  canActivatePlayerSkill3_14,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -56,7 +58,8 @@ import {
   getPlayerSelfKanOptions,
   getRoundLabel,
   getWindLabel,
-  playPlayerSelfKan
+  playPlayerSelfKan,
+  skipPlayerSkill3_14
 } from "./lib/mahjong/engine";
 import type {
   CpuProgressStep
@@ -1093,6 +1096,12 @@ export function GameBoard({
     round.currentSeat === 0 &&
     round.phase === "discarding";
 
+  const canUsePlayerSkill3_14 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill3_14(
+      gameState
+    );
+
   const canUsePlayerSkill1_14 =
     !isInteractionLocked &&
     canActivatePlayerSkill1_14(
@@ -1753,6 +1762,22 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill3_14() {
+    setGameState((currentState) =>
+      activatePlayerSkill3_14(
+        currentState
+      )
+    );
+  }
+
+  function handleSkipPlayerSkill3_14() {
+    setGameState((currentState) =>
+      skipPlayerSkill3_14(
+        currentState
+      )
+    );
+  }  
+
 
   function handleRon() {
     if (winPresentingRef.current) {
@@ -2340,6 +2365,8 @@ export function GameBoard({
               ? "CPU進行中…"
               : round.phase === "matchEnd"
               ? "対局終了"
+              : round.phase === "dealAction"
+              ? "色即是空を発動しますか？"
               : round.phase === "reaction"
                 ? reactionStatus
                 : canTsumo
@@ -2390,6 +2417,26 @@ export function GameBoard({
               >
                 次局
               </button>
+            ) : round.phase === "dealAction" ? (
+              <>
+                {canUsePlayerSkill3_14 && (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={handlePlayerSkill3_14}
+                  >
+                    色即是空を発動
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={handleSkipPlayerSkill3_14}
+                >
+                  発動しない
+                </button>
+              </>
             ) : round.phase === "reaction" ? (
               <>
                 {canRon && (
