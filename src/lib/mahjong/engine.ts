@@ -98,6 +98,10 @@ import {
   tryActivateAkuukanPlayerSkill3_11
 } from "../akuukan/faceDownDiscard";
 import {
+  clearAkuukanPlayerSkill3_12Snapshot,
+  tryActivateAkuukanPlayerSkill3_12
+} from "../akuukan/fullHandSnapshot";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1241,6 +1245,74 @@ export function activatePlayerSkill3_11(
   };
 }
 
+export function canActivatePlayerSkill3_12(
+  state: GameState,
+  targetSeat: SeatIndex
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding" ||
+    targetSeat === 0 ||
+    !state.round.players[targetSeat]
+  ) {
+    return false;
+  }
+
+  const targetPlayer =
+    state.round.players[targetSeat];
+
+  return tryActivateAkuukanPlayerSkill3_12(
+    {
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    },
+    targetPlayer.id,
+    targetPlayer.hand
+  ).succeeded;
+}
+
+export function activatePlayerSkill3_12(
+  state: GameState,
+  targetSeat: SeatIndex
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding" ||
+    targetSeat === 0 ||
+    !state.round.players[targetSeat]
+  ) {
+    return state;
+  }
+
+  const targetPlayer =
+    state.round.players[targetSeat];
+  const activation =
+    tryActivateAkuukanPlayerSkill3_12(
+      {
+        akuukan: state.akuukan,
+        playerMp: state.playerMp,
+        maxMp: state.maxMp
+      },
+      targetPlayer.id,
+      targetPlayer.hand
+    );
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      `透牌【全】を発動し、${targetPlayer.name}の手牌を記録しました。`
+  };
+}
+
 function beginAkuukanTurnState(
   state: GameState,
   advancePlayerTimedSkills = true
@@ -1935,11 +2007,13 @@ export function discardTile(
   const followingSeat = nextSeat(seat);
   const akuukanAfterDiscard =
     seat === 0 && state.akuukan
-      ? advanceAkuukanPlayerSkill1_15AfterDiscard(
-          state.akuukan
+      ? clearAkuukanPlayerSkill3_12Snapshot(
+          advanceAkuukanPlayerSkill1_15AfterDiscard(
+            state.akuukan
+          )
         )
       : state.akuukan;
-
+  
   const discardedState: GameState = {
     ...state,
     ...(akuukanAfterDiscard
