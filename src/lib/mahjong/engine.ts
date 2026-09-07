@@ -67,6 +67,7 @@ import {
   takeAkuukanE28RiverTile
 } from "../akuukan/riverDraw";
 import {
+  completeAkuukanPlayerSkill3_13Discard,
   takeAkuukanPlayerSkill3_13ReservedTile,
   tryActivateAkuukanPlayerSkill3_13
 } from "../akuukan/riverTileTransfer";
@@ -6124,6 +6125,75 @@ function getPendingCpuRiichiSeat(
   return lastDiscard.seat;
 }
 
+function completePlayerSkill3_13DiscardAfterResponses(
+  state: GameState,
+  reserveDiscard: boolean
+): GameState {
+  const lastDiscard =
+    state.round.lastDiscard;
+
+  if (
+    !state.akuukan ||
+    !lastDiscard ||
+    lastDiscard.seat !== 0
+  ) {
+    return state;
+  }
+
+  const akuukan =
+    completeAkuukanPlayerSkill3_13Discard(
+      state.akuukan,
+      reserveDiscard
+        ? lastDiscard.discard.tile
+        : null
+    );
+
+  if (akuukan === state.akuukan) {
+    return state;
+  }
+
+  if (!reserveDiscard) {
+    return {
+      ...state,
+      akuukan
+    };
+  }
+
+  const transferredDiscard: Discard = {
+    ...lastDiscard.discard,
+    removedFromRiver: true
+  };
+  const player = state.round.players[0];
+
+  return {
+    ...state,
+    akuukan,
+    round: {
+      ...state.round,
+      players: replacePlayer(
+        state.round.players,
+        {
+          ...player,
+          discards: player.discards.map(
+            (discard) =>
+              discard.tile.id ===
+                transferredDiscard.tile.id
+                ? transferredDiscard
+                : discard
+          )
+        }
+      ),
+      lastDiscard: {
+        seat: 0,
+        discard: transferredDiscard
+      }
+    },
+    notice:
+      state.notice +
+      " 河牌転送で捨て牌を予約しました。"
+  };
+}
+
 function completeCpuTurns(
   state: GameState,
   random: () => number,
@@ -6218,6 +6288,12 @@ function completeCpuTurns(
         cpuDecision.option.callerSeat;
 
       nextState =
+        completePlayerSkill3_13DiscardAfterResponses(
+          nextState,
+          false
+        );
+
+      nextState =
         cpuDecision.kind === "openKan"
           ? applyCpuOpenKanCall(
               nextState,
@@ -6251,6 +6327,12 @@ function completeCpuTurns(
       skipPlayerMeldCallReaction = false;
       continue;
     }
+
+    nextState =
+      completePlayerSkill3_13DiscardAfterResponses(
+        nextState,
+        true
+      );
 
     const fourWindsState =
       finishFourWindsIfAvailable(
