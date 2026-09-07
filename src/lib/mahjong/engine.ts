@@ -936,10 +936,33 @@ export function createInitialGameState(
     notice: "東1局を開始しました。捨てる牌を選んでください。"
   };
 
-  return applyAkuukanDamatenDetection(
-    initialState,
-    random
-  ).state;
+  const detectedState =
+    applyAkuukanDamatenDetection(
+      initialState,
+      random
+    ).state;
+
+  const dealActionState: GameState = {
+    ...detectedState,
+    round: {
+      ...detectedState.round,
+      phase: "dealAction"
+    }
+  };
+
+  if (
+    canActivatePlayerSkill3_14(
+      dealActionState
+    )
+  ) {
+    return {
+      ...dealActionState,
+      notice:
+        "東1局の配牌が完了しました。色即是空を発動するか選んでください。"
+    };
+  }
+
+  return detectedState;
 }
 
 export function canActivatePlayerSkill1_14(
