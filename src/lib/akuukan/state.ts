@@ -374,8 +374,12 @@ export function resetAkuukanRoundUsage(
 export function beginAkuukanRound(
   state: AkuukanGameState
 ): AkuukanGameState {
+  const {
+    playerSkill3_13Transfer: _transfer,
+    ...roundResetState
+  } = resetAkuukanRoundUsage(state);
   const reset = {
-    ...resetAkuukanRoundUsage(state),
+    ...roundResetState,
     activeEffects:
       state.activeEffects.filter(
         (effect) =>
