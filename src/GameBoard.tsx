@@ -12,6 +12,9 @@ import {
   getPlayerSkill3_4VisibleTileIds
 } from "./lib/akuukan/transparentTiles";
 import {
+  getAkuukanPlayerSkill3_12Snapshot
+} from "./lib/akuukan/fullHandSnapshot";
+import {
   playGameSound,
   unlockGameAudio
 } from "./lib/gameAudio";
@@ -22,12 +25,14 @@ import {
   activatePlayerSkill3_9,
   activatePlayerSkill3_10,
   activatePlayerSkill3_11,
+  activatePlayerSkill3_12,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
   canActivatePlayerSkill3_9,
   canActivatePlayerSkill3_10,
   canActivatePlayerSkill3_11,
+  canActivatePlayerSkill3_12,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -71,6 +76,9 @@ import type {
 } from "./lib/mahjong/types";
 
 const CPU_PROGRESS_INTERVAL_MS = 500;
+
+const OPPONENT_SEATS:
+  readonly SeatIndex[] = [1, 2, 3];
 
 const DECLARATION_OVERLAY_DURATION_MS = 500;
 
@@ -253,6 +261,7 @@ interface OpponentAreaProps {
   position: OpponentPosition;
   isDeclaring: boolean;
   visibleTileIds: readonly string[];
+  snapshotTiles: readonly Tile[] | null;
   declarationTargetTileIds:
     readonly string[];
 }
@@ -747,8 +756,12 @@ function OpponentArea({
   position,
   isDeclaring,
   visibleTileIds,
+  snapshotTiles,
   declarationTargetTileIds
 }: OpponentAreaProps) {
+  const displayedHand =
+    snapshotTiles ?? player.hand;
+
   return (
     <section
       className={
@@ -766,11 +779,12 @@ function OpponentArea({
     >
       <div
         className="opponent-hand"
-        data-count={`${player.hand.length}枚`}
-        aria-label={`${player.name}の手牌${player.hand.length}枚`}
+        data-count={`${displayedHand.length}枚`}
+        aria-label={`${player.name}の手牌${displayedHand.length}枚`}
       >
-        {player.hand.map((tile) => {
+        {displayedHand.map((tile) => {
           const isVisible =
+            snapshotTiles !== null ||
             visibleTileIds.includes(tile.id);
 
           return (
@@ -1107,6 +1121,22 @@ export function GameBoard({
     canActivatePlayerSkill3_11(
       gameState
     );  
+
+  const canUsePlayerSkill3_12 =
+    !isInteractionLocked &&
+    OPPONENT_SEATS.some((seat) =>
+      canActivatePlayerSkill3_12(
+        gameState,
+        seat
+      )
+    );
+
+  const playerSkill3_12Snapshot =
+    gameState.akuukan
+      ? getAkuukanPlayerSkill3_12Snapshot(
+          gameState.akuukan
+        )
+      : null;
 
   const playerSkill1_15RemainingTurns =
     gameState.akuukan?.activeEffects.find(
@@ -1671,6 +1701,18 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill3_12(
+    targetSeat: SeatIndex
+  ) {
+    setGameState((currentState) =>
+      activatePlayerSkill3_12(
+        currentState,
+        targetSeat
+      )
+    );
+  }
+
+
   function handleRon() {
     if (winPresentingRef.current) {
       return;
@@ -1935,6 +1977,13 @@ export function GameBoard({
                 )
               : []
           }
+          snapshotTiles={
+            playerSkill3_12Snapshot
+              ?.playerId ===
+              round.players[2].id
+              ? playerSkill3_12Snapshot.tiles
+              : null
+          }
           declarationTargetTileIds={
             declarationTargetTileIds
           }
@@ -1946,6 +1995,13 @@ export function GameBoard({
           isDeclaring={
             activeDeclarationSeat === 3
           }
+          snapshotTiles={
+            playerSkill3_12Snapshot
+              ?.playerId ===
+              round.players[3].id
+              ? playerSkill3_12Snapshot.tiles
+              : null
+          }          
           visibleTileIds={
             gameState.akuukan
               ? getPlayerSkill3_4VisibleTileIds(
@@ -1965,6 +2021,13 @@ export function GameBoard({
           isDeclaring={
             activeDeclarationSeat === 1
           }
+          snapshotTiles={
+            playerSkill3_12Snapshot
+              ?.playerId ===
+              round.players[1].id
+              ? playerSkill3_12Snapshot.tiles
+              : null
+          }          
           visibleTileIds={
             gameState.akuukan
               ? getPlayerSkill3_4VisibleTileIds(
@@ -2415,7 +2478,28 @@ export function GameBoard({
                     防御結界【改】
                   </button>
                 )}                
-                
+                {canUsePlayerSkill3_12 &&
+                  OPPONENT_SEATS.map(
+                    (targetSeat) => (
+                      <button
+                        key={`player-skill-3-12-${targetSeat}`}
+                        type="button"
+                        className="secondary-button"
+                        onClick={() =>
+                          handlePlayerSkill3_12(
+                            targetSeat
+                          )
+                        }
+                      >
+                        透牌【全】：
+                        {
+                          round.players[
+                            targetSeat
+                          ].name
+                        }
+                      </button>
+                    )
+                  )}                
                 {selfKanOptions.map(
                   (option) => (
                     <button
