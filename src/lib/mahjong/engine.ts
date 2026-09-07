@@ -352,6 +352,12 @@ export interface NextRoundProgression {
   finalState: GameState;
 }
 
+export interface PlayerDealActionProgression {
+  stateAfterAction: GameState;
+  cpuSteps: CpuProgressStep[];
+  finalState: GameState;
+}
+
 type CpuProgressObserver = (
   step: CpuProgressStep
 ) => void;
@@ -1489,6 +1495,52 @@ export function skipPlayerSkill3_14(
     },
     notice:
       "色即是空を発動せず、局を開始します。"
+  };
+}
+
+export function createPlayerDealActionProgression(
+  state: GameState,
+  activateSkill3_14: boolean,
+  random: () => number = Math.random
+): PlayerDealActionProgression {
+  const stateAfterAction =
+    activateSkill3_14
+      ? activatePlayerSkill3_14(state)
+      : skipPlayerSkill3_14(state);
+  const cpuSteps: CpuProgressStep[] = [];
+
+  if (stateAfterAction === state) {
+    return {
+      stateAfterAction,
+      cpuSteps,
+      finalState: stateAfterAction
+    };
+  }
+
+  const finalState =
+    stateAfterAction.round.phase !==
+    "drawing"
+      ? stateAfterAction
+      : stateAfterAction.round
+          .currentSeat === 0
+        ? drawTile(
+            stateAfterAction,
+            0,
+            random
+          )
+        : completeCpuTurns(
+            stateAfterAction,
+            random,
+            false,
+            (step) => {
+              cpuSteps.push(step);
+            }
+          );
+
+  return {
+    stateAfterAction,
+    cpuSteps,
+    finalState
   };
 }
 
