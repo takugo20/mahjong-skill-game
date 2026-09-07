@@ -4,6 +4,9 @@ import type {
 import {
   isEnemyAbilityEnabled
 } from "./winningEvaluationEnemyAbilityAdjustments";
+import {
+  hasAkuukanPlayerSkill3_14Restriction
+} from "./opponentActionRestrictionPlayerSkill3_14";
 
 export const AKUUKAN_E3_CALL_DEPOSIT =
   1000;
@@ -117,10 +120,24 @@ function isAkuukanE24DiscardRonProhibited(
   );
 }
 
+function isAkuukanPlayerSkill3_14OpponentCallProhibited(
+  input: AkuukanCallCheckInput
+): boolean {
+  return (
+    input.owner !== "player" &&
+    hasAkuukanPlayerSkill3_14Restriction(
+      input.akuukan
+    )
+  );
+}
+
 export function isAkuukanCallAllowed(
   input: AkuukanCallCheckInput
 ): boolean {
   if (
+    isAkuukanPlayerSkill3_14OpponentCallProhibited(
+      input
+    ) ||
     isAkuukanE8CallProhibited(input) ||
     isAkuukanE13PlayerCallProhibited(
       input
