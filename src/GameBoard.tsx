@@ -358,12 +358,17 @@ function River({
   lastDiscardTileId,
   declarationTargetTileIds
 }: RiverProps) {
+  const visibleDiscards =
+    player.discards.filter(
+      (discard) =>
+        discard.removedFromRiver !== true
+    );
   const classes = [
     "discard-grid",
     `discard-grid--${position}`
   ];
 
-  if (player.discards.length === 0) {
+  if (visibleDiscards.length === 0) {
     classes.push("discard-grid--empty");
   }
 
@@ -372,7 +377,7 @@ function River({
       className={classes.join(" ")}
       aria-label={`${player.name}の河`}
     >
-      {player.discards.map((discard) => {
+      {visibleDiscards.map((discard) => {
         const showRiichiDeclaration =
           discard.riichiDeclaration &&
           !declarationTargetTileIds.includes(
