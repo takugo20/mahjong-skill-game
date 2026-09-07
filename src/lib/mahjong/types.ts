@@ -49,6 +49,7 @@ export interface Discard {
   riichiDeclaration: boolean;
   faceDown: boolean;
   called: boolean;
+  removedFromRiver?: boolean;
   drawnTileSource?:
     DrawnTileSource | null;
 }
