@@ -9,6 +9,7 @@ import {
   createInitialGameState,
   createNextRoundProgression,
   createPlayerDealActionProgression,
+  discardTile,
   skipPlayerSkill3_14
 } from "./engine";
 import type {
@@ -119,6 +120,92 @@ describe("プレイヤースキル3-14のエンジン統合", () => {
         insufficientMp
       )
     ).toBe(insufficientMp);
+  });
+
+    it("効果中は他家の手出しを拒否する", () => {
+    const state =
+      activatePlayerSkill3_14(
+        createState()
+      );
+    const cpu = state.round.players[1];
+    const drawnTile = cpu.hand[0];
+    const handTile = cpu.hand[1];
+
+    state.round.currentSeat = 1;
+    state.round.phase = "discarding";
+    cpu.drawnTileId = drawnTile.id;
+
+    const rejected = discardTile(
+      state,
+      handTile.id,
+      false,
+      () => 0.5
+    );
+
+    expect(rejected.round.turnNumber).toBe(
+      state.round.turnNumber
+    );
+    expect(
+      rejected.round.players[1].hand
+    ).toContainEqual(handTile);
+    expect(rejected.notice).toContain(
+      "ツモ切り以外"
+    );
+  });
+
+  it("効果中も他家のツモ切りを許可する", () => {
+    const state =
+      activatePlayerSkill3_14(
+        createState()
+      );
+    const cpu = state.round.players[1];
+    const drawnTile = cpu.hand[0];
+
+    state.round.currentSeat = 1;
+    state.round.phase = "discarding";
+    cpu.drawnTileId = drawnTile.id;
+
+    const discarded = discardTile(
+      state,
+      drawnTile.id,
+      false,
+      () => 0.5
+    );
+
+    expect(
+      discarded.round.turnNumber
+    ).toBe(state.round.turnNumber + 1);
+    expect(
+      discarded.round.lastDiscard
+        ?.discard.tile.id
+    ).toBe(drawnTile.id);
+  });
+
+  it("効果中もプレイヤーの手出しを許可する", () => {
+    const state =
+      activatePlayerSkill3_14(
+        createState()
+      );
+    const player = state.round.players[0];
+    const drawnTile = player.hand[0];
+    const handTile = player.hand[1];
+
+    player.drawnTileId = drawnTile.id;
+
+    const discarded = discardTile(
+      state,
+      handTile.id,
+      false,
+      () => 0.5
+    );
+
+    expect(
+      discarded.round.turnNumber
+    ).toBe(state.round.turnNumber + 1);
+    expect(
+      discarded.round.lastDiscard
+        ?.discard.tile.id
+    ).toBe(handTile.id);
   });
 
     it("次局のMP回復後に選択を待ち、CPU親でも選択後に進行する", () => {
