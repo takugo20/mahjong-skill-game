@@ -67,6 +67,10 @@ import {
   takeAkuukanE28RiverTile
 } from "../akuukan/riverDraw";
 import {
+  takeAkuukanPlayerSkill3_13ReservedTile,
+  tryActivateAkuukanPlayerSkill3_13
+} from "../akuukan/riverTileTransfer";
+import {
   selectAkuukanE28RiverDrawCandidate
 } from "../akuukan/riverDrawAi";
 import {
@@ -1313,6 +1317,69 @@ export function activatePlayerSkill3_12(
   };
 }
 
+export function canActivatePlayerSkill3_13(
+  state: GameState,
+  targetSeat: SeatIndex
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding" ||
+    targetSeat === 0 ||
+    !state.round.players[targetSeat]
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill3_13(
+    {
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    },
+    state.round.players[targetSeat].id
+  ).succeeded;
+}
+
+export function activatePlayerSkill3_13(
+  state: GameState,
+  targetSeat: SeatIndex
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding" ||
+    targetSeat === 0 ||
+    !state.round.players[targetSeat]
+  ) {
+    return state;
+  }
+
+  const targetPlayer =
+    state.round.players[targetSeat];
+  const activation =
+    tryActivateAkuukanPlayerSkill3_13(
+      {
+        akuukan: state.akuukan,
+        playerMp: state.playerMp,
+        maxMp: state.maxMp
+      },
+      targetPlayer.id
+    );
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      `河牌転送を発動しました。${targetPlayer.name}へ捨て牌を転送します。`
+  };
+}
+
 function beginAkuukanTurnState(
   state: GameState,
   advancePlayerTimedSkills = true
@@ -1755,6 +1822,64 @@ export function drawAkuukanE28RiverTile(
   });
 }
 
+function drawAkuukanPlayerSkill3_13ReservedTile(
+  state: GameState,
+  seat: SeatIndex
+): GameState {
+  const round = state.round;
+
+  if (
+    !state.akuukan ||
+    round.phase !== "drawing" ||
+    round.currentSeat !== seat
+  ) {
+    return state;
+  }
+
+  const currentPlayer = round.players[seat];
+  const reservedDraw =
+    takeAkuukanPlayerSkill3_13ReservedTile(
+      state.akuukan,
+      currentPlayer.id
+    );
+
+  if (!reservedDraw) {
+    return state;
+  }
+
+  const drawnTile = reservedDraw.tile;
+  const updatedPlayer: PlayerState = {
+    ...currentPlayer,
+    hand: sortTiles([
+      ...currentPlayer.hand,
+      drawnTile
+    ]),
+    temporaryFuriten: false,
+    drawnTileId: drawnTile.id,
+    drawnTileSource: "river"
+  };
+  const drawnState = beginAkuukanTurnState({
+    ...state,
+    akuukan: reservedDraw.akuukan,
+    round: {
+      ...round,
+      players: replacePlayer(
+        round.players,
+        updatedPlayer
+      ),
+      phase: "discarding",
+      meldCallOptions: []
+    },
+    notice:
+      `${currentPlayer.name}が河牌転送の予約牌をツモりました。`
+  });
+
+  return beginAkuukanE25NormalAction(
+    drawnState,
+    updatedPlayer
+  );
+}
+
 export function drawTile(
   state: GameState,
   seat: SeatIndex,
@@ -1770,6 +1895,14 @@ export function drawTile(
   }
 
   const currentPlayer = round.players[seat];
+  const reservedDrawState =
+    drawAkuukanPlayerSkill3_13ReservedTile(
+      state,
+      seat
+    );
+  if (reservedDrawState !== state) {
+    return reservedDrawState
+  
   const drawIndex =
     getAkuukanLiveWallDrawIndex(
       state,
@@ -1841,6 +1974,16 @@ export function drawCpuTile(
   seat: SeatIndex,
   random: () => number = Math.random
 ): GameState {
+  const reservedDrawState =
+    drawAkuukanPlayerSkill3_13ReservedTile(
+      state,
+      seat
+    );
+
+  if (reservedDrawState !== state) {
+    return reservedDrawState;
+  }
+
   const drawer = state.round.players[seat];
 
   if (
