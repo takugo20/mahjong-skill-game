@@ -309,7 +309,9 @@ export function advanceAkuukanTurnEffects(
         effect.sourceId ===
           "player-skill:3-10" ||
         effect.sourceId ===
-          "player-skill:3-11"
+          "player-skill:3-11" ||
+        effect.sourceId ===
+          "player-skill:3-14"
       ) {
         return [effect];
       }
