@@ -107,6 +107,9 @@ import {
   tryActivateAkuukanPlayerSkill3_12
 } from "../akuukan/fullHandSnapshot";
 import {
+  tryActivateAkuukanPlayerSkill3_14
+} from "../akuukan/opponentActionRestrictionPlayerSkill3_14";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1378,6 +1381,91 @@ export function activatePlayerSkill3_13(
     playerMp: activation.state.playerMp,
     notice:
       `河牌転送を発動しました。${targetPlayer.name}へ捨て牌を転送します。`
+  };
+}
+
+function getPhaseAfterPlayerSkill3_14DealAction(
+  state: GameState
+): "drawing" | "discarding" {
+  return state.round.players[
+    state.round.currentSeat
+  ].drawnTileId
+    ? "discarding"
+    : "drawing";
+}
+
+export function canActivatePlayerSkill3_14(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.phase !== "dealAction"
+  ) {
+    return false;
+  }
+
+  return tryActivateAkuukanPlayerSkill3_14({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  }).succeeded;
+}
+
+export function activatePlayerSkill3_14(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    state.round.phase !== "dealAction"
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill3_14({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    round: {
+      ...state.round,
+      phase:
+        getPhaseAfterPlayerSkill3_14DealAction(
+          state
+        )
+    },
+    notice:
+      "色即是空を発動しました。他家の鳴き・槓・手出しを制限します。"
+  };
+}
+
+export function skipPlayerSkill3_14(
+  state: GameState
+): GameState {
+  if (state.round.phase !== "dealAction") {
+    return state;
+  }
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      phase:
+        getPhaseAfterPlayerSkill3_14DealAction(
+          state
+        )
+    },
+    notice:
+      "色即是空を発動せず、局を開始します。"
   };
 }
 
