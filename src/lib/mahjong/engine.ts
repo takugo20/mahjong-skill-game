@@ -107,6 +107,7 @@ import {
   tryActivateAkuukanPlayerSkill3_12
 } from "../akuukan/fullHandSnapshot";
 import {
+  advanceAkuukanPlayerSkill3_14AfterOpponentCycle,
   isAkuukanPlayerSkill3_14OpponentRestricted,
   tryActivateAkuukanPlayerSkill3_14
 } from "../akuukan/opponentActionRestrictionPlayerSkill3_14";
@@ -2340,7 +2341,7 @@ export function discardTile(
 
   const wallIsEmpty = round.liveWall.length === 0;
   const followingSeat = nextSeat(seat);
-  const akuukanAfterDiscard =
+  const akuukanAfterPlayerDiscard =
     seat === 0 && state.akuukan
       ? clearAkuukanPlayerSkill3_12Snapshot(
           advanceAkuukanPlayerSkill1_15AfterDiscard(
@@ -2348,6 +2349,13 @@ export function discardTile(
           )
         )
       : state.akuukan;
+  const akuukanAfterDiscard =
+    seat === 3 &&
+    akuukanAfterPlayerDiscard
+      ? advanceAkuukanPlayerSkill3_14AfterOpponentCycle(
+          akuukanAfterPlayerDiscard
+        )
+      : akuukanAfterPlayerDiscard;
   
   const discardedState: GameState = {
     ...state,
