@@ -4,6 +4,9 @@ import {
   it
 } from "vitest";
 import {
+  getAkuukanPlayerSkill3_14RemainingTurns
+} from "../akuukan/opponentActionRestrictionPlayerSkill3_14";
+import {
   activatePlayerSkill3_14,
   canActivatePlayerSkill3_14,
   createInitialGameState,
@@ -34,6 +37,16 @@ function createState(
   state.round.phase = "dealAction";
 
   return state;
+}
+
+function getRemainingTurns(
+  state: GameState
+): number | null {
+  return state.akuukan
+    ? getAkuukanPlayerSkill3_14RemainingTurns(
+        state.akuukan
+      )
+    : null;
 }
 
 describe("プレイヤースキル3-14のエンジン統合", () => {
@@ -206,6 +219,47 @@ describe("プレイヤースキル3-14のエンジン統合", () => {
       discarded.round.lastDiscard
         ?.discard.tile.id
     ).toBe(handTile.id);
+  });
+
+    it("他家3人の一巡完了時だけ残り巡数を1減らす", () => {
+    let progressed =
+      activatePlayerSkill3_14(
+        createState()
+      );
+    const cases = [
+      { seat: 1, remainingTurns: 6 },
+      { seat: 2, remainingTurns: 6 },
+      { seat: 3, remainingTurns: 5 }
+    ] as const;
+
+    for (const currentCase of cases) {
+      const cpu =
+        progressed.round.players[
+          currentCase.seat
+        ];
+      const drawnTile = cpu.hand[0];
+
+      progressed.round.currentSeat =
+        currentCase.seat;
+      progressed.round.phase =
+        "discarding";
+      cpu.drawnTileId = drawnTile.id;
+
+      progressed = discardTile(
+        progressed,
+        drawnTile.id,
+        false,
+        () => 0.5
+      );
+
+      expect(
+        getRemainingTurns(progressed)
+      ).toBe(currentCase.remainingTurns);
+    }
+
+    expect(
+      progressed.round.currentSeat
+    ).toBe(0);
   });
 
     it("次局のMP回復後に選択を待ち、CPU親でも選択後に進行する", () => {
