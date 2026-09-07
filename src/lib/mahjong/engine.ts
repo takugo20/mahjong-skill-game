@@ -7855,6 +7855,33 @@ function resolveNextRoundStart(
       random
     );
 
+  const dealActionState: GameState = {
+    ...dealDetection.state,
+    round: {
+      ...dealDetection.state.round,
+      phase: "dealAction"
+    }
+  };
+
+  if (
+    canActivatePlayerSkill3_14(
+      dealActionState
+    )
+  ) {
+    const pendingState: GameState = {
+      ...dealActionState,
+      notice:
+        `${getRoundLabel(dealActionState.round)}の配牌が完了しました。` +
+        (dealDetection.detectionNotice ?? "") +
+        "色即是空を発動するか選んでください。"
+    };
+
+    return {
+      stateAfterStart: pendingState,
+      finalState: pendingState
+    };
+  }
+
   const startedState =
     nextDealerSeat === 0
       ? drawTile(
