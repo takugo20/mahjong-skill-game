@@ -66,7 +66,8 @@ export function getAkuukanE28RiverDrawCandidates(
     (player) =>
       player.discards.flatMap(
         (discard, discardIndex) =>
-          discard.called
+          discard.called ||
+          discard.removedFromRiver === true
             ? []
             : [{
                 tile: discard.tile,
