@@ -1901,7 +1901,8 @@ export function drawTile(
       seat
     );
   if (reservedDrawState !== state) {
-    return reservedDrawState
+    return reservedDrawState;
+  }
   
   const drawIndex =
     getAkuukanLiveWallDrawIndex(
