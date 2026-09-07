@@ -26,6 +26,7 @@ import {
   activatePlayerSkill3_10,
   activatePlayerSkill3_11,
   activatePlayerSkill3_12,
+  activatePlayerSkill3_13,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
@@ -33,6 +34,7 @@ import {
   canActivatePlayerSkill3_10,
   canActivatePlayerSkill3_11,
   canActivatePlayerSkill3_12,
+  canActivatePlayerSkill3_13,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -1143,6 +1145,29 @@ export function GameBoard({
         )
       : null;
 
+    const canUsePlayerSkill3_13 =
+    !isInteractionLocked &&
+    OPPONENT_SEATS.some((seat) =>
+      canActivatePlayerSkill3_13(
+        gameState,
+        seat
+      )
+    );
+
+  const playerSkill3_13Transfer =
+    gameState.akuukan
+      ?.playerSkill3_13Transfer ?? null;
+
+  const playerSkill3_13Target =
+    playerSkill3_13Transfer
+      ? round.players.find(
+          (roundPlayer) =>
+            roundPlayer.id ===
+            playerSkill3_13Transfer
+              .targetPlayerId
+        ) ?? null
+      : null;
+
   const playerSkill1_15RemainingTurns =
     gameState.akuukan?.activeEffects.find(
       (effect) =>
@@ -1717,6 +1742,17 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill3_13(
+    targetSeat: SeatIndex
+  ) {
+    setGameState((currentState) =>
+      activatePlayerSkill3_13(
+        currentState,
+        targetSeat
+      )
+    );
+  }
+
 
   function handleRon() {
     if (winPresentingRef.current) {
@@ -2215,6 +2251,24 @@ export function GameBoard({
                     巡
                   </span>
                 )}
+                {playerSkill3_13Transfer &&
+                  playerSkill3_13Target && (
+                  <span className="active-skill-status-badge">
+                    河牌転送 →
+                    {playerSkill3_13Target.name}
+                    {" "}残り
+                    {
+                      playerSkill3_13Transfer
+                        .remainingCollectionTurns
+                    }
+                    巡／予約
+                    {
+                      playerSkill3_13Transfer
+                        .reservedTiles.length
+                    }
+                    枚
+                  </span>
+                )}                
               </div>
 
               <strong>
@@ -2497,6 +2551,28 @@ export function GameBoard({
                         }
                       >
                         透牌【全】：
+                        {
+                          round.players[
+                            targetSeat
+                          ].name
+                        }
+                      </button>
+                    )
+                  )}
+                {canUsePlayerSkill3_13 &&
+                  OPPONENT_SEATS.map(
+                    (targetSeat) => (
+                      <button
+                        key={`player-skill-3-13-${targetSeat}`}
+                        type="button"
+                        className="secondary-button"
+                        onClick={() =>
+                          handlePlayerSkill3_13(
+                            targetSeat
+                          )
+                        }
+                      >
+                        河牌転送：
                         {
                           round.players[
                             targetSeat
