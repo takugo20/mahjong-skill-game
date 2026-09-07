@@ -254,6 +254,20 @@ export interface AkuukanPlayerSkill3_12Snapshot {
   tiles: AkuukanPlayerSkill3_12SnapshotTile[];
 }
 
+export interface AkuukanPlayerSkill3_13ReservedTile {
+  id: string;
+  suit: NumberSuit | "honor";
+  rank: number;
+  red: boolean;
+}
+
+export interface AkuukanPlayerSkill3_13TransferState {
+  targetPlayerId: string;
+  remainingCollectionTurns: number;
+  reservedTiles:
+    AkuukanPlayerSkill3_13ReservedTile[];
+}
+
 export interface AkuukanGameState {
   setup: AkuukanMatchSetup;
   e2DrawRestriction?:
@@ -269,6 +283,8 @@ export interface AkuukanGameState {
     Record<string, string[]>;
   playerSkill3_12Snapshot?:
     AkuukanPlayerSkill3_12Snapshot;  
+  playerSkill3_13Transfer?:
+    AkuukanPlayerSkill3_13TransferState;
   playerSkill3_7RonImmunityActive?:
     boolean;
   e19DiscardRestrictions?:
