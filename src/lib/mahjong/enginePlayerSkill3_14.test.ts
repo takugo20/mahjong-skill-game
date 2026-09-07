@@ -7,6 +7,8 @@ import {
   activatePlayerSkill3_14,
   canActivatePlayerSkill3_14,
   createInitialGameState,
+  createNextRoundProgression,
+  createPlayerDealActionProgression,
   skipPlayerSkill3_14
 } from "./engine";
 import type {
@@ -117,5 +119,67 @@ describe("プレイヤースキル3-14のエンジン統合", () => {
         insufficientMp
       )
     ).toBe(insufficientMp);
+  });
+
+    it("次局のMP回復後に選択を待ち、CPU親でも選択後に進行する", () => {
+    const state = skipPlayerSkill3_14(
+      createState()
+    );
+
+    state.playerMp = 100;
+    state.round.phase = "roundEnd";
+    state.round.winResult = {
+      winMethod: "tsumo",
+      winnerSeat: 1,
+      loserSeat: null,
+      winningTile: {
+        id: "player-skill-3-14-next-round-win",
+        suit: "man",
+        rank: 1,
+        red: false
+      },
+      yakuNames: ["門前清自摸和"],
+      han: 1,
+      fu: 30,
+      yakumanMultiplier: 0,
+      limitName: null,
+      totalPoints: 1000,
+      pointChanges: []
+    };
+
+    const nextRound =
+      createNextRoundProgression(
+        state,
+        () => 0.5
+      );
+
+    expect(
+      nextRound.stateAfterStart.round.phase
+    ).toBe("dealAction");
+    expect(
+      nextRound.stateAfterStart.round
+        .currentSeat
+    ).toBe(1);
+    expect(
+      nextRound.stateAfterStart.playerMp
+    ).toBe(490);
+    expect(nextRound.cpuSteps).toEqual([]);
+
+    const activated =
+      createPlayerDealActionProgression(
+        nextRound.stateAfterStart,
+        true,
+        () => 0.5
+      );
+
+    expect(
+      activated.stateAfterAction.playerMp
+    ).toBe(140);
+    expect(
+      activated.stateAfterAction.round.phase
+    ).toBe("drawing");
+    expect(
+      activated.cpuSteps.length
+    ).toBeGreaterThan(0);
   });
 });
