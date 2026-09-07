@@ -27,7 +27,6 @@ import {
   activatePlayerSkill3_11,
   activatePlayerSkill3_12,
   activatePlayerSkill3_13,
-  activatePlayerSkill3_14,
   canActivatePlayerSkill1_14,
   canActivatePlayerSkill1_15,
   canActivatePlayerSkill3_8,
@@ -43,6 +42,7 @@ import {
   canPlayerTsumo,
   createInitialGameState,
   createNextRoundProgression,
+  createPlayerDealActionProgression,
   createPlayerDiscardProgression,
   createPlayerReactionSkipProgression,
   createPlayerRiichiProgression,
@@ -58,8 +58,7 @@ import {
   getPlayerSelfKanOptions,
   getRoundLabel,
   getWindLabel,
-  playPlayerSelfKan,
-  skipPlayerSkill3_14
+  playPlayerSelfKan
 } from "./lib/mahjong/engine";
 import type {
   CpuProgressStep
@@ -1763,20 +1762,54 @@ export function GameBoard({
   }
 
   function handlePlayerSkill3_14() {
-    setGameState((currentState) =>
-      activatePlayerSkill3_14(
-        currentState
-      )
-    );
+    handlePlayerDealAction(true);
   }
 
   function handleSkipPlayerSkill3_14() {
-    setGameState((currentState) =>
-      skipPlayerSkill3_14(
-        currentState
-      )
+    handlePlayerDealAction(false);
+  }
+
+  function handlePlayerDealAction(
+    activateSkill3_14: boolean
+  ) {
+    if (cpuProgressingRef.current) {
+      return;
+    }
+
+    const progression =
+      createPlayerDealActionProgression(
+        gameState,
+        activateSkill3_14
+      );
+    const timedStates =
+      progression.cpuSteps.map(
+        (step) => step.state
+      );
+    const lastTimedState =
+      timedStates.length === 0
+        ? progression.stateAfterAction
+        : timedStates[
+            timedStates.length - 1
+          ];
+
+    if (
+      lastTimedState !== progression.finalState
+    ) {
+      timedStates.push(
+        progression.finalState
+      );
+    }
+
+    setGameState(
+      progression.stateAfterAction
     );
-  }  
+    setSelectedTileId(null);
+    scheduleCpuProgression(
+      timedStates,
+      progression.cpuSteps,
+      progression.stateAfterAction
+    );
+  }
 
 
   function handleRon() {
