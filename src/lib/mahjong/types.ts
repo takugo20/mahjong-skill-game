@@ -11,6 +11,7 @@ export type Wind = "east" | "south" | "west" | "north";
 export type SeatIndex = 0 | 1 | 2 | 3;
 
 export type GamePhase =
+  | "dealAction"
   | "drawing"
   | "discarding"
   | "reaction"
