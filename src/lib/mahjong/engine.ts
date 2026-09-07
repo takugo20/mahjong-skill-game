@@ -107,6 +107,7 @@ import {
   tryActivateAkuukanPlayerSkill3_12
 } from "../akuukan/fullHandSnapshot";
 import {
+  isAkuukanPlayerSkill3_14OpponentRestricted,
   tryActivateAkuukanPlayerSkill3_14
 } from "../akuukan/opponentActionRestrictionPlayerSkill3_14";
 import {
@@ -1799,10 +1800,21 @@ function getForbiddenDiscardTileIdsForPlayer(
   );
   const callRestriction =
     state.round.meldCallDiscardRestriction;
+  const playerSkill3_14Restricted =
+    state.akuukan
+      ? isAkuukanPlayerSkill3_14OpponentRestricted(
+          state.akuukan,
+          player.seat
+        )
+      : false;
 
   return player.hand
     .filter(
       (tile) =>
+        (
+          playerSkill3_14Restricted &&
+          tile.id !== player.drawnTileId
+        ) ||
         e19ForbiddenTileIdSet.has(tile.id) ||
         (
           callRestriction?.callerSeat ===
@@ -2214,6 +2226,21 @@ export function discardTile(
   const canChangeRiichiHand =
     currentPlayer.riichi &&
     isNotenRiichiAllowed(state, seat);
+
+  if (
+    state.akuukan &&
+    isAkuukanPlayerSkill3_14OpponentRestricted(
+      state.akuukan,
+      seat
+    ) &&
+    currentPlayer.drawnTileId !== tileId
+  ) {
+    return {
+      ...state,
+      notice:
+        "色即是空の効果中、他家はツモ切り以外の牌を捨てられません。"
+    };
+  }
 
   if (
     currentPlayer.riichi &&
@@ -6070,7 +6097,7 @@ function getCpuRiichiDecision(
   const cpuPlayer =
     state.round.players[cpuSeat];
   const forbiddenTileIdSet = new Set(
-    getAkuukanE19ForbiddenTileIdsForPlayer(
+    getForbiddenDiscardTileIdsForPlayer(
       state,
       cpuPlayer
     )
