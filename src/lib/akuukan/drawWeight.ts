@@ -2,6 +2,7 @@ import {
   isDora
 } from "../mahjong/tiles";
 import type {
+  Meld,
   Tile
 } from "../mahjong/types";
 import {
@@ -22,6 +23,9 @@ import {
 import {
   getAkuukanPlayerSkill4_2DrawWeightMultiplier
 } from "./sameTileDrawWeight";
+import {
+  getAkuukanPlayerSkill4_3DrawWeightMultiplier
+} from "./shantenImprovementDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -34,6 +38,7 @@ export interface AkuukanPlayerSkill1_4DrawInput {
     readonly number[];
   readonly doraIndicators: readonly Tile[];
   readonly hand?: readonly Tile[];
+  readonly melds?: readonly Meld[];
   readonly random: () => number;
 }
 
@@ -142,6 +147,14 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           drawerIsPlayer:
             input.drawerIsPlayer,
           hand: input.hand ?? [],
+          candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_3DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          hand: input.hand ?? [],
+          melds: input.melds ?? [],
           candidate: candidate.tile
         })
     }));
