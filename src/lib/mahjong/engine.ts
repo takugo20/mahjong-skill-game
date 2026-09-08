@@ -1900,6 +1900,7 @@ function getAkuukanLiveWallDrawIndex(
     doraIndicators:
       getDoraIndicators(state.round),
     hand: player.hand,
+    melds: player.melds,
     random
   });
 }
