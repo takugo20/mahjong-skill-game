@@ -38,6 +38,9 @@ import {
 import {
   getAkuukanPlayerSkill4_7DrawWeightMultiplier
 } from "./closedKanSameTileDrawWeight";
+import {
+  getAkuukanPlayerSkill4_8DrawWeightMultiplier
+} from "./fourthPlaceShantenDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -51,6 +54,7 @@ export interface AkuukanPlayerSkill1_4DrawInput {
   readonly doraIndicators: readonly Tile[];
   readonly hand?: readonly Tile[];
   readonly melds?: readonly Meld[];
+  readonly playerIsFourth?: boolean;
   readonly random: () => number;
 }
 
@@ -197,6 +201,16 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           akuukan: input.akuukan,
           drawerIsPlayer:
             input.drawerIsPlayer,
+          hand: input.hand ?? [],
+          melds: input.melds ?? [],
+          candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_8DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          playerIsFourth:
+            input.playerIsFourth ?? false,
           hand: input.hand ?? [],
           melds: input.melds ?? [],
           candidate: candidate.tile
