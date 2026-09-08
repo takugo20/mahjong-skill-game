@@ -1901,6 +1901,8 @@ function getAkuukanLiveWallDrawIndex(
       getDoraIndicators(state.round),
     hand: player.hand,
     melds: player.melds,
+    playerIsFourth:
+      isPlayerCurrentlyFourth(state),
     random
   });
 }
