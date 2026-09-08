@@ -4,6 +4,9 @@ import {
 import {
   isAkuukanSourceDisabled
 } from "./state";
+import {
+  hasAkuukanPlayerSkill3_14Restriction
+} from "./opponentActionRestrictionPlayerSkill3_14";
 import type {
   AkuukanGameState
 } from "./types";
@@ -70,6 +73,9 @@ export function isAkuukanNotenRiichiAllowed(
 ): boolean {
   return (
     input.owner === "selectedEnemy" &&
+    !hasAkuukanPlayerSkill3_14Restriction(
+      input.akuukan
+    ) &&
     isEnemyAbilityEnabled(
       input.akuukan,
       "E-4"
