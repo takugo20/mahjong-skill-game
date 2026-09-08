@@ -7,6 +7,9 @@ import {
   createInitialAkuukanGameState,
   disableAkuukanSource
 } from "./state";
+import {
+  tryActivateAkuukanPlayerSkill3_14
+} from "./opponentActionRestrictionPlayerSkill3_14";
 import type {
   AkuukanMatchSetup
 } from "./types";
@@ -251,5 +254,39 @@ describe("亜空間麻雀のノーテン立直許可", () => {
         owner: "selectedEnemy"
       })
     ).toBe(false);
+  });
+
+    it("色即是空の効果中はE-4本人のノーテン立直も禁止する", () => {
+    const activated =
+      tryActivateAkuukanPlayerSkill3_14({
+        akuukan: createAkuukan({
+          enemyId: "enemy-2",
+          equippedSkills: [
+            { id: "3-14", level: 5 }
+          ]
+        }),
+        playerMp: 900,
+        maxMp: 900
+      });
+
+    expect(activated.succeeded).toBe(true);
+    expect(
+      isAkuukanNotenRiichiAllowed({
+        akuukan: activated.state.akuukan,
+        owner: "selectedEnemy"
+      })
+    ).toBe(false);
+
+    const disabled = disableAkuukanSource(
+      activated.state.akuukan,
+      "player-skill:3-14"
+    );
+
+    expect(
+      isAkuukanNotenRiichiAllowed({
+        akuukan: disabled,
+        owner: "selectedEnemy"
+      })
+    ).toBe(true);
   });
 });
