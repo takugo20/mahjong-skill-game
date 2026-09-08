@@ -303,4 +303,41 @@ describe("プレイヤースキル1-4の重量抽選", () => {
       })
     ).toBe(1);
   });
+
+    it("4-1の隣接倍率と4-2の同一牌倍率を乗算する", () => {
+    const normalTile = createTile(
+      "pin",
+      1
+    );
+    const matchingTile = createTile(
+      "man",
+      5
+    );
+    const akuukan =
+      createInitialAkuukanGameState({
+        enemyId: "enemy-1",
+        equippedSkills: [
+          { id: "4-1", level: 5 },
+          { id: "4-2", level: 5 }
+        ]
+      });
+
+    expect(
+      getAkuukanPlayerSkill1_4LiveWallDrawIndex({
+        akuukan,
+        drawerIsPlayer: true,
+        liveWall: [
+          normalTile,
+          matchingTile
+        ],
+        candidateIndexes: [0, 1],
+        doraIndicators: [],
+        hand: [
+          createTile("man", 4),
+          createTile("man", 5)
+        ],
+        random: () => 0.31
+      })
+    ).toBe(1);
+  });
 });
