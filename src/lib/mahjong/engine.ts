@@ -1899,6 +1899,7 @@ function getAkuukanLiveWallDrawIndex(
     candidateIndexes,
     doraIndicators:
       getDoraIndicators(state.round),
+    hand: player.hand,
     random
   });
 }
