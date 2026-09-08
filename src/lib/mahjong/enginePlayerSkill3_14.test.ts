@@ -20,7 +20,8 @@ import type {
 } from "./types";
 
 function createState(
-  playerMp = 700
+  playerMp = 700,
+  level: 1 | 2 | 3 | 4 | 5 = 5
 ): GameState {
   const state = createInitialGameState(
     () => 0.5,
@@ -28,7 +29,7 @@ function createState(
       enemyId: "enemy-1",
       equippedSkills: [{
         id: "3-14",
-        level: 5
+        level
       }]
     }
   );
@@ -260,6 +261,62 @@ describe("プレイヤースキル3-14のエンジン統合", () => {
     expect(
       progressed.round.currentSeat
     ).toBe(0);
+  });
+
+    it("Lv.1は一巡終了時に効果が切れ、他家の手出しを再び許可する", () => {
+    let progressed =
+      activatePlayerSkill3_14(
+        createState(700, 1)
+      );
+    const lastCpu =
+      progressed.round.players[3];
+    const lastCpuDrawnTile =
+      lastCpu.hand[0];
+
+    progressed.round.currentSeat = 3;
+    progressed.round.phase =
+      "discarding";
+    lastCpu.drawnTileId =
+      lastCpuDrawnTile.id;
+
+    progressed = discardTile(
+      progressed,
+      lastCpuDrawnTile.id,
+      false,
+      () => 0.5
+    );
+
+    expect(
+      getRemainingTurns(progressed)
+    ).toBeNull();
+
+    const nextCpu =
+      progressed.round.players[1];
+    const nextCpuDrawnTile =
+      nextCpu.hand[0];
+    const nextCpuHandTile =
+      nextCpu.hand[1];
+
+    progressed.round.currentSeat = 1;
+    progressed.round.phase =
+      "discarding";
+    nextCpu.drawnTileId =
+      nextCpuDrawnTile.id;
+
+    const discarded = discardTile(
+      progressed,
+      nextCpuHandTile.id,
+      false,
+      () => 0.5
+    );
+
+    expect(
+      discarded.round.turnNumber
+    ).toBe(progressed.round.turnNumber + 1);
+    expect(
+      discarded.round.lastDiscard
+        ?.discard.tile.id
+    ).toBe(nextCpuHandTile.id);
   });
 
     it("次局のMP回復後に選択を待ち、CPU親でも選択後に進行する", () => {
