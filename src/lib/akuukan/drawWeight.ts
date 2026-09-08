@@ -16,6 +16,9 @@ import {
 import {
   isAkuukanSourceDisabled
 } from "./state";
+import {
+  getAkuukanPlayerSkill4_1DrawWeightMultiplier
+} from "./adjacentDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -27,6 +30,7 @@ export interface AkuukanPlayerSkill1_4DrawInput {
   readonly candidateIndexes:
     readonly number[];
   readonly doraIndicators: readonly Tile[];
+  readonly hand?: readonly Tile[];
   readonly random: () => number;
 }
 
@@ -106,27 +110,30 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
     return firstCandidate.index;
   }
 
-  const multiplier =
+  const doraMultiplier =
     getEnabledDoraDrawWeightMultiplier(
       input.akuukan
-    );
-
-  if (
-    multiplier === null ||
-    multiplier === 1
-  ) {
-    return firstCandidate.index;
-  }
+    ) ?? 1;
 
   const weightedCandidates =
     candidates.map((candidate) => ({
       ...candidate,
-      weight: isConfirmedDora(
-        candidate.tile,
-        input.doraIndicators
-      )
-        ? multiplier
-        : 1
+      weight:
+        (
+          isConfirmedDora(
+            candidate.tile,
+            input.doraIndicators
+          )
+            ? doraMultiplier
+            : 1
+        ) *
+        getAkuukanPlayerSkill4_1DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          hand: input.hand ?? [],
+          candidate: candidate.tile
+        })
     }));
   const firstWeight =
     weightedCandidates[0].weight;
