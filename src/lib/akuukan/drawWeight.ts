@@ -29,6 +29,9 @@ import {
 import {
   getAkuukanPlayerSkill4_4DrawWeightMultiplier
 } from "./closedHandShantenDrawWeight";
+import {
+  getAkuukanPlayerSkill4_5DrawWeightMultiplier
+} from "./openHandShantenDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -161,6 +164,14 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           candidate: candidate.tile
         }) *
         getAkuukanPlayerSkill4_4DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          hand: input.hand ?? [],
+          melds: input.melds ?? [],
+          candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_5DrawWeightMultiplier({
           akuukan: input.akuukan,
           drawerIsPlayer:
             input.drawerIsPlayer,
