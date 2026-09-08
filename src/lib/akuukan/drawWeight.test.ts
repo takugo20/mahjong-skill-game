@@ -267,4 +267,40 @@ describe("プレイヤースキル1-4の重量抽選", () => {
     ).toBeNull();
     expect(random.getCallCount()).toBe(0);
   });
+
+    it("1-4のドラ倍率と4-1の隣接倍率を乗算する", () => {
+    const normalTile = createTile(
+      "pin",
+      1
+    );
+    const doraAdjacentTile = createTile(
+      "man",
+      6
+    );
+    const akuukan =
+      createInitialAkuukanGameState({
+        enemyId: "enemy-1",
+        equippedSkills: [
+          { id: "1-4", level: 5 },
+          { id: "4-1", level: 5 }
+        ]
+      });
+
+    expect(
+      getAkuukanPlayerSkill1_4LiveWallDrawIndex({
+        akuukan,
+        drawerIsPlayer: true,
+        liveWall: [
+          normalTile,
+          doraAdjacentTile
+        ],
+        candidateIndexes: [0, 1],
+        doraIndicators: [
+          createTile("man", 5)
+        ],
+        hand: [createTile("man", 5)],
+        random: () => 0.25
+      })
+    ).toBe(1);
+  });
 });
