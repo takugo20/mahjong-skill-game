@@ -975,6 +975,18 @@ export function createInitialGameState(
     };
   }
 
+  if (
+    canActivatePlayerSkill4_17(
+      dealActionState
+    )
+  ) {
+    return {
+      ...dealActionState,
+      notice:
+        "東1局の配牌が完了しました。手牌整理【序】で交換する牌を選んでください。"
+    };
+  }
+
   return detectedState;
 }
 
@@ -1604,19 +1616,35 @@ export function activatePlayerSkill3_14(
     return state;
   }
 
-  return {
+  const activatedState: GameState = {
     ...state,
     akuukan: activation.state.akuukan,
     playerMp: activation.state.playerMp,
-    round: {
-      ...state.round,
-      phase:
-        getPhaseAfterPlayerSkill3_14DealAction(
-          state
-        )
-    },
     notice:
       "色即是空を発動しました。他家の鳴き・槓・手出しを制限します。"
+  };
+
+  if (
+    canActivatePlayerSkill4_17(
+      activatedState
+    )
+  ) {
+    return {
+      ...activatedState,
+      notice:
+        "色即是空を発動しました。続けて手牌整理【序】で交換する牌を選んでください。"
+    };
+  }
+
+  return {
+    ...activatedState,
+    round: {
+      ...activatedState.round,
+      phase:
+        getPhaseAfterPlayerSkill3_14DealAction(
+          activatedState
+        )
+    }
   };
 }
 
@@ -1625,6 +1653,16 @@ export function skipPlayerSkill3_14(
 ): GameState {
   if (state.round.phase !== "dealAction") {
     return state;
+  }
+
+  if (
+    canActivatePlayerSkill4_17(state)
+  ) {
+    return {
+      ...state,
+      notice:
+        "色即是空を発動しません。手牌整理【序】で交換する牌を選んでください。"
+    };
   }
 
   return {
@@ -8055,6 +8093,25 @@ function resolveNextRoundStart(
         `${getRoundLabel(dealActionState.round)}の配牌が完了しました。` +
         (dealDetection.detectionNotice ?? "") +
         "色即是空を発動するか選んでください。"
+    };
+
+    return {
+      stateAfterStart: pendingState,
+      finalState: pendingState
+    };
+  }
+
+  if (
+    canActivatePlayerSkill4_17(
+      dealActionState
+    )
+  ) {
+    const pendingState: GameState = {
+      ...dealActionState,
+      notice:
+        `${getRoundLabel(dealActionState.round)}の配牌が完了しました。` +
+        (dealDetection.detectionNotice ?? "") +
+        "手牌整理【序】で交換する牌を選んでください。"
     };
 
     return {
