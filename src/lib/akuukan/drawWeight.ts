@@ -41,6 +41,9 @@ import {
 import {
   getAkuukanPlayerSkill4_8DrawWeightMultiplier
 } from "./fourthPlaceShantenDrawWeight";
+import {
+  getAkuukanPlayerSkill4_9DrawWeightMultiplier
+} from "./allHonorTileDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -213,6 +216,12 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
             input.playerIsFourth ?? false,
           hand: input.hand ?? [],
           melds: input.melds ?? [],
+          candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_9DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
           candidate: candidate.tile
         })
     }));
