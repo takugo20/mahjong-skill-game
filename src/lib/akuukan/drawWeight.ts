@@ -279,7 +279,6 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           candidate: candidate.tile
         })
     }));
-    }));
   const firstWeight =
     weightedCandidates[0].weight;
 
