@@ -1903,6 +1903,7 @@ function getAkuukanLiveWallDrawIndex(
     melds: player.melds,
     playerIsFourth:
       isPlayerCurrentlyFourth(state),
+    seatWind: player.seatWind,
     random
   });
 }
