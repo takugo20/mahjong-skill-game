@@ -36,6 +36,7 @@ import {
   canActivatePlayerSkill3_12,
   canActivatePlayerSkill3_13,
   canActivatePlayerSkill3_14,
+  canActivatePlayerSkill4_17,
   canPlayerDeclareNineTerminals,
   canPlayerRiichi,
   canPlayerRon,
@@ -56,6 +57,7 @@ import {
   getPlayerOpenKanCallOptions,
   getPlayerRiichiDiscardTileIds,
   getPlayerSelfKanOptions,
+  getPlayerSkill4_17MaximumExchangeTileCount,
   getRoundLabel,
   getWindLabel,
   playPlayerSelfKan
@@ -866,6 +868,11 @@ export function GameBoard({
   ] = useState<string | null>(null);
 
   const [
+    playerSkill4_17SelectedTileIds,
+    setPlayerSkill4_17SelectedTileIds
+  ] = useState<string[]>([]);
+
+  const [
     isCpuProgressing,
     setIsCpuProgressing
   ] = useState(false);
@@ -1097,7 +1104,22 @@ export function GameBoard({
 
   const canUsePlayerSkill3_14 =
     !isInteractionLocked &&
+    round.dealActionKind ===
+      "playerSkill3_14" &&
     canActivatePlayerSkill3_14(
+      gameState
+    );
+
+  const canUsePlayerSkill4_17 =
+    !isInteractionLocked &&
+    round.dealActionKind ===
+      "playerSkill4_17" &&
+    canActivatePlayerSkill4_17(
+      gameState
+    );
+
+  const playerSkill4_17MaximumExchangeTileCount =
+    getPlayerSkill4_17MaximumExchangeTileCount(
       gameState
     );
 
@@ -1548,6 +1570,29 @@ export function GameBoard({
   function handleTileSelection(
     tileId: string
   ) {
+    if (canUsePlayerSkill4_17) {
+      setPlayerSkill4_17SelectedTileIds(
+        (current) => {
+          if (current.includes(tileId)) {
+            return current.filter(
+              (currentTileId) =>
+                currentTileId !== tileId
+            );
+          }
+
+          if (
+            current.length >=
+            playerSkill4_17MaximumExchangeTileCount
+          ) {
+            return current;
+          }
+
+          return [...current, tileId];
+        }
+      );
+      return;
+    }
+
     if (
       !canDiscard ||
       cpuProgressingRef.current
@@ -1999,6 +2044,7 @@ export function GameBoard({
   function handleRestart() {
     setGameState(createInitialGameState());
     setSelectedTileId(null);
+    setPlayerSkill4_17SelectedTileIds([]);
   }
 
   function renderPlayerTile(tile: Tile) {
@@ -2007,7 +2053,10 @@ export function GameBoard({
         key={tile.id}
         tile={tile}
         selected={
-          selectedTileId === tile.id
+          selectedTileId === tile.id ||
+          playerSkill4_17SelectedTileIds.includes(
+            tile.id
+          )
         }
         highlighted={
           player.drawnTileId === tile.id ||
@@ -2024,7 +2073,8 @@ export function GameBoard({
           )
         }
         disabled={
-          !canDiscard ||
+          (!canDiscard &&
+            !canUsePlayerSkill4_17) ||
           (
             player.riichi &&
             player.drawnTileId !== tile.id
