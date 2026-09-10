@@ -3,7 +3,8 @@ import {
 } from "../mahjong/tiles";
 import type {
   Meld,
-  Tile
+  Tile,
+  Wind
 } from "../mahjong/types";
 import {
   getEquippedPlayerSkill
@@ -62,6 +63,9 @@ import {
 import {
   getAkuukanPlayerSkill4_15DrawWeightMultiplier
 } from "./dragonTileDrawWeight";
+import {
+  getAkuukanPlayerSkill4_16DrawWeightMultiplier
+} from "./seatWindTileDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -76,6 +80,7 @@ export interface AkuukanPlayerSkill1_4DrawInput {
   readonly hand?: readonly Tile[];
   readonly melds?: readonly Meld[];
   readonly playerIsFourth?: boolean;
+  readonly seatWind?: Wind;
   readonly random: () => number;
 }
 
@@ -276,6 +281,14 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           akuukan: input.akuukan,
           drawerIsPlayer:
             input.drawerIsPlayer,
+          candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_16DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          seatWind:
+            input.seatWind ?? "east",
           candidate: candidate.tile
         })
     }));
