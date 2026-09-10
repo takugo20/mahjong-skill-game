@@ -112,6 +112,11 @@ import {
   tryActivateAkuukanPlayerSkill3_14
 } from "../akuukan/opponentActionRestrictionPlayerSkill3_14";
 import {
+  canActivateAkuukanPlayerSkill4_17,
+  getAkuukanPlayerSkill4_17Config,
+  tryActivateAkuukanPlayerSkill4_17
+} from "../akuukan/handExchangePlayerSkill4_17";
+import {
   synchronizePlayerSkill3_4VisibleTiles
 } from "../akuukan/transparentTiles";
 import {
@@ -1423,6 +1428,142 @@ function getPhaseAfterPlayerSkill3_14DealAction(
   ].drawnTileId
     ? "discarding"
     : "drawing";
+}
+
+function getPlayerSkill4_17State(
+  state: GameState
+) {
+  const player = state.round.players.find(
+    (candidate) => candidate.seat === 0
+  );
+
+  if (!state.akuukan || !player) {
+    return null;
+  }
+
+  return {
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp,
+    hand: player.hand,
+    liveWall: state.round.liveWall,
+    deadWall: state.round.deadWall,
+    doraIndicatorCount:
+      state.round.doraIndicatorCount,
+    rinshanDrawCount:
+      state.round.rinshanDrawCount
+  };
+}
+
+export function canActivatePlayerSkill4_17(
+  state: GameState
+): boolean {
+  if (state.round.phase !== "dealAction") {
+    return false;
+  }
+
+  const skillState =
+    getPlayerSkill4_17State(state);
+
+  return skillState !== null &&
+    canActivateAkuukanPlayerSkill4_17(
+      skillState
+    );
+}
+
+export function getPlayerSkill4_17MaximumExchangeTileCount(
+  state: GameState
+): number {
+  if (state.round.phase !== "dealAction") {
+    return 0;
+  }
+
+  const skillState =
+    getPlayerSkill4_17State(state);
+  const config = skillState
+    ? getAkuukanPlayerSkill4_17Config(
+        skillState
+      )
+    : null;
+
+  return config?.maximumExchangeTileCount ?? 0;
+}
+
+export function activatePlayerSkill4_17(
+  state: GameState,
+  selectedTileIds: readonly string[],
+  random: () => number = Math.random
+): GameState {
+  if (state.round.phase !== "dealAction") {
+    return state;
+  }
+
+  const skillState =
+    getPlayerSkill4_17State(state);
+
+  if (!skillState) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill4_17(
+      skillState,
+      selectedTileIds,
+      random
+    );
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    round: {
+      ...state.round,
+      liveWall: [...activation.state.liveWall],
+      deadWall: [...activation.state.deadWall],
+      players: state.round.players.map(
+        (player) =>
+          player.seat === 0
+            ? {
+                ...player,
+                hand: sortTiles([
+                  ...activation.state.hand
+                ])
+              }
+            : player
+      ),
+      phase:
+        getPhaseAfterPlayerSkill3_14DealAction(
+          state
+        )
+    },
+    notice:
+      `手牌整理【序】を発動し、${activation.exchanges.length}枚を交換しました。`
+  };
+}
+
+export function skipPlayerSkill4_17(
+  state: GameState
+): GameState {
+  if (state.round.phase !== "dealAction") {
+    return state;
+  }
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      phase:
+        getPhaseAfterPlayerSkill3_14DealAction(
+          state
+        )
+    },
+    notice:
+      "手牌整理【序】を発動せず、局を開始します。"
+  };
 }
 
 export function canActivatePlayerSkill3_14(
