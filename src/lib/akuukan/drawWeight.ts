@@ -59,6 +59,9 @@ import {
 import {
   getAkuukanPlayerSkill4_14DrawWeightMultiplier
 } from "./centerNumberTileDrawWeight";
+import {
+  getAkuukanPlayerSkill4_15DrawWeightMultiplier
+} from "./dragonTileDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -268,7 +271,14 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           drawerIsPlayer:
             input.drawerIsPlayer,
           candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_15DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          candidate: candidate.tile
         })
+    }));
     }));
   const firstWeight =
     weightedCandidates[0].weight;
