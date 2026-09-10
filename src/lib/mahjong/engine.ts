@@ -970,6 +970,11 @@ export function createInitialGameState(
   ) {
     return {
       ...dealActionState,
+      round: {
+        ...dealActionState.round,
+        dealActionKind:
+          "playerSkill3_14"
+      },
       notice:
         "東1局の配牌が完了しました。色即是空を発動するか選んでください。"
     };
@@ -982,6 +987,11 @@ export function createInitialGameState(
   ) {
     return {
       ...dealActionState,
+      round: {
+        ...dealActionState.round,
+        dealActionKind:
+          "playerSkill4_17"
+      },
       notice:
         "東1局の配牌が完了しました。手牌整理【序】で交換する牌を選んでください。"
     };
@@ -1550,7 +1560,8 @@ export function activatePlayerSkill4_17(
       phase:
         getPhaseAfterPlayerSkill3_14DealAction(
           state
-        )
+        ),
+      dealActionKind: undefined
     },
     notice:
       `手牌整理【序】を発動し、${activation.exchanges.length}枚を交換しました。`
@@ -1571,7 +1582,8 @@ export function skipPlayerSkill4_17(
       phase:
         getPhaseAfterPlayerSkill3_14DealAction(
           state
-        )
+        ),
+      dealActionKind: undefined
     },
     notice:
       "手牌整理【序】を発動せず、局を開始します。"
@@ -1631,6 +1643,11 @@ export function activatePlayerSkill3_14(
   ) {
     return {
       ...activatedState,
+      round: {
+        ...activatedState.round,
+        dealActionKind:
+          "playerSkill4_17"
+      },
       notice:
         "色即是空を発動しました。続けて手牌整理【序】で交換する牌を選んでください。"
     };
@@ -1643,7 +1660,8 @@ export function activatePlayerSkill3_14(
       phase:
         getPhaseAfterPlayerSkill3_14DealAction(
           activatedState
-        )
+        ),
+      dealActionKind: undefined
     }
   };
 }
@@ -1660,6 +1678,11 @@ export function skipPlayerSkill3_14(
   ) {
     return {
       ...state,
+      round: {
+        ...state.round,
+        dealActionKind:
+          "playerSkill4_17"
+      },
       notice:
         "色即是空を発動しません。手牌整理【序】で交換する牌を選んでください。"
     };
@@ -1672,7 +1695,8 @@ export function skipPlayerSkill3_14(
       phase:
         getPhaseAfterPlayerSkill3_14DealAction(
           state
-        )
+        ),
+      dealActionKind: undefined
     },
     notice:
       "色即是空を発動せず、局を開始します。"
