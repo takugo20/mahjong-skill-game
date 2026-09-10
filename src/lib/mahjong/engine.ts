@@ -1749,6 +1749,56 @@ export function createPlayerDealActionProgression(
   };
 }
 
+export function createPlayerSkill4_17DealActionProgression(
+  state: GameState,
+  selectedTileIds: readonly string[] | null,
+  random: () => number = Math.random
+): PlayerDealActionProgression {
+  const stateAfterAction =
+    selectedTileIds === null
+      ? skipPlayerSkill4_17(state)
+      : activatePlayerSkill4_17(
+          state,
+          selectedTileIds,
+          random
+        );
+  const cpuSteps: CpuProgressStep[] = [];
+
+  if (stateAfterAction === state) {
+    return {
+      stateAfterAction,
+      cpuSteps,
+      finalState: stateAfterAction
+    };
+  }
+
+  const finalState =
+    stateAfterAction.round.phase !==
+    "drawing"
+      ? stateAfterAction
+      : stateAfterAction.round
+          .currentSeat === 0
+        ? drawTile(
+            stateAfterAction,
+            0,
+            random
+          )
+        : completeCpuTurns(
+            stateAfterAction,
+            random,
+            false,
+            (step) => {
+              cpuSteps.push(step);
+            }
+          );
+
+  return {
+    stateAfterAction,
+    cpuSteps,
+    finalState
+  };
+}
+
 function beginAkuukanTurnState(
   state: GameState,
   advancePlayerTimedSkills = true
@@ -8113,6 +8163,11 @@ function resolveNextRoundStart(
   ) {
     const pendingState: GameState = {
       ...dealActionState,
+      round: {
+        ...dealActionState.round,
+        dealActionKind:
+          "playerSkill3_14"
+      },
       notice:
         `${getRoundLabel(dealActionState.round)}の配牌が完了しました。` +
         (dealDetection.detectionNotice ?? "") +
@@ -8132,6 +8187,11 @@ function resolveNextRoundStart(
   ) {
     const pendingState: GameState = {
       ...dealActionState,
+      round: {
+        ...dealActionState.round,
+        dealActionKind:
+          "playerSkill4_17"
+      },
       notice:
         `${getRoundLabel(dealActionState.round)}の配牌が完了しました。` +
         (dealDetection.detectionNotice ?? "") +
