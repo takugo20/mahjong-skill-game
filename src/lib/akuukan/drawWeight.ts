@@ -47,6 +47,9 @@ import {
 import {
   getAkuukanPlayerSkill4_10DrawWeightMultiplier
 } from "./souTileDrawWeight";
+import {
+  getAkuukanPlayerSkill4_11DrawWeightMultiplier
+} from "./pinTileDrawWeight";
 import type {
   AkuukanGameState
 } from "./types";
@@ -228,6 +231,12 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           candidate: candidate.tile
         }) *
         getAkuukanPlayerSkill4_10DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer:
+            input.drawerIsPlayer,
+          candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill4_11DrawWeightMultiplier({
           akuukan: input.akuukan,
           drawerIsPlayer:
             input.drawerIsPlayer,
