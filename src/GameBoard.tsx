@@ -45,6 +45,7 @@ import {
   createNextRoundProgression,
   createPlayerDealActionProgression,
   createPlayerDiscardProgression,
+  createPlayerSkill4_17DealActionProgression,
   createPlayerReactionSkipProgression,
   createPlayerRiichiProgression,
   declarePlayerMeldCall,
@@ -1856,6 +1857,48 @@ export function GameBoard({
     );
   }
 
+  function handlePlayerSkill4_17(
+    selectedTileIds: readonly string[] | null
+  ) {
+    if (cpuProgressingRef.current) {
+      return;
+    }
+
+    const progression =
+      createPlayerSkill4_17DealActionProgression(
+        gameState,
+        selectedTileIds
+      );
+    const timedStates =
+      progression.cpuSteps.map(
+        (step) => step.state
+      );
+    const lastTimedState =
+      timedStates.length === 0
+        ? progression.stateAfterAction
+        : timedStates[
+            timedStates.length - 1
+          ];
+
+    if (
+      lastTimedState !== progression.finalState
+    ) {
+      timedStates.push(
+        progression.finalState
+      );
+    }
+
+    setGameState(
+      progression.stateAfterAction
+    );
+    setSelectedTileId(null);
+    setPlayerSkill4_17SelectedTileIds([]);
+    scheduleCpuProgression(
+      timedStates,
+      progression.cpuSteps,
+      progression.stateAfterAction
+    );
+  }  
 
   function handleRon() {
     if (winPresentingRef.current) {
@@ -2449,7 +2492,11 @@ export function GameBoard({
               : round.phase === "matchEnd"
               ? "対局終了"
               : round.phase === "dealAction"
-              ? "色即是空を発動しますか？"
+              ? canUsePlayerSkill3_14
+                ? "色即是空を発動しますか？"
+                : canUsePlayerSkill4_17
+                  ? `手牌整理【序】：交換する牌を選択（${playerSkill4_17SelectedTileIds.length}／${playerSkill4_17MaximumExchangeTileCount}枚）`
+                  : "配牌時の能力を選択"
               : round.phase === "reaction"
                 ? reactionStatus
                 : canTsumo
@@ -2502,7 +2549,7 @@ export function GameBoard({
               </button>
             ) : round.phase === "dealAction" ? (
               <>
-                {canUsePlayerSkill3_14 && (
+                {canUsePlayerSkill3_14 ? (
                   <button
                     type="button"
                     className="primary-button"
@@ -2510,15 +2557,43 @@ export function GameBoard({
                   >
                     色即是空を発動
                   </button>
-                )}
+                ) : canUsePlayerSkill4_17 ? (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={
+                      playerSkill4_17SelectedTileIds.length ===
+                      0
+                    }
+                    onClick={() =>
+                      handlePlayerSkill4_17(
+                        playerSkill4_17SelectedTileIds
+                      )
+                    }
+                  >
+                    選択した牌を交換
+                  </button>
+                ) : null}
 
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={handleSkipPlayerSkill3_14}
-                >
-                  発動しない
-                </button>
+                {canUsePlayerSkill3_14 ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handleSkipPlayerSkill3_14}
+                  >
+                    発動しない
+                  </button>
+                ) : canUsePlayerSkill4_17 ? (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={() =>
+                      handlePlayerSkill4_17(null)
+                    }
+                  >
+                    発動しない
+                  </button>
+                ) : null}
               </>
             ) : round.phase === "reaction" ? (
               <>
