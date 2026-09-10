@@ -273,6 +273,9 @@ export interface RoundState {
   players: PlayerState[];
   currentSeat: SeatIndex;
   phase: GamePhase;
+  dealActionKind?:
+    | "playerSkill3_14"
+    | "playerSkill4_17";
   lastDiscard: LastDiscard | null;
   meldCallOptions?: MeldCallOption[];
   meldCallDiscardRestriction?:
