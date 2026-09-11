@@ -2780,6 +2780,8 @@ export function discardTile(
       },
       meldCallOptions: [],
       meldCallDiscardRestriction: null,
+      handExchangeWinningTileIds:
+        undefined,
       turnNumber: round.turnNumber + 1
     },
     notice: wallIsEmpty
@@ -4400,15 +4402,13 @@ export function declarePlayerTsumo(
       "tsumo",
       random
     );
-  const resolution = resolveRoundWin(
-    createWinInput(
-      application.scoringState,
-      0,
-      "tsumo"
-    )
-  );
 
-  if (!resolution.valid) {
+  const resolution =
+    getBestPlayerTsumoResolution(
+      application.scoringState
+    );
+
+  if (!resolution) {
     return {
       ...state,
       notice: "ツモ和了の精算に失敗しました。"
@@ -4417,10 +4417,7 @@ export function declarePlayerTsumo(
 
   return finishRoundWithWin(
     application.state,
-    applyAkuukanPaymentMultipliersToWinResolution(
-      application.state,
-      resolution
-    )
+    resolution
   );
 }
 
