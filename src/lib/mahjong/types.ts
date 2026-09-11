@@ -276,6 +276,7 @@ export interface RoundState {
   dealActionKind?:
     | "playerSkill3_14"
     | "playerSkill4_17";
+  handExchangeWinningTileIds?: string[];
   lastDiscard: LastDiscard | null;
   meldCallOptions?: MeldCallOption[];
   meldCallDiscardRestriction?:
