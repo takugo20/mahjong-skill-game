@@ -1723,7 +1723,12 @@ export function activatePlayerSkill4_18(
                 ])
               }
             : player
-      )
+      ),
+      handExchangeWinningTileIds:
+        activation.exchanges.map(
+          (exchange) =>
+            exchange.incomingTile.id
+        )
     },
     notice:
       `手牌整理【索】を発動し、${activation.exchanges.length}枚を交換しました。`
@@ -2985,7 +2990,8 @@ function createWinInput(
   state: GameState,
   winnerSeat: SeatIndex,
   winMethod: "tsumo" | "ron",
-  chankanSource?: ChankanWinSource
+  chankanSource?: ChankanWinSource,
+  tsumoWinningTileId?: string
 ) {
   const player =
     state.round.players[winnerSeat];
@@ -3010,6 +3016,9 @@ function createWinInput(
     round: state.round,
     winnerSeat,
     winMethod,
+    ...(tsumoWinningTileId
+      ? { tsumoWinningTileId }
+      : {}),
     ...(akuukanWinningInput
       ? {
           treatAsClosed:
