@@ -276,7 +276,6 @@ import {
   getRiichiClosedKanAllowedTileTypes
 } from "./riichiKan";
 import {
-  evaluateRoundWin,
   resolveRoundWin
 } from "./roundWin";
 import type {
@@ -3575,20 +3574,92 @@ function applyAkuukanPlayerSkill1_3BeforeWin(
   };
 }
 
+function getPlayerTsumoWinningTileIds(
+  state: GameState
+): string[] {
+  const player = state.round.players[0];
+
+  const exchangeTileIds =
+    state.round
+      .handExchangeWinningTileIds
+      ?.filter((tileId) =>
+        player.hand.some(
+          (tile) => tile.id === tileId
+        )
+      ) ?? [];
+
+  if (exchangeTileIds.length > 0) {
+    return exchangeTileIds;
+  }
+
+  return player.drawnTileId
+    ? [player.drawnTileId]
+    : [];
+}
+
+function comparePlayerTsumoResolutions(
+  left: ValidRoundWinResolution,
+  right: ValidRoundWinResolution
+): number {
+  const leftBest = left.evaluation.best;
+  const rightBest = right.evaluation.best;
+
+  return (
+    rightBest.score.totalPoints -
+      leftBest.score.totalPoints ||
+    rightBest.yakumanMultiplier -
+      leftBest.yakumanMultiplier ||
+    rightBest.totalHan -
+      leftBest.totalHan ||
+    (rightBest.fu?.fu ?? 0) -
+      (leftBest.fu?.fu ?? 0)
+  );
+}
+
+function getBestPlayerTsumoResolution(
+  state: GameState
+): ValidRoundWinResolution | null {
+  const exchangeWinningTileIdSet =
+    new Set(
+      state.round
+        .handExchangeWinningTileIds ?? []
+    );
+
+  const resolutions =
+    getPlayerTsumoWinningTileIds(state)
+      .map((winningTileId) =>
+        getValidWinResolution(
+          state,
+          0,
+          "tsumo",
+          undefined,
+          exchangeWinningTileIdSet.has(
+            winningTileId
+          )
+            ? winningTileId
+            : undefined
+        )
+      )
+      .filter(
+        (
+          resolution
+        ): resolution is ValidRoundWinResolution =>
+          resolution !== null
+      );
+
+  resolutions.sort(
+    comparePlayerTsumoResolutions
+  );
+
+  return resolutions[0] ?? null;
+}
+
 export function canPlayerTsumo(
   state: GameState
 ): boolean {
-  try {
-    return evaluateRoundWin(
-      createWinInput(
-        state,
-        0,
-        "tsumo"
-      )
-    ).valid;
-  } catch {
-    return false;
-  }
+  return getBestPlayerTsumoResolution(
+    state
+  ) !== null;
 }
 
 export function canPlayerRon(
@@ -4426,7 +4497,8 @@ function getValidWinResolution(
   state: GameState,
   winnerSeat: SeatIndex,
   winMethod: "tsumo" | "ron",
-  chankanSource?: ChankanWinSource
+  chankanSource?: ChankanWinSource,
+  tsumoWinningTileId?: string
 ): ValidRoundWinResolution | null {
   try {
     if (
@@ -4444,7 +4516,8 @@ function getValidWinResolution(
         state,
         winnerSeat,
         winMethod,
-        chankanSource
+        chankanSource,
+        tsumoWinningTileId
       )
     );
 
