@@ -43,6 +43,7 @@ export interface RoundWinActionInput {
   round: RoundState;
   winnerSeat: SeatIndex;
   winMethod: WinMethod;
+  tsumoWinningTileId?: string;
   doraIndicators: readonly Tile[];
   uraDoraIndicators?: readonly Tile[];
   treatAsClosed?: boolean;
@@ -133,7 +134,11 @@ function getTsumoSource(
     );
   }
 
-  if (!winner.drawnTileId) {
+  const winningTileId =
+    input.tsumoWinningTileId ??
+    winner.drawnTileId;
+
+  if (!winningTileId) {
     throw new Error(
       "ツモ和了に必要なツモ牌がありません"
     );
@@ -141,7 +146,7 @@ function getTsumoSource(
 
   const winningTile = winner.hand.find(
     (tile) =>
-      tile.id === winner.drawnTileId
+      tile.id === winningTileId
   );
 
   if (!winningTile) {
