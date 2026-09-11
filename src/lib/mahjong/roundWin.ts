@@ -57,6 +57,7 @@ export interface RoundWinActionInput {
     WinningCandidateScoreAdjuster;
   doubleRiichi?: boolean;
   rinshan?: boolean;
+  haitei?: boolean;
   chankan?: boolean;
   chankanSource?: ChankanWinSource;
   tenhou?: boolean;
@@ -336,10 +337,13 @@ function createWinningInput(
       input.chankan === true ||
       input.chankanSource !== undefined,
     haitei:
-      input.winMethod === "tsumo" &&
-      input.round.liveWall.length === 0 &&
-      source.winner.drawnTileSource ===
-        "liveWall",
+      input.haitei ??
+      (
+        input.winMethod === "tsumo" &&
+        input.round.liveWall.length === 0 &&
+        source.winner.drawnTileSource ===
+          "liveWall"
+      ),
     houtei:
       input.winMethod === "ron" &&
       input.round.liveWall.length === 0 &&
