@@ -3058,8 +3058,12 @@ function createWinInput(
       player.doubleRiichi === true,
     rinshan:
       winMethod === "tsumo" &&
+      tsumoWinningTileId === undefined &&
       player.drawnTileSource ===
         "rinshan",
+    ...(tsumoWinningTileId
+      ? { haitei: false }
+      : {}),
     tenhou:
       firstUninterruptedTsumo &&
       player.isDealer,
