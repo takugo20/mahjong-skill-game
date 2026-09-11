@@ -75,7 +75,8 @@ function createExchangeWinState(): GameState {
             },
             tsumogiri: true,
             riichiDeclaration: false,
-            called: false
+            called: false,
+            faceDown: false
           }],
           ...(player.seat === 0
             ? {
