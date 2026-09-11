@@ -1,3 +1,10 @@
+import { PlayerSkill4_18Panel } from "./components/PlayerSkill4_18Panel";
+import {
+  activatePlayerSkill4_18,
+  canActivatePlayerSkill4_18,
+  getPlayerSkill4_18MaximumExchangeTileCount,
+  getPlayerSkill4_18SelectableTileIds
+} from "./lib/mahjong/engine";
 import {
   useEffect,
   useRef,
@@ -874,6 +881,16 @@ export function GameBoard({
   ] = useState<string[]>([]);
 
   const [
+    isSelectingPlayerSkill4_18,
+    setIsSelectingPlayerSkill4_18
+  ] = useState(false);
+
+  const [
+    playerSkill4_18SelectedTileIds,
+    setPlayerSkill4_18SelectedTileIds
+  ] = useState<string[]>([]);
+
+  const [
     isCpuProgressing,
     setIsCpuProgressing
   ] = useState(false);
@@ -1099,6 +1116,7 @@ export function GameBoard({
     round.lastDiscard?.discard.tile.id ?? null;
 
   const canDiscard =
+    !isSelectingPlayerSkill4_18 &&
     !isInteractionLocked &&
     round.currentSeat === 0 &&
     round.phase === "discarding";
@@ -1857,6 +1875,31 @@ export function GameBoard({
     );
   }
 
+    function closePlayerSkill4_18Panel() {
+    setIsSelectingPlayerSkill4_18(false);
+    setPlayerSkill4_18SelectedTileIds([]);
+    setSelectedTileId(null);
+  }
+
+  function confirmPlayerSkill4_18() {
+    if (
+      isInteractionLocked ||
+      cpuProgressingRef.current ||
+      !canActivatePlayerSkill4_18(gameState)
+    ) {
+      return;
+    }
+
+    setGameState(
+      activatePlayerSkill4_18(
+        gameState,
+        playerSkill4_18SelectedTileIds
+      )
+    );
+
+    closePlayerSkill4_18Panel();
+  }
+
   function handlePlayerSkill4_17(
     selectedTileIds: readonly string[] | null
   ) {
@@ -2085,6 +2128,7 @@ export function GameBoard({
   }
   
   function handleRestart() {
+    closePlayerSkill4_18Panel();
     setGameState(createInitialGameState());
     setSelectedTileId(null);
     setPlayerSkill4_17SelectedTileIds([]);
@@ -2595,6 +2639,29 @@ export function GameBoard({
                   </button>
                 ) : null}
               </>
+            ) : isSelectingPlayerSkill4_18 ? (
+              <PlayerSkill4_18Panel
+                tiles={player.hand}
+                selectableTileIds={
+                  getPlayerSkill4_18SelectableTileIds(
+                    gameState
+                  )
+                }
+                selectedTileIds={
+                  playerSkill4_18SelectedTileIds
+                }
+                maximumCount={
+                  getPlayerSkill4_18MaximumExchangeTileCount(
+                    gameState
+                  )
+                }
+                disabled={isInteractionLocked}
+                onSelectionChange={
+                  setPlayerSkill4_18SelectedTileIds
+                }
+                onConfirm={confirmPlayerSkill4_18}
+                onCancel={closePlayerSkill4_18Panel}
+              />
             ) : round.phase === "reaction" ? (
               <>
                 {canRon && (
@@ -2668,6 +2735,20 @@ export function GameBoard({
               </>
             ) : (
               <>
+              {!isInteractionLocked &&
+                  canActivatePlayerSkill4_18(gameState) && (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => {
+                        setSelectedTileId(null);
+                        setPlayerSkill4_18SelectedTileIds([]);
+                        setIsSelectingPlayerSkill4_18(true);
+                      }}
+                    >
+                      手牌整理【索】
+                    </button>
+                  )}
                 {canTsumo && (
                   <button
                     type="button"
