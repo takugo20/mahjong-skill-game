@@ -1,3 +1,4 @@
+import { SkillLevelInfo } from "./SkillLevelInfo";
 import { useState } from "react";
 import type {
   AkuukanSaveData
@@ -133,6 +134,11 @@ export function SkillCatalog({
             </p>
 
             <p>{skill.description}</p>
+
+            <SkillLevelInfo
+              skill={skill}
+              currentLevel={progress.level}
+            />
 
             {progress.isUnlocked && (
               maximum ? (
