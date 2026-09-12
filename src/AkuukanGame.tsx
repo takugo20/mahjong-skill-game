@@ -1,3 +1,4 @@
+import { unlockGameAudio } from "./lib/gameAudio";
 import { EnemyGuide } from "./EnemyGuide";
 import { SkillCatalog } from "./SkillCatalog";
 import { MatchGrowthResult } from "./MatchGrowthResult";
@@ -65,6 +66,7 @@ export function AkuukanGame() {
   );
 
   function start() {
+    void unlockGameAudio();
     const result = tryStartAkuukanMatchFromSaveData(
       saveRef.current,
       enemyId
