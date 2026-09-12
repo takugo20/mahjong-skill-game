@@ -65,6 +65,7 @@ it.each(["tsumo", "ron"] as const)(
 it("暗槓の4枚を表示し、元の手牌を変更しない", () => {
   const player = {
     name: "自分",
+    seat: 0 as const,
     hand: [tile("hand")],
     melds: [{
       kind: "closedKan" as const,
