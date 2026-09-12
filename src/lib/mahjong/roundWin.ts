@@ -56,6 +56,7 @@ export interface RoundWinActionInput {
   candidateScoreAdjuster?:
     WinningCandidateScoreAdjuster;
   doubleRiichi?: boolean;
+  ippatsu?: boolean;  
   rinshan?: boolean;
   haitei?: boolean;
   chankan?: boolean;
@@ -331,7 +332,7 @@ function createWinningInput(
     riichi: source.winner.riichi,
     doubleRiichi:
       input.doubleRiichi,
-    ippatsu: source.winner.ippatsu,
+    ippatsu: input.ippatsu ?? source.winner.ippatsu,
     rinshan: input.rinshan,
     chankan:
       input.chankan === true ||
