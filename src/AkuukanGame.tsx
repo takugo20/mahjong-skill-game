@@ -1,3 +1,4 @@
+import { EnemyGuide } from "./EnemyGuide";
 import { SkillCatalog } from "./SkillCatalog";
 import { MatchGrowthResult } from "./MatchGrowthResult";
 import { useCallback, useRef, useState } from "react";
@@ -214,6 +215,11 @@ export function AkuukanGame() {
               </option>
             ))}
           </select>
+
+          <EnemyGuide
+            selectedEnemyId={enemyId}
+            progress={loaded.saveData.enemyProgress}
+          />
 
           <p>
             装備スキル：
