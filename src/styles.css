@@ -3900,3 +3900,65 @@ body {
     box-shadow: 0 0 16px #ffd35e;
   }
 }
+
+/* 加槓：ポンの横向き牌の上へ重ねる */
+.meld-stack-upper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  bottom: calc(100% + 2px);
+}
+
+.meld-group--addedKan {
+  padding-top: calc(var(--meld-tile-width) + 2px);
+}
+
+.meld-area--top .meld-group--addedKan {
+  padding-top: 0;
+  padding-bottom: calc(var(--meld-tile-width) + 2px);
+}
+
+.meld-area--top .meld-stack-upper {
+  bottom: auto;
+  top: calc(100% + 2px);
+}
+
+.meld-area--left .meld-group--addedKan {
+  padding-top: 0;
+  padding-right: calc(var(--meld-tile-width) + 2px);
+}
+
+.meld-area--right .meld-group--addedKan {
+  padding-top: 0;
+  padding-left: calc(var(--meld-tile-width) + 2px);
+}
+
+.meld-area--left .meld-stack-upper {
+  bottom: 0;
+  left: calc(100% + 2px);
+}
+
+.meld-area--right .meld-stack-upper {
+  bottom: 0;
+  left: auto;
+  right: calc(100% + 2px);
+}
+
+/* 和了結果も同じ面子表示を使用 */
+.win-result-melds {
+  --meld-tile-width: 26px;
+  --meld-tile-height: 36px;
+  align-items: flex-end;
+}
+
+.win-result-meld-tiles {
+  align-items: flex-end;
+}
+
+.win-result-hand .meld-tile--called .mahjong-tile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
