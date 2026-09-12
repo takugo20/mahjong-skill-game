@@ -1,3 +1,4 @@
+import { MeldTiles } from "./components/MeldTiles";
 import { useDamatenAlert } from "./useDamatenAlert";
 import { WinResultHand } from "./components/WinResultHand";
 import {
@@ -773,39 +774,14 @@ function MeldArea({
           data-meld-kind={meld.kind}
           data-called-from={meld.calledFrom}
         >
-          {getMeldDisplayTiles(
-            meld,
-            player.seat
-          ).map((tile) => {
-            const isCalledTile =
-              tile.id === meld.calledTileId;
-
-            return (
-              <span
-                key={tile.id}
-                className={
-                  isCalledTile
-                    ? "meld-tile meld-tile--called"
-                    : "meld-tile"
-                }
-                data-called-tile={
-                  isCalledTile
-                    ? "true"
-                    : undefined
-                }
-              >
-                <TileView
-                  tile={tile}
-                  compact={compact}
-                  declarationTarget={
-                    declarationTargetTileIds.includes(
-                      tile.id
-                    )
-                  }
-                />
-              </span>
-            );
-          })}
+          <MeldTiles
+            meld={meld}
+            seat={player.seat}
+            compact={compact}
+            declarationTargetTileIds={
+              declarationTargetTileIds
+            }
+          />
         </div>
       ))}
     </div>
