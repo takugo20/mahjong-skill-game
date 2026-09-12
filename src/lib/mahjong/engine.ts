@@ -1,4 +1,10 @@
 import {
+  createInitialPlayerSkillGrowthState
+} from "../akuukan/playerSkillProgress";
+import {
+  createPlayerSkillMatchDrawProgress
+} from "../akuukan/playerSkillMatchDrawProgress";
+import {
   getAkuukanPlayerSkill5_8HaiteiCandidates
 } from "../akuukan/haiteiDrawCandidates";
 import {
@@ -981,6 +987,12 @@ export function createInitialGameState(
   }
 
   const initialState: GameState = {
+    ...(akuukanSetup ? {
+      roundSequence: 1,
+      playerSkillDrawProgress: createPlayerSkillMatchDrawProgress(
+        createInitialPlayerSkillGrowthState()
+      )
+    } : {}),    
     round: {
       prevailingWind: "east",
       handNumber: 1,
