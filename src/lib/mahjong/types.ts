@@ -1,4 +1,7 @@
 import type {
+  AkuukanPlayerSkill5_4Progress
+} from "../akuukan/extendedIppatsuProgress";
+import type {
   AkuukanGameState
 } from "../akuukan/types";
 
@@ -68,6 +71,7 @@ export interface PlayerState {
   riichi: boolean;
   doubleRiichi?: boolean;
   ippatsu: boolean;
+  extendedIppatsuProgress?: AkuukanPlayerSkill5_4Progress | null;
   temporaryFuriten?: boolean;
   riichiFuriten?: boolean;
   drawnTileId: string | null;
