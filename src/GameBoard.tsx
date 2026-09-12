@@ -1,3 +1,7 @@
+import {
+  activatePlayerSkill4_21,
+  canActivatePlayerSkill4_21
+} from "./lib/mahjong/engine";
 import { PlayerSkill4_20Panel } from "./components/PlayerSkill4_20Panel";
 import {
   activatePlayerSkill4_20,
@@ -1178,6 +1182,10 @@ export function GameBoard({
       gameState
     );
 
+  const canUsePlayerSkill4_21 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill4_21(gameState);
+  
   const canUsePlayerSkill1_14 =
     !isInteractionLocked &&
     canActivatePlayerSkill1_14(
@@ -1787,6 +1795,20 @@ export function GameBoard({
       )
     );
 
+    setSelectedTileId(null);
+  }
+
+function handlePlayerSkill4_21() {
+    if (
+      isInteractionLocked ||
+      cpuProgressingRef.current
+    ) {
+      return;
+    }
+
+    setGameState((currentState) =>
+      activatePlayerSkill4_21(currentState)
+    );
     setSelectedTileId(null);
   }
 
@@ -2912,7 +2934,15 @@ export function GameBoard({
                     九種九牌
                   </button>
                 )}
-
+                {canUsePlayerSkill4_21 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill4_21}
+                  >
+                    雲外蒼天【対】
+                  </button>
+                )}
                 {canUsePlayerSkill1_14 && (
                   <button
                     type="button"
