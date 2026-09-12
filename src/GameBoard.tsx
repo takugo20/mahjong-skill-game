@@ -1,3 +1,4 @@
+import { useDamatenAlert } from "./useDamatenAlert";
 import { WinResultHand } from "./components/WinResultHand";
 import {
   activatePlayerSkill4_23,
@@ -298,6 +299,7 @@ interface RiverProps {
 }
 
 interface OpponentAreaProps {
+  damatenDetected?: boolean;
   player: PlayerState;
   position: OpponentPosition;
   isDeclaring: boolean;
@@ -811,6 +813,7 @@ function MeldArea({
 }
 
 function OpponentArea({
+  damatenDetected = false,
   player,
   position,
   isDeclaring,
@@ -870,7 +873,15 @@ function OpponentArea({
 
       <div className="opponent-meta">
         <div className="player-status">
-          <div className="player-status__name">
+          <div
+            className={
+              `player-status__name${
+                damatenDetected
+                  ? " player-status__name--damaten"
+                  : ""
+              }`
+            }
+          >
             <span className="wind-badge">
               {getWindLabel(player.seatWind)}
             </span>
@@ -922,6 +933,10 @@ export function GameBoard({
       onMatchEnd?.(gameState);
     }
   }, [gameState, onMatchEnd]);
+
+  const damatenPlayerIds = useDamatenAlert(
+    gameState.damatenAlert
+  );
 
   const [
     selectedTileId,
@@ -2385,6 +2400,9 @@ function handlePlayerSkill4_21() {
         </div>
 
         <OpponentArea
+          damatenDetected={
+            damatenPlayerIds.includes(round.players[2].id)
+          }
           player={round.players[2]}
           position="top"
           isDeclaring={
@@ -2411,6 +2429,9 @@ function handlePlayerSkill4_21() {
         />
 
         <OpponentArea
+          damatenDetected={
+            damatenPlayerIds.includes(round.players[3].id)
+          }
           player={round.players[3]}
           position="left"
           isDeclaring={
@@ -2437,6 +2458,9 @@ function handlePlayerSkill4_21() {
         />
 
         <OpponentArea
+          damatenDetected={
+            damatenPlayerIds.includes(round.players[1].id)
+          }
           player={round.players[1]}
           position="right"
           isDeclaring={
