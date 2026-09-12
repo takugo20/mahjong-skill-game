@@ -3797,3 +3797,80 @@ body {
   -webkit-overflow-scrolling: touch;
   touch-action: auto;
 }
+
+/* 和了結果の牌姿 */
+.win-result-card.win-result-card--hand {
+  width: min(96%, 800px);
+}
+
+.win-result-header.win-result-header--hand {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.win-result-header--hand > .win-result-dora-indicators {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+.win-result-hand {
+  min-width: 0;
+  padding: 6px 0;
+}
+
+.win-result-hand-tiles,
+.win-result-concealed,
+.win-result-melds,
+.win-result-meld-tiles {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.win-result-hand-tiles,
+.win-result-concealed,
+.win-result-melds {
+  flex-wrap: wrap;
+}
+
+.win-result-winning {
+  margin-left: 8px;
+  text-align: center;
+}
+
+.win-result-melds {
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.win-result-hand .mahjong-tile {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 36px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 2px;
+  border-radius: 4px;
+  transform: none;
+}
+
+.win-result-winning .mahjong-tile {
+  outline: 2px solid #ffe07b;
+  outline-offset: 1px;
+}
+
+.win-result-hand small {
+  display: block;
+  margin-top: 3px;
+  color: #ffe3a0;
+  font-size: 11px;
+  letter-spacing: normal;
+}
+
+@media (max-width: 520px) {
+  .win-result-header.win-result-header--hand {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
