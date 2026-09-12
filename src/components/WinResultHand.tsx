@@ -1,3 +1,4 @@
+import { MeldTiles } from "./MeldTiles";
 import { TileView } from "./TileView";
 import { sortTiles } from "../lib/mahjong/tiles";
 import type {
@@ -6,8 +7,14 @@ import type {
 } from "../lib/mahjong/types";
 
 interface Props {
-  player: Pick<PlayerState, "name" | "hand" | "melds">;
-  result: Pick<RoundWinResult, "winMethod" | "winningTile">;
+  player: Pick<
+    PlayerState,
+    "name" | "hand" | "melds" | "seat"
+  >;
+  result: Pick<
+    RoundWinResult,
+    "winMethod" | "winningTile"
+  >;
 }
 
 const MELD_LABELS = {
@@ -50,7 +57,6 @@ export function WinResultHand({
           aria-label="和了牌"
         >
           <TileView tile={result.winningTile} />
-
           <small>
             {result.winMethod === "tsumo" ? "ツモ" : "ロン"}
           </small>
@@ -65,10 +71,15 @@ export function WinResultHand({
               role="group"
               aria-label={MELD_LABELS[meld.kind]}
             >
-              <div className="win-result-meld-tiles">
-                {meld.tiles.map(tile => (
-                  <TileView key={tile.id} tile={tile} />
-                ))}
+              <div
+                className={
+                  `win-result-meld-tiles meld-group meld-group--${meld.kind}`
+                }
+              >
+                <MeldTiles
+                  meld={meld}
+                  seat={player.seat}
+                />
               </div>
 
               <small>{MELD_LABELS[meld.kind]}</small>
