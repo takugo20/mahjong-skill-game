@@ -3553,3 +3553,115 @@ body {
 .meld-area--right .meld-tile--called {
   align-self: center;
 }
+
+/* 亜空間麻雀：開始画面 */
+.akuukan-lobby {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.akuukan-lobby-header h1 {
+  margin: 0 0 6px;
+  color: #ffe3a0;
+  font-size: clamp(26px, 5vw, 36px);
+}
+
+.akuukan-lobby-header p {
+  margin: 0 0 18px;
+  color: #c1d6ca;
+}
+
+.akuukan-lobby-card,
+.akuukan-lobby-guide {
+  padding: 16px;
+  border: 1px solid #527762;
+  border-radius: 16px;
+  background: #10291e;
+}
+
+.akuukan-lobby-card > label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.akuukan-lobby button,
+.akuukan-lobby select {
+  min-height: 48px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #719782;
+  border-radius: 10px;
+  color: #f5f8f6;
+  background: #214a36;
+  font: inherit;
+  touch-action: manipulation;
+}
+
+.akuukan-lobby select {
+  width: 100%;
+}
+
+.akuukan-lobby select option {
+  color: #f5f8f6;
+  background: #10291e;
+}
+
+.akuukan-lobby select option:disabled {
+  color: #a6b2ab;
+}
+
+.akuukan-lobby button.akuukan-lobby-start {
+  width: 100%;
+  min-height: 56px;
+  border-color: #ffe3a0;
+  color: #17271c;
+  background: #f0ca74;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.akuukan-lobby-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.akuukan-lobby-hint {
+  color: #c1d6ca;
+}
+
+.akuukan-lobby-guide {
+  margin-top: 16px;
+}
+
+.akuukan-lobby-guide > summary {
+  display: list-item;
+  min-height: 48px;
+  padding: 10px 0;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.akuukan-lobby :is(
+  button,
+  select,
+  summary
+):focus-visible {
+  outline: 3px solid #ffe07b;
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .akuukan-lobby-actions {
+    grid-template-columns: 1fr;
+  }
+}
