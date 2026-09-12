@@ -249,6 +249,7 @@ function prepareAddedKan(
   const addedMeld: Meld = {
     ...originalMeld,
     kind: "addedKan",
+    addedTileId: addedTile.id,
     tiles: sortTiles(kanTiles)
   };
 
