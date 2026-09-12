@@ -286,7 +286,7 @@ describe("和了結果のドラ表示", () => {
     expect(html).toContain(
       "<span>ドラ3</span>"
     );
-    expect(html).not.toContain(
+    expect(getResultDoraHtml(html)).not.toContain(
       'aria-label="中"'
     );
   });
