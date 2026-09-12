@@ -1,4 +1,10 @@
 import {
+  getAkuukanPlayerSkill5_5DrawWeightMultiplier
+} from "../akuukan/tankiWinningDrawWeight";
+import {
+  hasAkuukanLegalWinningWait
+} from "../akuukan/winningWaitEligibility";
+import {
   isAkuukanPlayerSkill5_4IppatsuAvailable
 } from "../akuukan/extendedIppatsu";
 import {
@@ -2757,7 +2763,18 @@ function getAkuukanLiveWallDrawIndex(
       candidateIsWinningTile: true
     }) > 1;
 
-  const winningTileIds = canApplyFirstRiichiDrawWeight
+  const canApplyTankiDrawWeight =
+    getAkuukanPlayerSkill5_5DrawWeightMultiplier({
+      akuukan: state.akuukan,
+      drawerIsPlayer: player.seat === 0,
+      isNormalDraw: true,
+      candidateHasLegalTankiWin: true
+    }) > 1;
+
+  const tankiWinningTileIds: string[] = [];
+
+  const winningTileIds =
+    canApplyFirstRiichiDrawWeight || canApplyTankiDrawWeight
     ? candidateIndexes.flatMap((index) => {
         const tile = state.round.liveWall[index];
 
@@ -2789,13 +2806,23 @@ function getAkuukanLiveWallDrawIndex(
           }
         };
 
-        return getValidWinResolution(
+        const resolution = getValidWinResolution(
           candidateState,
           player.seat,
           "tsumo"
-        )
-          ? [tile.id]
-          : [];
+        );
+
+        if (
+          canApplyTankiDrawWeight &&
+          hasAkuukanLegalWinningWait(
+            resolution?.evaluation,
+            ["tanki"]
+          )
+        ) {
+          tankiWinningTileIds.push(tile.id);
+        }
+
+        return resolution ? [tile.id] : [];
       })
     : [];
 
@@ -2815,6 +2842,8 @@ function getAkuukanLiveWallDrawIndex(
     isFirstNormalDrawAfterRiichi,
     normalIppatsuAvailable: player.ippatsu,
     winningTileIds,
+    isNormalDraw: true,
+    tankiWinningTileIds,
     random
   });
 }
