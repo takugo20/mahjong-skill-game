@@ -157,22 +157,22 @@ export function AkuukanGame() {
     );
   }
 
-  return (
-    <main
-      style={{
-        maxWidth: 640,
-        margin: "0 auto",
-        padding: 24
-      }}
-    >
-      <h1>亜空間麻雀</h1>
+    return (
+    <main className="akuukan-lobby">
+      <header className="akuukan-lobby-header">
+        <h1>亜空間麻雀</h1>
+        <p>
+          対戦相手と装備を選んで、半荘を始めましょう。
+        </p>
+      </header>
 
       {loaded.failureReason ? (
-        <>
+        <section className="akuukan-lobby-card">
           <p role="alert">
             セーブデータを読み込めませんでした。
             再読み込みをお試しください。
           </p>
+
           <button
             type="button"
             onClick={() => {
@@ -185,70 +185,91 @@ export function AkuukanGame() {
           >
             読み込みを再試行
           </button>
-        </>
+        </section>
       ) : (
         <>
-          <label htmlFor="enemy-select">
-            対戦相手
-          </label>{" "}
-          <select
-            id="enemy-select"
-            value={enemyId}
-            onChange={event =>
-              setEnemyId(event.target.value as EnemyId)
-            }
+          <section
+            className="akuukan-lobby-card"
+            aria-label="対局の準備"
           >
-            {ENEMY_CATALOG.map(enemy => (
-              <option
-                key={enemy.id}
-                value={enemy.id}
-                disabled={
-                  !loaded.saveData.enemyProgress
+            <label htmlFor="enemy-select">
+              対戦相手
+            </label>
+
+            <select
+              id="enemy-select"
+              value={enemyId}
+              onChange={event =>
+                setEnemyId(event.target.value as EnemyId)
+              }
+            >
+              {ENEMY_CATALOG.map(enemy => (
+                <option
+                  key={enemy.id}
+                  value={enemy.id}
+                  disabled={
+                    !loaded.saveData.enemyProgress
+                      .enemies[enemy.id].isUnlocked
+                  }
+                >
+                  {enemy.displayName}
+                  {loaded.saveData.enemyProgress
                     .enemies[enemy.id].isUnlocked
-                }
+                    ? ""
+                    : "（未解放）"}
+                </option>
+              ))}
+            </select>
+
+            <p>
+              装備スキル：
+              {loaded.saveData.equippedSkills.length} / 10
+            </p>
+
+            {loaded.saveData.equippedSkills.length === 0 && (
+              <p className="akuukan-lobby-hint">
+                スキルを装備すると、特殊能力を使いながら
+                経験値を獲得できます。
+              </p>
+            )}
+
+            <button
+              type="button"
+              className="akuukan-lobby-start"
+              onClick={start}
+            >
+              対局を開始
+            </button>
+
+            <div className="akuukan-lobby-actions">
+              <button
+                type="button"
+                onClick={() => setEquipmentOpen(true)}
               >
-                {enemy.displayName}
-                {loaded.saveData.enemyProgress
-                  .enemies[enemy.id].isUnlocked
-                  ? ""
-                  : "（未解放）"}
-              </option>
-            ))}
-          </select>
+                スキル装備を変更
+              </button>
 
-          <EnemyGuide
-            selectedEnemyId={enemyId}
-            progress={loaded.saveData.enemyProgress}
-          />
+              <button
+                type="button"
+                onClick={() => setCatalogOpen(true)}
+              >
+                スキル図鑑を見る
+              </button>
+            </div>
 
-          <p>
-            装備スキル：
-            {loaded.saveData.equippedSkills.length} / 10
-          </p>
+            {message && <p role="status">{message}</p>}
+          </section>
 
-          <button
-            type="button"
-            onClick={() => setCatalogOpen(true)}
-          >
-            スキル図鑑を見る
-          </button>
+          <details className="akuukan-lobby-guide">
+            <summary>
+              敵の能力・解放条件を見る
+            </summary>
 
-          <button
-            type="button"
-            onClick={() => setEquipmentOpen(true)}
-          >
-            スキル装備を変更
-          </button>
-
-          {message && <p role="alert">{message}</p>}
-
-          <button
-            type="button"
-            className="primary-button"
-            onClick={start}
-          >
-            対局を開始
-          </button>
+            <EnemyGuide
+              selectedEnemyId={enemyId}
+              progress={loaded.saveData.enemyProgress}
+            />
+          </details>
         </>
       )}
     </main>
