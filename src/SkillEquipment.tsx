@@ -55,13 +55,7 @@ export function SkillEquipment({
   }
 
   return (
-    <main
-      style={{
-        maxWidth: 640,
-        margin: "0 auto",
-        padding: 24
-      }}
-    >
+    <main className="akuukan-skill-screen">
       <h1>スキル装備</h1>
 
       <p>装備数：{draft.equippedSkills.length} / {MAX}</p>
@@ -71,32 +65,34 @@ export function SkillEquipment({
         保存すると次の対局に反映されます。
       </p>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap"
-        }}
-      >
-        <button
-          type="button"
-          onClick={save}
-          style={{ minHeight: 44 }}
-        >
-          装備を保存
-        </button>
+      <div className="akuukan-skill-toolbar">
+        <div className="akuukan-skill-actions">
+          <button
+            type="button"
+            className="akuukan-skill-save"
+            onClick={save}
+          >
+            装備を保存
+          </button>
 
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{ minHeight: 44 }}
+          <button
+            type="button"
+            onClick={onCancel}
+          >
+            変更を破棄して戻る
+          </button>
+        </div>
+
+        <p
+          className="akuukan-skill-count"
+          aria-live="polite"
         >
-          変更を破棄して戻る
-        </button>
+          選択中：{draft.equippedSkills.length} / {MAX}
+        </p>
+
+        {message && <p role="alert">{message}</p>}
       </div>
-
-      {message && <p role="alert">{message}</p>}
-
+      
       <div
         style={{
           display: "grid",
