@@ -1,4 +1,7 @@
 import {
+  executeKanWithAkuukanPlayerSkill5_3
+} from "../akuukan/kanDoraExecution";
+import {
   exchangeAkuukanPlayerSkill5_2UraDoraIndicators
 } from "../akuukan/uraDoraIndicatorExchange";
 import {
@@ -6604,7 +6607,8 @@ export function declarePlayerMeldCall(
 
 export function declarePlayerOpenKan(
   state: GameState,
-  optionId: string
+  optionId: string,
+  random: () => number = Math.random
 ): GameState {
   const option =
     getPlayerOpenKanCallOptions(state)
@@ -6663,10 +6667,14 @@ export function declarePlayerOpenKan(
             )
         }
       : callState;
-  const execution = executeKan({
-    round: kanDeclarationState.round,
-    option
-  });
+  const execution = executeKanWithAkuukanPlayerSkill5_3(
+    {
+      round: kanDeclarationState.round,
+      option
+    },
+    kanDeclarationState.akuukan,
+    random
+  );
   const kanState = beginAkuukanTurnState(
     applyCallAfterEffects(
       {
@@ -8091,7 +8099,8 @@ export function declarePlayerSelfKan(
 }
 
 export function completePlayerSelfKan(
-  state: GameState
+  state: GameState,
+  random: () => number = Math.random
 ): GameState {
   const pendingKan =
     state.round.pendingKan;
@@ -8108,14 +8117,18 @@ export function completePlayerSelfKan(
     };
   }
 
-  const execution = executeKan({
-    round: {
-      ...state.round,
-      phase: "discarding"
+  const execution = executeKanWithAkuukanPlayerSkill5_3(
+    {
+      round: {
+        ...state.round,
+        phase: "discarding"
+      },
+      declarerSeat: 0,
+      option: pendingKan
     },
-    declarerSeat: 0,
-    option: pendingKan
-  });
+    state.akuukan,
+    random
+  );
   const kanLabel =
     pendingKan.kind === "closedKan"
       ? "暗槓"
@@ -8142,7 +8155,8 @@ export function completePlayerSelfKan(
 
 export function playPlayerSelfKan(
   state: GameState,
-  optionId: string
+  optionId: string,
+  random: () => number = Math.random
 ): GameState {
   const declaredState =
     declarePlayerSelfKan(
@@ -8161,7 +8175,8 @@ export function playPlayerSelfKan(
 
   return cpuChankanState ??
     completePlayerSelfKan(
-      declaredState
+      declaredState,
+      random
     );
 }
 
