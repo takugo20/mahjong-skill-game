@@ -1,4 +1,7 @@
 import type {
+  AkuukanGameMatchProgress
+} from "../akuukan/gameMatchProgress";
+import type {
   PlayerSkillMatchDrawProgress
 } from "../akuukan/playerSkillMatchDrawProgress";
 import type {
@@ -304,6 +307,7 @@ export interface RoundState {
 }
 
 export interface GameState {
+  matchProgress?: AkuukanGameMatchProgress;  
   playerSkillDrawProgress?: PlayerSkillMatchDrawProgress;
   roundSequence?: number;  
   round: RoundState;
