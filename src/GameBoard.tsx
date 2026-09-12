@@ -403,11 +403,8 @@ function River({
   lastDiscardTileId,
   declarationTargetTileIds
 }: RiverProps) {
-  const visibleDiscards =
-    player.discards.filter(
-      (discard) =>
-        discard.removedFromRiver !== true
-    );
+  const visibleDiscards = player.discards;
+
   const classes = [
     "discard-grid",
     `discard-grid--${position}`
@@ -422,7 +419,11 @@ function River({
       className={classes.join(" ")}
       aria-label={`${player.name}の河`}
     >
-      {visibleDiscards.map((discard) => {
+      {visibleDiscards.map(discard => {
+        const isRemoved =
+          discard.called ||
+          discard.removedFromRiver === true;
+
         const showRiichiDeclaration =
           discard.riichiDeclaration &&
           !declarationTargetTileIds.includes(
@@ -432,10 +433,17 @@ function River({
         return (
           <span
             key={discard.tile.id}
-            className={
-              showRiichiDeclaration
-                ? "discard-tile discard-tile--riichi"
-                : "discard-tile"
+            className={[
+              "discard-tile",
+              showRiichiDeclaration &&
+                "discard-tile--riichi",
+              isRemoved &&
+                "discard-tile--removed"
+            ].filter(Boolean).join(" ")}
+            title={
+              isRemoved
+                ? "副露・河拾いで河から取り除かれた牌"
+                : undefined
             }
             data-riichi-declaration={
               showRiichiDeclaration
@@ -452,10 +460,11 @@ function River({
               faceDown={!tilesVisible}
               compact
               highlighted={
-                discard.tile.id ===
-                lastDiscardTileId
+                !isRemoved &&
+                discard.tile.id === lastDiscardTileId
               }
               declarationTarget={
+                !isRemoved &&
                 declarationTargetTileIds.includes(
                   discard.tile.id
                 )
