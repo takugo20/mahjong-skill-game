@@ -1,3 +1,4 @@
+import { WinResultHand } from "./components/WinResultHand";
 import {
   activatePlayerSkill4_23,
   canActivatePlayerSkill4_23
@@ -3209,8 +3210,8 @@ function handlePlayerSkill4_21() {
             aria-modal="true"
             aria-label="和了結果"
           >
-            <article className="win-result-card">
-              <header className="win-result-header">
+            <article className="win-result-card win-result-card--hand">
+              <header className="win-result-header win-result-header--hand">
                 <div>
                   <span>
                     {winResult.winMethod === "tsumo"
@@ -3220,6 +3221,11 @@ function handlePlayerSkill4_21() {
 
                   <strong>和了</strong>
                 </div>
+
+                <WinResultHand
+                  player={round.players[winResult.winnerSeat]}
+                  result={winResult}
+                />
 
                 <WinResultDoraIndicators
                   doraIndicators={
@@ -3400,6 +3406,11 @@ function handlePlayerSkill4_21() {
                               )}
                             </div>
                           </header>
+
+                          <WinResultHand
+                            player={winner}
+                            result={ronResult}
+                          />
 
                           <div className="win-result-yaku">
                             {ronResult.yakuNames.map(
