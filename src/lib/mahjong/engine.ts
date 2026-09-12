@@ -1,4 +1,7 @@
 import {
+  settleAkuukanGameMatchProgress
+} from "../akuukan/gameMatchProgress";
+import {
   recordAkuukanGameWinProgress
 } from "../akuukan/gameWinProgress";
 import {
@@ -8946,7 +8949,7 @@ function getAdvancedRoundPosition(
   );
 }
 
-function finishMatch(
+function finishMatchWithoutProgress(
   state: GameState,
   notice: string
 ): GameState {
@@ -9342,5 +9345,13 @@ function finishRoundWithExhaustiveDraw(
 ): GameState {
   return recordAkuukanGameDrawProgress(
     finishRoundWithExhaustiveDrawWithoutProgress(...args)
+  );
+}
+
+function finishMatch(
+  ...args: Parameters<typeof finishMatchWithoutProgress>
+): GameState {
+  return settleAkuukanGameMatchProgress(
+    finishMatchWithoutProgress(...args)
   );
 }
