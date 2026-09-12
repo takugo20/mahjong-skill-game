@@ -47,6 +47,7 @@ export type MeldKind =
   | "addedKan";
 
 export interface Meld {
+  addedTileId?: string;
   kind: MeldKind;
   tiles: Tile[];
   calledFrom?: SeatIndex;
