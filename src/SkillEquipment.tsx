@@ -1,3 +1,4 @@
+import { SkillLevelInfo } from "./SkillLevelInfo";
 import { useState } from "react";
 import type { AkuukanSaveData } from "./lib/akuukan/saveData";
 import type { PlayerSkillId } from "./lib/akuukan/types";
@@ -199,6 +200,11 @@ export function SkillEquipment({
               </p>
 
               <p>{skill.description}</p>
+
+              <SkillLevelInfo
+                skill={skill}
+                currentLevel={progress.level}
+              />
             </article>
           );
         })}
