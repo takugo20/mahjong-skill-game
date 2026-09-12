@@ -1,4 +1,7 @@
 import {
+  getAkuukanPlayerSkill5_8DrawWeightMultiplier
+} from "./haiteiWinningDrawWeight";
+import {
   getAkuukanPlayerSkill5_6DrawWeightMultiplier
 } from "./penchanKanchanWinningDrawWeight";
 import {
@@ -97,6 +100,9 @@ export interface AkuukanPlayerSkill1_4DrawInput {
   readonly isNormalDraw?: boolean;
   readonly tankiWinningTileIds?: readonly string[];  
   readonly penchanKanchanWinningTileIds?: readonly string[];  
+  readonly isHaiteiDraw?: boolean;
+  readonly tenpaiBeforeHaiteiDraw?: boolean;
+  readonly haiteiWinningTileIds?: readonly string[];  
   readonly random: () => number;
 }
 
@@ -331,6 +337,18 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           isNormalDraw: input.isNormalDraw ?? false,
           candidateHasLegalPenchanOrKanchanWin:
             input.penchanKanchanWinningTileIds?.includes(candidate.tile.id) ?? false
+        }) *
+        getAkuukanPlayerSkill5_8DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer: input.drawerIsPlayer,
+          isNormalLiveWallDraw:
+            input.isNormalDraw ?? false,
+          isLastLiveWallTile:
+            input.isHaiteiDraw ?? false,
+          tenpaiBeforeDraw:
+            input.tenpaiBeforeHaiteiDraw ?? false,
+          candidateHasLegalTsumoWin:
+            input.haiteiWinningTileIds?.includes(candidate.tile.id) ?? false
         })
     }));
   const firstWeight =
