@@ -307,6 +307,10 @@ export interface RoundState {
 }
 
 export interface GameState {
+  damatenAlert?: {
+    sequence: number;
+    playerIds: readonly string[];
+  };
   matchProgress?: AkuukanGameMatchProgress;  
   playerSkillDrawProgress?: PlayerSkillMatchDrawProgress;
   roundSequence?: number;  
