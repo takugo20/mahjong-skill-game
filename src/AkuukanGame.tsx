@@ -1,3 +1,4 @@
+import { SkillCatalog } from "./SkillCatalog";
 import { MatchGrowthResult } from "./MatchGrowthResult";
 import { useCallback, useRef, useState } from "react";
 import { SkillEquipment } from "./SkillEquipment";
@@ -19,6 +20,7 @@ export function AkuukanGame() {
   const [loaded, setLoaded] = useState(
     loadAkuukanSaveDataFromBrowser
   );
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [equipmentOpen, setEquipmentOpen] = useState(false);
   const [enemyId, setEnemyId] =
     useState<EnemyId>("enemy-1");
@@ -78,6 +80,15 @@ export function AkuukanGame() {
     setSaveStatus("idle");
     setMessage("");
     setInitialState(result.gameState);
+  }
+
+  if (catalogOpen) {
+    return (
+      <SkillCatalog
+        saveData={saveRef.current}
+        onBack={() => setCatalogOpen(false)}
+      />
+    );
   }
 
   if (equipmentOpen) {
@@ -208,6 +219,13 @@ export function AkuukanGame() {
             装備スキル：
             {loaded.saveData.equippedSkills.length} / 10
           </p>
+
+          <button
+            type="button"
+            onClick={() => setCatalogOpen(true)}
+          >
+            スキル図鑑を見る
+          </button>
 
           <button
             type="button"
