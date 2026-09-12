@@ -26,6 +26,24 @@ export function SkillEquipment({
 }: Props) {
   const [draft, setDraft] = useState(saveData);
   const [message, setMessage] = useState("");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  const visibleSkills = PLAYER_SKILL_CATALOG.filter(skill => {
+    if (!draft.playerSkillGrowth.skills[skill.id].isUnlocked) {
+      return false;
+    }
+
+    const equipped = draft.equippedSkills.some(
+      item => item.id === skill.id
+    );
+
+    return (
+      (filter === "all" || equipped) &&
+      `${skill.name} ${skill.id} ${skill.catalogNumber}`
+        .includes(query.trim())
+    );
+  });
 
   function toggle(id: PlayerSkillId, equipped: boolean) {
     const result = equipped
@@ -93,6 +111,37 @@ export function SkillEquipment({
         {message && <p role="alert">{message}</p>}
       </div>
       
+      <label>
+        装備スキル検索
+        <input
+          value={query}
+          onChange={event => setQuery(event.target.value)}
+          placeholder="スキル名・ID・図鑑番号"
+        />
+      </label>
+
+      <label>
+        装備一覧の表示対象
+        <select
+          value={filter}
+          onChange={event => setFilter(event.target.value)}
+        >
+          <option value="all">解放済みすべて</option>
+          <option value="equipped">装備中だけ</option>
+        </select>
+      </label>
+
+      <p aria-live="polite">
+        表示件数：{visibleSkills.length}
+      </p>
+
+      {visibleSkills.length === 0 && (
+        <p>
+          該当するスキルはありません。
+          検索内容や表示対象を変更してください。
+        </p>
+      )}
+
       <div
         style={{
           display: "grid",
@@ -100,7 +149,7 @@ export function SkillEquipment({
           marginTop: 16
         }}
       >
-        {PLAYER_SKILL_CATALOG.map(skill => {
+        {visibleSkills.map(skill => {
           const progress =
             draft.playerSkillGrowth.skills[skill.id];
 
