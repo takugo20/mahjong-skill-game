@@ -1,4 +1,5 @@
 export type GameSound =
+  | "damatenAlert"
   | "drawTile"
   | "discardTile"
   | "chi"
@@ -82,6 +83,10 @@ const SOUND_PATTERNS:
       tone(440, 0.18, 0.11),
       tone(330, 0.2, 0.12, "triangle", 0.14),
       tone(220, 0.24, 0.14, "sine", 0.3)
+    ],
+    damatenAlert: [
+      tone(1320, 0.07, 0.12, "sine", 0),
+      tone(1320, 0.07, 0.12, "sine", 0.14)
     ],
     matchEnd: [
       tone(392, 0.18, 0.1),
