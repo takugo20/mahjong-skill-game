@@ -1,3 +1,6 @@
+import {
+  interruptAkuukanPlayerSkill5_4Progress
+} from "../akuukan/extendedIppatsuProgress";
 import type {
   AddedKanOption,
   ClosedKanOption,
@@ -364,7 +367,12 @@ function updatePlayers(
     (player): PlayerState => {
       const withoutIppatsu = {
         ...player,
-        ippatsu: false
+        ippatsu: false,
+        extendedIppatsuProgress: player.extendedIppatsuProgress
+          ? interruptAkuukanPlayerSkill5_4Progress(
+              player.extendedIppatsuProgress
+            )
+          : player.extendedIppatsuProgress
       };
 
       if (
