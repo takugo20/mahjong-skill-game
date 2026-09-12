@@ -1,4 +1,7 @@
 import {
+  recordAkuukanGameWinProgress
+} from "../akuukan/gameWinProgress";
+import {
   recordAkuukanGameDrawProgress,
   advanceAkuukanDrawProgressRound
 } from "../akuukan/gameDrawProgress";
@@ -9308,7 +9311,10 @@ function finishRoundWithWin(
   ...args: Parameters<typeof finishRoundWithWinWithoutProgress>
 ): GameState {
   return recordAkuukanGameDrawProgress(
-    finishRoundWithWinWithoutProgress(...args)
+    recordAkuukanGameWinProgress(
+      finishRoundWithWinWithoutProgress(...args),
+      [args[1]]
+    )
   );
 }
 
@@ -9316,7 +9322,10 @@ function finishRoundWithRonCandidates(
   ...args: Parameters<typeof finishRoundWithRonCandidatesWithoutProgress>
 ): GameState {
   return recordAkuukanGameDrawProgress(
-    finishRoundWithRonCandidatesWithoutProgress(...args)
+    recordAkuukanGameWinProgress(
+      finishRoundWithRonCandidatesWithoutProgress(...args),
+      args[1]
+    )
   );
 }
 
