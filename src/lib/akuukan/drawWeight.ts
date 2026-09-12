@@ -354,10 +354,23 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
   const firstWeight =
     weightedCandidates[0].weight;
 
+  const isHaiteiSpecialDraw =
+    getAkuukanPlayerSkill5_8DrawWeightMultiplier({
+      akuukan: input.akuukan,
+      drawerIsPlayer: input.drawerIsPlayer,
+      isNormalLiveWallDraw:
+        input.isNormalDraw ?? false,
+      isLastLiveWallTile:
+        input.isHaiteiDraw ?? false,
+      tenpaiBeforeDraw:
+        input.tenpaiBeforeHaiteiDraw ?? false,
+      candidateHasLegalTsumoWin: true
+    }) > 1;
+
   if (
+    (!isHaiteiSpecialDraw || weightedCandidates.length === 1) &&
     weightedCandidates.every(
-      (candidate) =>
-        candidate.weight === firstWeight
+      candidate => candidate.weight === firstWeight
     )
   ) {
     return firstCandidate.index;
