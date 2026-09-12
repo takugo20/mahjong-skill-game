@@ -1,7 +1,8 @@
 import {
   createAkuukanPlayerSkill5_4Progress,
   recordAkuukanPlayerSkill5_4Discard,
-  completeAkuukanPlayerSkill5_4DiscardReactions
+  completeAkuukanPlayerSkill5_4DiscardReactions,
+  interruptAkuukanPlayerSkill5_4Progress
 } from "../akuukan/extendedIppatsuProgress";
 import {
   executeKanWithAkuukanPlayerSkill5_3
@@ -6167,7 +6168,12 @@ function applyCpuMeldCall(
       (player): PlayerState => {
         const withoutIppatsu = {
           ...player,
-          ippatsu: false
+          ippatsu: false,
+          extendedIppatsuProgress: player.extendedIppatsuProgress
+            ? interruptAkuukanPlayerSkill5_4Progress(
+                player.extendedIppatsuProgress
+              )
+            : player.extendedIppatsuProgress
         };
 
         if (
@@ -6541,7 +6547,12 @@ export function declarePlayerMeldCall(
       (roundPlayer): PlayerState => {
         const withoutIppatsu = {
           ...roundPlayer,
-          ippatsu: false
+          ippatsu: false,
+          extendedIppatsuProgress: roundPlayer.extendedIppatsuProgress
+            ? interruptAkuukanPlayerSkill5_4Progress(
+                roundPlayer.extendedIppatsuProgress
+              )
+            : roundPlayer.extendedIppatsuProgress
         };
 
         if (roundPlayer.seat === 0) {
