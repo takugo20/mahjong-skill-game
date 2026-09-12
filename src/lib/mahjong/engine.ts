@@ -1,4 +1,7 @@
 import {
+  isAkuukanPlayerSkill5_4IppatsuAvailable
+} from "../akuukan/extendedIppatsu";
+import {
   createAkuukanPlayerSkill5_4Progress,
   recordAkuukanPlayerSkill5_4Discard,
   completeAkuukanPlayerSkill5_4DiscardReactions,
@@ -3514,6 +3517,21 @@ function createWinInput(
 ) {
   const player =
     state.round.players[winnerSeat];
+  const progress = player.extendedIppatsuProgress;
+
+  const extendedIppatsu = Boolean(
+    state.akuukan &&
+    progress &&
+    isAkuukanPlayerSkill5_4IppatsuAvailable({
+      akuukan: state.akuukan,
+      winnerIsPlayer: winnerSeat === 0,
+      riichiEstablished: player.riichi,
+      completedTurnsAfterRiichi:
+        progress.completedTurnsAfterRiichi,
+      interruptedByCallOrKan:
+        progress.interruptedByCallOrKan
+    })
+  );  
   const firstUninterruptedTsumo =
     isFirstUninterruptedTsumo(
       state,
@@ -3533,6 +3551,7 @@ function createWinInput(
 
   return {
     round: state.round,
+    ippatsu: player.ippatsu || extendedIppatsu,
     winnerSeat,
     winMethod,
     ...(tsumoWinningTileId
