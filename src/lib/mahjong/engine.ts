@@ -3,8 +3,12 @@ import {
   tryActivateAkuukanPlayerSkill4_21
 } from "../akuukan/nextRoundPairReservation";
 import {
-  applyPlayerSkill4_21AtDeal
-} from "../akuukan/nextRoundPairReservationDeal";
+  applyActiveReservationsAtDeal
+} from "../akuukan/nextRoundActiveReservationsDeal";
+import {
+  canActivateAkuukanPlayerSkill4_22,
+  tryActivateAkuukanPlayerSkill4_22
+} from "../akuukan/nextRoundSequenceReservation";
 import {
   canActivateAkuukanPlayerSkill4_20,
   getAkuukanPlayerSkill4_20Config,
@@ -557,7 +561,7 @@ function prepareAkuukanDealComposition(
     });
 
   const activePairReservation =
-    applyPlayerSkill4_21AtDeal({
+    applyActiveReservationsAtDeal({
       akuukan: suitReservation.akuukan,
       availableTiles:
         suitReservation.remainingTiles,
@@ -2066,6 +2070,52 @@ export function activatePlayerSkill4_21(
     playerMp: activation.state.playerMp,
     notice:
       "雲外蒼天【対】を発動し、次の配牌に対子1組を予約しました。"
+  };
+}
+
+export function canActivatePlayerSkill4_22(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return canActivateAkuukanPlayerSkill4_22({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  });
+}
+
+export function activatePlayerSkill4_22(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    !canActivatePlayerSkill4_22(state)
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill4_22({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) return state;
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "雲外蒼天【順】を発動し、次の配牌に順子1組を予約しました。"
   };
 }
 
