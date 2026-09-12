@@ -1,4 +1,9 @@
 import {
+  canActivateAkuukanPlayerSkill4_20,
+  getAkuukanPlayerSkill4_20Config,
+  tryActivateAkuukanPlayerSkill4_20
+} from "../akuukan/handExchangePlayerSkill4_20";
+import {
   canActivateAkuukanPlayerSkill4_19,
   getAkuukanPlayerSkill4_19Config,
   tryActivateAkuukanPlayerSkill4_19
@@ -1872,6 +1877,142 @@ export function activatePlayerSkill4_19(
     },
     notice:
       `手牌整理【筒】を発動し、${activation.exchanges.length}枚を交換しました。`
+  };
+}
+
+function getPlayerSkill4_20State(
+  state: GameState
+) {
+  const player = state.round.players.find(
+    (candidate) => candidate.seat === 0
+  );
+
+  if (!state.akuukan || !player) {
+    return null;
+  }
+
+  return {
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp,
+    hand: player.hand,
+    liveWall: state.round.liveWall,
+    deadWall: state.round.deadWall,
+    doraIndicatorCount:
+      state.round.doraIndicatorCount,
+    rinshanDrawCount:
+      state.round.rinshanDrawCount,
+    riichi: player.riichi
+  };
+}
+
+export function canActivatePlayerSkill4_20(
+  state: GameState
+): boolean {
+  if (
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  const skillState =
+    getPlayerSkill4_20State(state);
+
+  return skillState !== null &&
+    canActivateAkuukanPlayerSkill4_20(
+      skillState
+    );
+}
+
+export function getPlayerSkill4_20MaximumExchangeTileCount(
+  state: GameState
+): number {
+  const skillState =
+    getPlayerSkill4_20State(state);
+
+  const config = skillState
+    ? getAkuukanPlayerSkill4_20Config(
+        skillState
+      )
+    : null;
+
+  return config?.maximumExchangeTileCount ?? 0;
+}
+
+export function getPlayerSkill4_20SelectableTileIds(
+  state: GameState
+): string[] {
+  if (!canActivatePlayerSkill4_20(state)) {
+    return [];
+  }
+
+  return state.round.players[0].hand
+    .filter(
+      (tile) =>
+        tile.suit === "pin" ||
+        tile.suit === "sou"
+    )
+    .map((tile) => tile.id);
+}
+
+export function activatePlayerSkill4_20(
+  state: GameState,
+  selectedTileIds: readonly string[],
+  random: () => number = Math.random
+): GameState {
+  if (
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return state;
+  }
+
+  const skillState =
+    getPlayerSkill4_20State(state);
+
+  if (!skillState) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill4_20(
+      skillState,
+      selectedTileIds,
+      random
+    );
+
+  if (!activation.succeeded) {
+    return state;
+  }
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    round: {
+      ...state.round,
+      liveWall: [...activation.state.liveWall],
+      deadWall: [...activation.state.deadWall],
+      players: state.round.players.map(
+        (player) =>
+          player.seat === 0
+            ? {
+                ...player,
+                hand: sortTiles([
+                  ...activation.state.hand
+                ])
+              }
+            : player
+      ),
+      handExchangeWinningTileIds:
+        activation.exchanges.map(
+          (exchange) =>
+            exchange.incomingTile.id
+        )
+    },
+    notice:
+      `手牌整理【萬】を発動し、${activation.exchanges.length}枚を交換しました。`
   };
 }
 
