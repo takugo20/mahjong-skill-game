@@ -17,8 +17,8 @@ import {
   interruptAkuukanPlayerSkill5_4Progress
 } from "../akuukan/extendedIppatsuProgress";
 import {
-  executeKanWithAkuukanPlayerSkill5_3
-} from "../akuukan/kanDoraExecution";
+  executeKanWithAkuukanPlayerSkill5_7
+} from "../akuukan/kanRinshanExecution";
 import {
   exchangeAkuukanPlayerSkill5_2UraDoraIndicators
 } from "../akuukan/uraDoraIndicatorExchange";
@@ -6764,12 +6764,14 @@ export function declarePlayerOpenKan(
             )
         }
       : callState;
-  const execution = executeKanWithAkuukanPlayerSkill5_3(
-    {
-      round: kanDeclarationState.round,
-      option
-    },
+  const execution = executeKanWithAkuukanPlayerSkill5_7(
+    { round: kanDeclarationState.round, option },
     kanDeclarationState.akuukan,
+    candidate => getValidWinResolution(
+      { ...kanDeclarationState, round: candidate.round },
+      0,
+      "tsumo"
+    ) !== null,
     random
   );
   const kanState = beginAkuukanTurnState(
@@ -8250,16 +8252,18 @@ export function completePlayerSelfKan(
     };
   }
 
-  const execution = executeKanWithAkuukanPlayerSkill5_3(
+  const execution = executeKanWithAkuukanPlayerSkill5_7(
     {
-      round: {
-        ...state.round,
-        phase: "discarding"
-      },
+      round: { ...state.round, phase: "discarding" },
       declarerSeat: 0,
       option: pendingKan
     },
     state.akuukan,
+    candidate => getValidWinResolution(
+      { ...state, round: candidate.round },
+      0,
+      "tsumo"
+    ) !== null,
     random
   );
   const kanLabel =
