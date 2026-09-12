@@ -1,4 +1,8 @@
 import {
+  activatePlayerSkill4_23,
+  canActivatePlayerSkill4_23
+} from "./lib/mahjong/engine";
+import {
   activatePlayerSkill4_22,
   canActivatePlayerSkill4_22
 } from "./lib/mahjong/engine";
@@ -1193,6 +1197,10 @@ export function GameBoard({
   const canUsePlayerSkill4_22 =
     !isInteractionLocked &&
     canActivatePlayerSkill4_22(gameState);  
+
+  const canUsePlayerSkill4_23 =
+    !isInteractionLocked &&
+    canActivatePlayerSkill4_23(gameState);
   
   const canUsePlayerSkill1_14 =
     !isInteractionLocked &&
@@ -1830,6 +1838,20 @@ function handlePlayerSkill4_21() {
 
     setGameState((currentState) =>
       activatePlayerSkill4_22(currentState)
+    );
+    setSelectedTileId(null);
+  }
+
+    function handlePlayerSkill4_23() {
+    if (
+      isInteractionLocked ||
+      cpuProgressingRef.current
+    ) {
+      return;
+    }
+
+    setGameState((currentState) =>
+      activatePlayerSkill4_23(currentState)
     );
     setSelectedTileId(null);
   }
@@ -2972,6 +2994,15 @@ function handlePlayerSkill4_21() {
                     onClick={handlePlayerSkill4_22}
                   >
                     雲外蒼天【順】
+                  </button>
+                )}
+                {canUsePlayerSkill4_23 && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={handlePlayerSkill4_23}
+                  >
+                    雲外蒼天【刻】
                   </button>
                 )}
                 {canUsePlayerSkill1_14 && (
