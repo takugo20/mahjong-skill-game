@@ -36,6 +36,7 @@ it.each(["tsumo", "ron"] as const)(
       <WinResultHand
         player={{
           name: "自分",
+          seat: 0 as const,
           hand,
           melds: []
         }}
