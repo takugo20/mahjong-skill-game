@@ -109,7 +109,11 @@ describe("5-8 海底抽選と予約牌・敵能力", () => {
 
   it("E-23の除外分岐では、5-8の和了牌でも候補から除外する", () => {
     const state = prepare();
-    const random = vi.fn(() => 0.9);
+
+    const random = vi.fn()
+      .mockReturnValueOnce(0.9)
+      .mockReturnValue(0);
+
     const result = drawTile(state, 0, random);
 
     expect(
@@ -118,11 +122,12 @@ describe("5-8 海底抽選と予約牌・敵能力", () => {
     expect(result.round.deadWall).toEqual(
       state.round.deadWall
     );
-    expect(random).toHaveBeenCalledTimes(1);
+    expect(random).toHaveBeenCalledTimes(2);
   });
 
-  it("E-23で異なる牌種が残らない場合は同じ牌種から取得する", () => {
+  it("E-23で異なる牌種が残らない場合も同じ重みの候補から抽選する", () => {
     const state = prepare();
+
     state.round.liveWall = [tile("man", 3)];
     state.round.deadWall = Array.from(
       { length: 14 },
@@ -134,7 +139,10 @@ describe("5-8 海底抽選と予約牌・敵能力", () => {
 
     expect(
       result.round.players[0].drawnTileId
-    ).toBe(state.round.liveWall[0].id);
-    expect(random).not.toHaveBeenCalled();
+    ).toBe(state.round.deadWall[12].id);
+    expect(result.round.deadWall[12]).toBe(
+      state.round.liveWall[0]
+    );
+    expect(random).toHaveBeenCalledTimes(1);
   });
 });
