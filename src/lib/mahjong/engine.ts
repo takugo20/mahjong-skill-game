@@ -3245,6 +3245,9 @@ export function discardTile(
       ...currentPlayer.discards,
       discard
     ],
+    ippatsu: currentPlayer.riichi
+      ? false
+      : currentPlayer.ippatsu,
     extendedIppatsuProgress:
       seat === 0 && currentPlayer.extendedIppatsuProgress
         ? recordAkuukanPlayerSkill5_4Discard(
