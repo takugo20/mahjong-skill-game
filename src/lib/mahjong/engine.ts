@@ -1,4 +1,8 @@
 import {
+  recordAkuukanGameDrawProgress,
+  advanceAkuukanDrawProgressRound
+} from "../akuukan/gameDrawProgress";
+import {
   createInitialPlayerSkillGrowthState
 } from "../akuukan/playerSkillProgress";
 import {
@@ -4498,7 +4502,7 @@ function finishRoundWithAkuukanE27Draw(
   );
 }
 
-function finishRoundWithWin(
+function finishRoundWithWinWithoutProgress(
   state: GameState,
   resolution:
     ValidRoundWinResolution
@@ -4607,7 +4611,7 @@ function finishRoundWithWin(
   };
 }
 
-function finishRoundWithRonCandidates(
+function finishRoundWithRonCandidatesWithoutProgress(
   state: GameState,
   candidates:
     readonly ValidRoundWinResolution[]
@@ -4803,7 +4807,7 @@ function finishRoundWithRonCandidates(
   };
 }
 
-function finishRoundWithAbortiveDraw(
+function finishRoundWithAbortiveDrawWithoutProgress(
   state: GameState,
   result: RoundAbortiveDrawResult,
   notice =
@@ -4828,7 +4832,7 @@ function finishRoundWithAbortiveDraw(
   };
 }
 
-function finishRoundWithExhaustiveDraw(
+function finishRoundWithExhaustiveDrawWithoutProgress(
   state: GameState,
   notice: string
 ): GameState {
@@ -8943,6 +8947,7 @@ function finishMatch(
   state: GameState,
   notice: string
 ): GameState {
+  state = recordAkuukanGameDrawProgress(state);  
   const settlement =
     resolveMatchSettlement({
       players: state.round.players.map(
@@ -9122,7 +9127,7 @@ function resolveNextRoundStart(
     );
 
   const dealtState: GameState = {
-    ...state,
+    ...advanceAkuukanDrawProgressRound(state),
     ...(dealtAkuukan
       ? { akuukan: dealtAkuukan }
       : {}),
@@ -9297,4 +9302,36 @@ export function createNextRoundProgression(
     cpuSteps,
     finalState: resolution.finalState
   };
+}
+
+function finishRoundWithWin(
+  ...args: Parameters<typeof finishRoundWithWinWithoutProgress>
+): GameState {
+  return recordAkuukanGameDrawProgress(
+    finishRoundWithWinWithoutProgress(...args)
+  );
+}
+
+function finishRoundWithRonCandidates(
+  ...args: Parameters<typeof finishRoundWithRonCandidatesWithoutProgress>
+): GameState {
+  return recordAkuukanGameDrawProgress(
+    finishRoundWithRonCandidatesWithoutProgress(...args)
+  );
+}
+
+function finishRoundWithAbortiveDraw(
+  ...args: Parameters<typeof finishRoundWithAbortiveDrawWithoutProgress>
+): GameState {
+  return recordAkuukanGameDrawProgress(
+    finishRoundWithAbortiveDrawWithoutProgress(...args)
+  );
+}
+
+function finishRoundWithExhaustiveDraw(
+  ...args: Parameters<typeof finishRoundWithExhaustiveDrawWithoutProgress>
+): GameState {
+  return recordAkuukanGameDrawProgress(
+    finishRoundWithExhaustiveDrawWithoutProgress(...args)
+  );
 }
