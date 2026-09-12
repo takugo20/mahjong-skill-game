@@ -904,6 +904,15 @@ export function GameBoard({
       createInitialGameState()
   );
 
+  useEffect(() => {
+    if (
+      gameState.round.phase === "matchEnd" &&
+      gameState.matchResult
+    ) {
+      onMatchEnd?.(gameState);
+    }
+  }, [gameState, onMatchEnd]);
+
   const [
     selectedTileId,
     setSelectedTileId
