@@ -1,4 +1,7 @@
 import {
+  createPlayerSkillMatchDrawProgress
+} from "./playerSkillMatchDrawProgress";
+import {
   createInitialGameState
 } from "../mahjong/engine";
 import type {
@@ -51,10 +54,16 @@ export function tryStartAkuukanMatchFromSaveData(
   }
 
   return {
-    gameState: createInitialGameState(
-      random,
-      setupResult.setup
-    ),
+    gameState: {
+      ...createInitialGameState(
+        random,
+        setupResult.setup
+      ),
+      roundSequence: 1,
+      playerSkillDrawProgress: createPlayerSkillMatchDrawProgress(
+        saveData.playerSkillGrowth
+      )
+    },
     succeeded: true,
     failureReason: null
   };
