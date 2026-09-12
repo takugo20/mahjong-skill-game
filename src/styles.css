@@ -3874,3 +3874,10 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 副露・河拾いされた牌は河の元の位置に薄く残す */
+.discard-tile--removed .mahjong-tile {
+  filter: grayscale(1);
+  opacity: 0.38;
+  box-shadow: none;
+}
