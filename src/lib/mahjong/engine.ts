@@ -837,6 +837,12 @@ function applyAkuukanDamatenDetection(
     state: {
       ...state,
       akuukan: detection.akuukan,
+      damatenAlert: detection.detectedPlayerIds.length > 0
+        ? {
+            sequence: (state.damatenAlert?.sequence ?? 0) + 1,
+            playerIds: detection.detectedPlayerIds
+          }
+        : state.damatenAlert,
       notice: detectionNotice
         ? `${state.notice}${detectionNotice}`
         : state.notice
