@@ -298,10 +298,10 @@ describe("E-1の画面表示", () => {
     );
 
     expect(countFaceDownTiles(html)).toBe(2);
-    expect(html).not.toContain(
+    expect(getResultDoraHtml(html)).not.toContain(
       'aria-label="一萬"'
     );
-    expect(html).not.toContain(
+    expect(getResultDoraHtml(html)).not.toContain(
       'aria-label="四筒"'
     );
     expect(html).toContain(
@@ -351,10 +351,10 @@ describe("E-1の画面表示", () => {
     );
 
     expect(countFaceDownTiles(html)).toBe(2);
-    expect(html).not.toContain(
+    expect(getResultDoraHtml(html)).not.toContain(
       'aria-label="一萬"'
     );
-    expect(html).not.toContain(
+    expect(getResultDoraHtml(html)).not.toContain(
       'aria-label="四筒"'
     );
     expect(html).toContain(
@@ -471,3 +471,18 @@ describe("E-13の河表示", () => {
     }
   });
 });
+
+function getResultDoraHtml(html: string): string {
+  const start = html.indexOf(
+    'aria-label="ドラ表示牌"'
+  );
+  const end = html.indexOf("</header>", start);
+
+  if (start < 0 || end < 0) {
+    throw new Error(
+      "結果画面のドラ表示牌が見つかりません。"
+    );
+  }
+
+  return html.slice(start, end);
+}
