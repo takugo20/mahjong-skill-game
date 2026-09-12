@@ -1,4 +1,11 @@
 import {
+  canActivateAkuukanPlayerSkill4_21,
+  tryActivateAkuukanPlayerSkill4_21
+} from "../akuukan/nextRoundPairReservation";
+import {
+  applyPlayerSkill4_21AtDeal
+} from "../akuukan/nextRoundPairReservationDeal";
+import {
   canActivateAkuukanPlayerSkill4_20,
   getAkuukanPlayerSkill4_20Config,
   tryActivateAkuukanPlayerSkill4_20
@@ -514,18 +521,14 @@ interface AkuukanDealComposition {
 function prepareAkuukanDealComposition(
   akuukan: AkuukanGameState | undefined,
   liveWall: Tile[],
-  deadWall: readonly Tile[]
+  deadWall: readonly Tile[],
+  random: () => number
 ): AkuukanDealComposition {
   if (!akuukan) {
     return {
       akuukan,
       liveWall,
-      reservedTilesBySeat: [
-        [],
-        [],
-        [],
-        []
-      ]
+      reservedTilesBySeat: [[], [], [], []]
     };
   }
 
@@ -533,9 +536,7 @@ function prepareAkuukanDealComposition(
     deadWall[DORA_INDICATOR_INDEXES[0]];
 
   if (!initialDoraIndicator) {
-    throw new Error(
-      "初期ドラ表示牌がありません。"
-    );
+    throw new Error("初期ドラ表示牌がありません。");
   }
 
   const pairReservation =
@@ -545,6 +546,7 @@ function prepareAkuukanDealComposition(
       preferredSuit:
         akuukan.playerSkill2_20ReservedSuit
     });
+
   const suitReservation =
     applyPlayerSkill2_20AtDeal({
       akuukan: pairReservation.akuukan,
@@ -554,57 +556,65 @@ function prepareAkuukanDealComposition(
         pairReservation.reservedTiles
     });
 
+  const activePairReservation =
+    applyPlayerSkill4_21AtDeal({
+      akuukan: suitReservation.akuukan,
+      availableTiles:
+        suitReservation.remainingTiles,
+      remainingHandTileCount: Math.max(
+        0,
+        13 - pairReservation.reservedTiles.length -
+          suitReservation.reservedTiles.length
+      ),
+      random
+    });
+
   const doraTripletReservation =
     reserveAkuukanE16DoraTriplet({
-      akuukan: suitReservation.akuukan,
-      doraIndicator:
-        initialDoraIndicator,
+      akuukan: activePairReservation.akuukan,
+      doraIndicator: initialDoraIndicator,
       availableTiles:
-        suitReservation.remainingTiles
+        activePairReservation.remainingTiles
     });
+
   const tenpaiHandReservation =
     reserveAkuukanE26TenpaiHand({
-      akuukan: suitReservation.akuukan,
+      akuukan: activePairReservation.akuukan,
       availableTiles:
-        doraTripletReservation
-          .remainingTiles
+        doraTripletReservation.remainingTiles
     });
+
   const shantenHandsReservation =
     reserveAkuukanE29ShantenHands({
-      akuukan: suitReservation.akuukan,
+      akuukan: activePairReservation.akuukan,
       availableTiles:
-        tenpaiHandReservation
-          .remainingTiles
+        tenpaiHandReservation.remainingTiles
     });
+
   const selectedEnemyReservedTiles = [
-    ...doraTripletReservation
-      .reservedTiles,
-    ...tenpaiHandReservation
-      .reservedTiles
+    ...doraTripletReservation.reservedTiles,
+    ...tenpaiHandReservation.reservedTiles
   ];
+
   const playerReservedTiles = [
     ...pairReservation.reservedTiles,
-    ...suitReservation.reservedTiles
+    ...suitReservation.reservedTiles,
+    ...activePairReservation.reservedTiles
   ];
 
-  if (
-    shantenHandsReservation
-      .constraintsSatisfied
-  ) {
-    const playerSupplementCount =
-      Math.max(
-        0,
-        13 - playerReservedTiles.length
-      );
+  if (shantenHandsReservation.constraintsSatisfied) {
+    const playerSupplementCount = Math.max(
+      0,
+      13 - playerReservedTiles.length
+    );
+
     const playerShantenTiles =
-      shantenHandsReservation
-        .reservedTilesBySeat[0];
+      shantenHandsReservation.reservedTilesBySeat[0];
 
     return {
-      akuukan: suitReservation.akuukan,
+      akuukan: activePairReservation.akuukan,
       liveWall: [
-        ...shantenHandsReservation
-          .remainingTiles,
+        ...shantenHandsReservation.remainingTiles,
         ...playerShantenTiles.slice(
           playerSupplementCount
         )
@@ -617,21 +627,17 @@ function prepareAkuukanDealComposition(
             playerSupplementCount
           )
         ],
-        shantenHandsReservation
-          .reservedTilesBySeat[1],
-        shantenHandsReservation
-          .reservedTilesBySeat[2],
-        shantenHandsReservation
-          .reservedTilesBySeat[3]
+        shantenHandsReservation.reservedTilesBySeat[1],
+        shantenHandsReservation.reservedTilesBySeat[2],
+        shantenHandsReservation.reservedTilesBySeat[3]
       ]
     };
   }
 
   return {
-    akuukan: suitReservation.akuukan,
+    akuukan: activePairReservation.akuukan,
     liveWall:
-      shantenHandsReservation
-        .remainingTiles,
+      shantenHandsReservation.remainingTiles,
     reservedTilesBySeat: [
       playerReservedTiles,
       [],
@@ -862,7 +868,8 @@ export function createInitialGameState(
     prepareAkuukanDealComposition(
       akuukan,
       availableLiveWall,
-      deadWall
+      deadWall,
+      random
     );
   const liveWall =
     dealComposition.liveWall;
@@ -2013,6 +2020,52 @@ export function activatePlayerSkill4_20(
     },
     notice:
       `手牌整理【萬】を発動し、${activation.exchanges.length}枚を交換しました。`
+  };
+}
+
+export function canActivatePlayerSkill4_21(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return canActivateAkuukanPlayerSkill4_21({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  });
+}
+
+export function activatePlayerSkill4_21(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    !canActivatePlayerSkill4_21(state)
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill4_21({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) return state;
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "雲外蒼天【対】を発動し、次の配牌に対子1組を予約しました。"
   };
 }
 
@@ -8284,7 +8337,8 @@ function dealNextRoundHands(
     prepareAkuukanDealComposition(
       akuukan,
       availableLiveWall,
-      deadWall
+      deadWall,
+      random
     );
   const liveWall =
     dealComposition.liveWall;
