@@ -315,9 +315,13 @@ interface MeldAreaProps {
 }
 
 interface GameBoardProps {
-  initialState?: ReturnType<
-    typeof createInitialGameState
-  >;
+  initialState?: ReturnType<typeof createInitialGameState>;
+  onMatchEnd?: (
+    state: ReturnType<typeof createInitialGameState>
+  ) => void;
+  onRestart?: () => void;
+  restartDisabled?: boolean;
+  matchSavePanel?: import("react").ReactNode;
 }
 
 function formatScore(score: number): string {
@@ -885,7 +889,11 @@ function OpponentArea({
 }
 
 export function GameBoard({
-  initialState
+  initialState,
+  onMatchEnd,
+  onRestart,
+  restartDisabled = false,
+  matchSavePanel
 }: GameBoardProps = {}) {
   const [
     gameState,
@@ -2278,6 +2286,12 @@ function handlePlayerSkill4_21() {
   }
   
   function handleRestart() {
+    if (restartDisabled) return;
+
+    if (onRestart) {
+      onRestart();
+      return;
+    }
     closePlayerSkill4_20Panel();
     closePlayerSkill4_19Panel();
     closePlayerSkill4_18Panel();
@@ -2732,6 +2746,7 @@ function handlePlayerSkill4_21() {
                 type="button"
                 className="primary-button"
                 onClick={handleRestart}
+                disabled={restartDisabled}                
               >
                 新しい対局
               </button>
@@ -4222,10 +4237,13 @@ function handlePlayerSkill4_21() {
                     : "残った供託点はありません。"}
                 </p>
 
+                {matchSavePanel}
+
                 <button
                   type="button"
                   className="primary-button win-result-next"
                   onClick={handleRestart}
+                  disabled={restartDisabled}
                 >
                   新しい対局
                 </button>
