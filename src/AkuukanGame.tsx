@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { SkillEquipment } from "./SkillEquipment";
 import { GameBoard } from "./GameBoard";
 import type { GameState } from "./lib/mahjong/types";
 import type { EnemyId } from "./lib/akuukan/types";
@@ -17,6 +18,7 @@ export function AkuukanGame() {
   const [loaded, setLoaded] = useState(
     loadAkuukanSaveDataFromBrowser
   );
+  const [equipmentOpen, setEquipmentOpen] = useState(false);
   const [enemyId, setEnemyId] =
     useState<EnemyId>("enemy-1");
   const [initialState, setInitialState] =
@@ -75,6 +77,25 @@ export function AkuukanGame() {
     setSaveStatus("idle");
     setMessage("");
     setInitialState(result.gameState);
+  }
+
+  if (equipmentOpen) {
+    return (
+      <SkillEquipment
+        saveData={saveRef.current}
+        onSaved={saveData => {
+          saveRef.current = saveData;
+          setLoaded({
+            saveData,
+            source: "storage",
+            failureReason: null
+          });
+          setMessage("装備を保存しました。");
+          setEquipmentOpen(false);
+        }}
+        onCancel={() => setEquipmentOpen(false)}
+      />
+    );
   }
 
   if (initialState) {
@@ -181,6 +202,13 @@ export function AkuukanGame() {
             装備スキル：
             {loaded.saveData.equippedSkills.length} / 10
           </p>
+
+          <button
+            type="button"
+            onClick={() => setEquipmentOpen(true)}
+          >
+            スキル装備を変更
+          </button>
 
           {message && <p role="alert">{message}</p>}
 
