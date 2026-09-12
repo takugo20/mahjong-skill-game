@@ -1,4 +1,7 @@
 import {
+  getAkuukanPlayerSkill5_6DrawWeightMultiplier
+} from "../akuukan/penchanKanchanWinningDrawWeight";
+import {
   getAkuukanPlayerSkill5_5DrawWeightMultiplier
 } from "../akuukan/tankiWinningDrawWeight";
 import {
@@ -2771,10 +2774,22 @@ function getAkuukanLiveWallDrawIndex(
       candidateHasLegalTankiWin: true
     }) > 1;
 
+  const canApplyPenchanKanchanDrawWeight =
+    getAkuukanPlayerSkill5_6DrawWeightMultiplier({
+      akuukan: state.akuukan,
+      drawerIsPlayer: player.seat === 0,
+      isNormalDraw: true,
+      candidateHasLegalPenchanOrKanchanWin: true
+    }) > 1;
+
+  const penchanKanchanWinningTileIds: string[] = [];
+
   const tankiWinningTileIds: string[] = [];
 
   const winningTileIds =
-    canApplyFirstRiichiDrawWeight || canApplyTankiDrawWeight
+    canApplyFirstRiichiDrawWeight ||
+    canApplyTankiDrawWeight ||
+    canApplyPenchanKanchanDrawWeight
     ? candidateIndexes.flatMap((index) => {
         const tile = state.round.liveWall[index];
 
@@ -2822,6 +2837,16 @@ function getAkuukanLiveWallDrawIndex(
           tankiWinningTileIds.push(tile.id);
         }
 
+        if (
+          canApplyPenchanKanchanDrawWeight &&
+          hasAkuukanLegalWinningWait(
+            resolution?.evaluation,
+            ["penchan", "kanchan"]
+          )
+        ) {
+          penchanKanchanWinningTileIds.push(tile.id);
+        }      
+
         return resolution ? [tile.id] : [];
       })
     : [];
@@ -2844,6 +2869,7 @@ function getAkuukanLiveWallDrawIndex(
     winningTileIds,
     isNormalDraw: true,
     tankiWinningTileIds,
+    penchanKanchanWinningTileIds,
     random
   });
 }
