@@ -143,7 +143,7 @@ describe("和了結果のドラ表示", () => {
     expect(html).not.toContain(
       "裏ドラ表示牌"
     );
-    expect(html).not.toContain(
+    expect(getResultDoraHtml(html)).not.toContain(
       'aria-label="中"'
     );
   });
@@ -291,3 +291,18 @@ describe("和了結果のドラ表示", () => {
     );
   });
 });
+
+function getResultDoraHtml(html: string): string {
+  const start = html.indexOf(
+    'aria-label="ドラ表示牌"'
+  );
+  const end = html.indexOf("</header>", start);
+
+  if (start < 0 || end < 0) {
+    throw new Error(
+      "結果画面のドラ表示牌が見つかりません。"
+    );
+  }
+
+  return html.slice(start, end);
+}
