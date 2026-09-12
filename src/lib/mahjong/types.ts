@@ -1,4 +1,7 @@
 import type {
+  PlayerSkillMatchDrawProgress
+} from "../akuukan/playerSkillMatchDrawProgress";
+import type {
   AkuukanPlayerSkill5_4Progress
 } from "../akuukan/extendedIppatsuProgress";
 import type {
@@ -301,6 +304,8 @@ export interface RoundState {
 }
 
 export interface GameState {
+  playerSkillDrawProgress?: PlayerSkillMatchDrawProgress;
+  roundSequence?: number;  
   round: RoundState;
   initialDealerSeat: SeatIndex;
   matchResult: MatchResult | null;
