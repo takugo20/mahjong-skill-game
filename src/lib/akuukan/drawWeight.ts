@@ -1,4 +1,7 @@
 import {
+  getAkuukanPlayerSkill5_1DrawWeightMultiplier
+} from "./firstRiichiDrawWeight";
+import {
   isDora
 } from "../mahjong/tiles";
 import type {
@@ -81,6 +84,10 @@ export interface AkuukanPlayerSkill1_4DrawInput {
   readonly melds?: readonly Meld[];
   readonly playerIsFourth?: boolean;
   readonly seatWind?: Wind;
+  readonly riichiEstablished?: boolean;
+  readonly isFirstNormalDrawAfterRiichi?: boolean;
+  readonly normalIppatsuAvailable?: boolean;
+  readonly winningTileIds?: readonly string[];
   readonly random: () => number;
 }
 
@@ -290,6 +297,18 @@ export function getAkuukanPlayerSkill1_4LiveWallDrawIndex(
           seatWind:
             input.seatWind ?? "east",
           candidate: candidate.tile
+        }) *
+        getAkuukanPlayerSkill5_1DrawWeightMultiplier({
+          akuukan: input.akuukan,
+          drawerIsPlayer: input.drawerIsPlayer,
+          riichiEstablished:
+            input.riichiEstablished ?? false,
+          isFirstNormalDrawAfterRiichi:
+            input.isFirstNormalDrawAfterRiichi ?? false,
+          normalIppatsuAvailable:
+            input.normalIppatsuAvailable ?? false,
+          candidateIsWinningTile:
+            input.winningTileIds?.includes(candidate.tile.id) ?? false
         })
     }));
   const firstWeight =
