@@ -146,3 +146,57 @@ describe("5-4の実際の打牌・槓による進行", () => {
     expect(result.round.players[0].ippatsu).toBe(false);
   });
 });
+
+describe("5-4の他家副露による中断", () => {
+  it.each(["pon", "openKan"] as const)(
+    "CPUの%s成立で延長一発を終了する",
+    kind => {
+      const state = prepare();
+      const calledTile = tile("honor", 5);
+      const player = state.round.players[0];
+
+      player.hand[13] = calledTile;
+      player.drawnTileId = calledTile.id;
+
+      state.round.players[1].hand = [
+        ...Array.from(
+          { length: kind === "pon" ? 2 : 3 },
+          () => tile("honor", 5)
+        ),
+        ...[2, 2].map(rank => tile("man", rank)),
+        ...(kind === "pon"
+          ? [tile("man", 9)]
+          : []),
+        ...[1, 2, 3, 4, 5, 6].map(
+          rank => tile("pin", rank)
+        ),
+        ...[7, 8].map(rank => tile("sou", rank))
+      ];
+
+      const before = JSON.stringify(state);
+
+      const result = playPlayerDiscard(
+        state,
+        calledTile.id,
+        () => 0.5
+      );
+
+      expect(
+        result.round.players[1].melds[0]
+      ).toMatchObject({
+        kind,
+        calledTileId: calledTile.id
+      });
+
+      expect(
+        result.round.players[0].extendedIppatsuProgress
+      ).toMatchObject({
+        interruptedByCallOrKan: true,
+        awaitingDiscardReactions: false
+      });
+
+      expect(result.round.players[0].ippatsu).toBe(false);
+      expect(JSON.stringify(state)).toBe(before);
+    }
+  );
+});
