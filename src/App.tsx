@@ -1,8 +1,8 @@
-import { GameBoard } from "./GameBoard";
+import { AkuukanGame } from "./AkuukanGame";
 import "./styles.css";
 
 function App() {
-  return <GameBoard />;
+  return <AkuukanGame />;
 }
 
 export default App;
