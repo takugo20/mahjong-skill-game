@@ -1,4 +1,7 @@
 import {
+  getAkuukanPlayerSkill5_1DrawWeightMultiplier
+} from "../akuukan/firstRiichiDrawWeight";
+import {
   canActivateAkuukanPlayerSkill4_23,
   tryActivateAkuukanPlayerSkill4_23
 } from "../akuukan/nextRoundTripletReservation";
@@ -2724,6 +2727,63 @@ function getAkuukanLiveWallDrawIndex(
       random
     });
 
+    const isFirstNormalDrawAfterRiichi =
+    player.riichi &&
+    player.discards[player.discards.length - 1]
+      ?.riichiDeclaration === true;
+
+  const canApplyFirstRiichiDrawWeight =
+    getAkuukanPlayerSkill5_1DrawWeightMultiplier({
+      akuukan: state.akuukan,
+      drawerIsPlayer: player.seat === 0,
+      riichiEstablished: player.riichi,
+      isFirstNormalDrawAfterRiichi,
+      normalIppatsuAvailable: player.ippatsu,
+      candidateIsWinningTile: true
+    }) > 1;
+
+  const winningTileIds = canApplyFirstRiichiDrawWeight
+    ? candidateIndexes.flatMap((index) => {
+        const tile = state.round.liveWall[index];
+
+        if (!tile) {
+          return [];
+        }
+
+        const candidatePlayer: PlayerState = {
+          ...player,
+          hand: sortTiles([...player.hand, tile]),
+          temporaryFuriten: false,
+          drawnTileId: tile.id,
+          drawnTileSource: "liveWall"
+        };
+
+        const candidateState: GameState = {
+          ...state,
+          round: {
+            ...state.round,
+            phase: "discarding",
+            liveWall: state.round.liveWall.filter(
+              (_, wallIndex) => wallIndex !== index
+            ),
+            players: replacePlayer(
+              state.round.players,
+              candidatePlayer
+            ),
+            meldCallOptions: []
+          }
+        };
+
+        return getValidWinResolution(
+          candidateState,
+          player.seat,
+          "tsumo"
+        )
+          ? [tile.id]
+          : [];
+      })
+    : [];
+
   return getAkuukanPlayerSkill1_4LiveWallDrawIndex({
     akuukan: state.akuukan,
     drawerIsPlayer: player.seat === 0,
@@ -2736,6 +2796,10 @@ function getAkuukanLiveWallDrawIndex(
     playerIsFourth:
       isPlayerCurrentlyFourth(state),
     seatWind: player.seatWind,
+    riichiEstablished: player.riichi,
+    isFirstNormalDrawAfterRiichi,
+    normalIppatsuAvailable: player.ippatsu,
+    winningTileIds,
     random
   });
 }
