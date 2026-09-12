@@ -111,19 +111,25 @@ describe("5-8 海底和了牌の重量抽選", () => {
     expect(value.random).not.toHaveBeenCalled();
   });
 
-  it("海底和了牌の情報がなければ補正しない", () => {
+  it("海底和了牌の情報がなければ等確率で抽選する", () => {
     const value = input();
 
     expect(
       drawIndex({
         ...value,
-        haiteiWinningTileIds: undefined
+        haiteiWinningTileIds: undefined,
+        random: () => 0.499999
       })
     ).toBe(0);
 
-    expect(value.random).not.toHaveBeenCalled();
+    expect(
+      drawIndex({
+        ...value,
+        haiteiWinningTileIds: undefined,
+        random: () => 0.5
+      })
+    ).toBe(1);
   });
-
   it("除外された海底和了牌を選ばない", () => {
     const value = input();
 
