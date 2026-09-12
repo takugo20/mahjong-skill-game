@@ -1,5 +1,7 @@
 import {
-  createAkuukanPlayerSkill5_4Progress
+  createAkuukanPlayerSkill5_4Progress,
+  recordAkuukanPlayerSkill5_4Discard,
+  completeAkuukanPlayerSkill5_4DiscardReactions
 } from "../akuukan/extendedIppatsuProgress";
 import {
   executeKanWithAkuukanPlayerSkill5_3
@@ -3242,9 +3244,13 @@ export function discardTile(
       ...currentPlayer.discards,
       discard
     ],
-    ippatsu: currentPlayer.riichi
-      ? false
-      : currentPlayer.ippatsu,
+    extendedIppatsuProgress:
+      seat === 0 && currentPlayer.extendedIppatsuProgress
+        ? recordAkuukanPlayerSkill5_4Discard(
+            currentPlayer.extendedIppatsuProgress,
+            riichiDeclaration
+          )
+        : currentPlayer.extendedIppatsuProgress,
     drawnTileId: null,
     drawnTileSource: null
   };
@@ -7378,10 +7384,46 @@ function getPendingCpuRiichiSeat(
   return lastDiscard.seat;
 }
 
+function completePlayerSkill5_4DiscardAfterResponses(
+  state: GameState
+): GameState {
+  if (state.round.lastDiscard?.seat !== 0) {
+    return state;
+  }
+
+  const player = state.round.players[0];
+  const progress = player.extendedIppatsuProgress;
+
+  if (!progress) {
+    return state;
+  }
+
+  const completed =
+    completeAkuukanPlayerSkill5_4DiscardReactions(
+      progress
+    );
+
+  if (completed === progress) {
+    return state;
+  }
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      players: replacePlayer(state.round.players, {
+        ...player,
+        extendedIppatsuProgress: completed
+      })
+    }
+  };
+}
+
 function completePlayerSkill3_13DiscardAfterResponses(
   state: GameState,
   reserveDiscard: boolean
 ): GameState {
+  state = completePlayerSkill5_4DiscardAfterResponses(state);  
   const lastDiscard =
     state.round.lastDiscard;
 
