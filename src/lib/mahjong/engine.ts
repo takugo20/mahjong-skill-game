@@ -1,4 +1,7 @@
 import {
+  createAkuukanPlayerSkill5_4Progress
+} from "../akuukan/extendedIppatsuProgress";
+import {
   executeKanWithAkuukanPlayerSkill5_3
 } from "../akuukan/kanDoraExecution";
 import {
@@ -8215,7 +8218,10 @@ function establishPlayerRiichi(
     score: player.score - RIICHI_DEPOSIT,
     riichi: true,
     doubleRiichi,
-    ippatsu: true
+    ippatsu: true,
+    extendedIppatsuProgress: state.akuukan
+      ? createAkuukanPlayerSkill5_4Progress()
+      : null
   };
 
   return {
@@ -8542,6 +8548,7 @@ function preparePlayersForNextRound(
     riichi: false,
     doubleRiichi: false,
     ippatsu: false,
+    extendedIppatsuProgress: null,
     temporaryFuriten: false,
     riichiFuriten: false,
     drawnTileId: null,
