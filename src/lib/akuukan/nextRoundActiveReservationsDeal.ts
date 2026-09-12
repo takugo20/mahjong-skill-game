@@ -7,11 +7,17 @@ import {
   applyPlayerSkill4_22AtDeal
 } from "./nextRoundSequenceReservationDeal";
 import {
+  applyPlayerSkill4_23AtDeal
+} from "./nextRoundTripletReservationDeal";
+import {
   AKUUKAN_PLAYER_SKILL_4_21_RESERVATION_PREFIX
 } from "./nextRoundPairReservation";
 import {
   AKUUKAN_PLAYER_SKILL_4_22_RESERVATION_PREFIX
 } from "./nextRoundSequenceReservation";
+import {
+  AKUUKAN_PLAYER_SKILL_4_23_RESERVATION_PREFIX
+} from "./nextRoundTripletReservation";
 
 export interface ApplyActiveReservationsAtDealInput {
   readonly akuukan: AkuukanGameState;
@@ -44,6 +50,12 @@ export function applyActiveReservationsAtDeal(
         effect.instanceId.startsWith(
           AKUUKAN_PLAYER_SKILL_4_22_RESERVATION_PREFIX
         )
+      ) ||
+      (
+        effect.sourceId === "player-skill:4-23" &&
+        effect.instanceId.startsWith(
+          AKUUKAN_PLAYER_SKILL_4_23_RESERVATION_PREFIX
+        )
       )
   );
 
@@ -56,7 +68,7 @@ export function applyActiveReservationsAtDeal(
   const reservedTiles: Tile[] = [];
   let remainingTiles = [...input.availableTiles];
 
-  // 対子と順子を種類別にまとめず、予約された順で処理する。
+  // 対子・順子・暗刻を、予約された順で処理する。
   for (const reservation of reservations) {
     const currentInput = {
       akuukan: {
@@ -71,7 +83,9 @@ export function applyActiveReservationsAtDeal(
 
     const result = reservation.sourceId === "player-skill:4-21"
       ? applyPlayerSkill4_21AtDeal(currentInput)
-      : applyPlayerSkill4_22AtDeal(currentInput);
+      : reservation.sourceId === "player-skill:4-22"
+        ? applyPlayerSkill4_22AtDeal(currentInput)
+        : applyPlayerSkill4_23AtDeal(currentInput);
 
     reservedTiles.push(...result.reservedTiles);
     remainingTiles = result.remainingTiles;
