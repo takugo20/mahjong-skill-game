@@ -1,4 +1,13 @@
 import {
+  getAkuukanPlayerSkill5_8HaiteiCandidates
+} from "../akuukan/haiteiDrawCandidates";
+import {
+  exchangeAkuukanPlayerSkill5_8HaiteiTile
+} from "../akuukan/haiteiTileExchange";
+import type {
+  AkuukanHandExchangeWallCandidate
+} from "../akuukan/handExchange";
+import {
   getAkuukanPlayerSkill5_6DrawWeightMultiplier
 } from "../akuukan/penchanKanchanWinningDrawWeight";
 import {
@@ -2723,7 +2732,8 @@ function synchronizeAkuukanE19ForPlayerHand(
 function getAkuukanLiveWallDrawIndex(
   state: GameState,
   player: PlayerState,
-  random: () => number
+  random: () => number,
+  haiteiCandidates: readonly AkuukanHandExchangeWallCandidate[] = []
 ): number | null {
   if (!state.akuukan) {
     return state.round.liveWall.length > 0
@@ -2731,27 +2741,26 @@ function getAkuukanLiveWallDrawIndex(
       : null;
   }
 
+  const isHaiteiDraw = haiteiCandidates.length > 0;
+  const drawCandidates = isHaiteiDraw
+    ? haiteiCandidates.map(candidate => candidate.tile)
+    : state.round.liveWall;
+
   const candidateIndexes =
     getAkuukanLiveWallDrawCandidateIndexes({
       akuukan: state.akuukan,
       playerId: player.id,
-      recipientIsSelectedEnemy:
-        player.seat === 2,
-      targetSuit:
-        getAkuukanE5TargetSuit(
-          state.akuukan
-        ),
+      recipientIsSelectedEnemy: player.seat === 2,
+      targetSuit: getAkuukanE5TargetSuit(state.akuukan),
       previousDiscardTile:
-        player.discards[
-          player.discards.length - 1
-        ]?.tile ?? null,
+        player.discards[player.discards.length - 1]?.tile ?? null,
       concealedTiles: player.hand,
       melds: player.melds,
-      liveWall: state.round.liveWall,
+      liveWall: drawCandidates,
       random
     });
 
-    const isFirstNormalDrawAfterRiichi =
+  const isFirstNormalDrawAfterRiichi =
     player.riichi &&
     player.discards[player.discards.length - 1]
       ?.riichiDeclaration === true;
@@ -2783,85 +2792,101 @@ function getAkuukanLiveWallDrawIndex(
     }) > 1;
 
   const penchanKanchanWinningTileIds: string[] = [];
-
   const tankiWinningTileIds: string[] = [];
 
   const winningTileIds =
     canApplyFirstRiichiDrawWeight ||
     canApplyTankiDrawWeight ||
-    canApplyPenchanKanchanDrawWeight
-    ? candidateIndexes.flatMap((index) => {
-        const tile = state.round.liveWall[index];
-
-        if (!tile) {
-          return [];
-        }
-
-        const candidatePlayer: PlayerState = {
-          ...player,
-          hand: sortTiles([...player.hand, tile]),
-          temporaryFuriten: false,
-          drawnTileId: tile.id,
-          drawnTileSource: "liveWall"
-        };
-
-        const candidateState: GameState = {
-          ...state,
-          round: {
-            ...state.round,
-            phase: "discarding",
-            liveWall: state.round.liveWall.filter(
-              (_, wallIndex) => wallIndex !== index
-            ),
-            players: replacePlayer(
-              state.round.players,
-              candidatePlayer
-            ),
-            meldCallOptions: []
+    canApplyPenchanKanchanDrawWeight ||
+    isHaiteiDraw
+      ? candidateIndexes.flatMap(index => {
+          const tile = drawCandidates[index];
+          if (!tile) {
+            return [];
           }
-        };
 
-        const resolution = getValidWinResolution(
-          candidateState,
-          player.seat,
-          "tsumo"
-        );
+          const candidatePlayer: PlayerState = {
+            ...player,
+            hand: sortTiles([...player.hand, tile]),
+            temporaryFuriten: false,
+            drawnTileId: tile.id,
+            drawnTileSource: "liveWall"
+          };
 
-        if (
-          canApplyTankiDrawWeight &&
-          hasAkuukanLegalWinningWait(
-            resolution?.evaluation,
-            ["tanki"]
-          )
-        ) {
-          tankiWinningTileIds.push(tile.id);
-        }
+          const candidateWalls = isHaiteiDraw
+            ? exchangeAkuukanPlayerSkill5_8HaiteiTile({
+                akuukan: state.akuukan!,
+                drawerIsPlayer: player.seat === 0,
+                isNormalLiveWallDraw: true,
+                tenpaiBeforeDraw: true,
+                liveWall: state.round.liveWall,
+                deadWall: state.round.deadWall,
+                doraIndicatorCount:
+                  state.round.doraIndicatorCount,
+                rinshanDrawCount:
+                  state.round.rinshanDrawCount,
+                selected: haiteiCandidates[index]
+              })
+            : state.round;
 
-        if (
-          canApplyPenchanKanchanDrawWeight &&
-          hasAkuukanLegalWinningWait(
-            resolution?.evaluation,
-            ["penchan", "kanchan"]
-          )
-        ) {
-          penchanKanchanWinningTileIds.push(tile.id);
-        }      
+          const candidateState: GameState = {
+            ...state,
+            round: {
+              ...state.round,
+              phase: "discarding",
+              deadWall: candidateWalls.deadWall,
+              liveWall: isHaiteiDraw
+                ? []
+                : state.round.liveWall.filter(
+                    (_, wallIndex) => wallIndex !== index
+                  ),
+              players: replacePlayer(
+                state.round.players,
+                candidatePlayer
+              ),
+              meldCallOptions: []
+            }
+          };
 
-        return resolution ? [tile.id] : [];
-      })
-    : [];
+          const resolution = getValidWinResolution(
+            candidateState,
+            player.seat,
+            "tsumo"
+          );
+
+          if (
+            canApplyTankiDrawWeight &&
+            hasAkuukanLegalWinningWait(
+              resolution?.evaluation,
+              ["tanki"]
+            )
+          ) {
+            tankiWinningTileIds.push(tile.id);
+          }
+
+          if (
+            canApplyPenchanKanchanDrawWeight &&
+            hasAkuukanLegalWinningWait(
+              resolution?.evaluation,
+              ["penchan", "kanchan"]
+            )
+          ) {
+            penchanKanchanWinningTileIds.push(tile.id);
+          }
+
+          return resolution ? [tile.id] : [];
+        })
+      : [];
 
   return getAkuukanPlayerSkill1_4LiveWallDrawIndex({
     akuukan: state.akuukan,
     drawerIsPlayer: player.seat === 0,
-    liveWall: state.round.liveWall,
+    liveWall: drawCandidates,
     candidateIndexes,
-    doraIndicators:
-      getDoraIndicators(state.round),
+    doraIndicators: getDoraIndicators(state.round),
     hand: player.hand,
     melds: player.melds,
-    playerIsFourth:
-      isPlayerCurrentlyFourth(state),
+    playerIsFourth: isPlayerCurrentlyFourth(state),
     seatWind: player.seatWind,
     riichiEstablished: player.riichi,
     isFirstNormalDrawAfterRiichi,
@@ -2870,6 +2895,9 @@ function getAkuukanLiveWallDrawIndex(
     isNormalDraw: true,
     tankiWinningTileIds,
     penchanKanchanWinningTileIds,
+    isHaiteiDraw,
+    tenpaiBeforeHaiteiDraw: isHaiteiDraw,
+    haiteiWinningTileIds: isHaiteiDraw ? winningTileIds : [],
     random
   });
 }
@@ -3033,7 +3061,7 @@ export function drawTile(
   seat: SeatIndex,
   random: () => number = Math.random
 ): GameState {
-  const round = state.round;
+  let round = state.round;
 
   if (
     round.phase !== "drawing" ||
@@ -3052,12 +3080,49 @@ export function drawTile(
     return reservedDrawState;
   }
   
-  const drawIndex =
-    getAkuukanLiveWallDrawIndex(
-      state,
-      currentPlayer,
-      random
-    );
+  const haiteiInput =
+    state.akuukan &&
+    seat === 0 &&
+    round.liveWall.length === 1
+      ? {
+          akuukan: state.akuukan,
+          drawerIsPlayer: true,
+          isNormalLiveWallDraw: true,
+          tenpaiBeforeDraw: isTenpai(
+            currentPlayer.hand,
+            currentPlayer.melds
+          ),
+          liveWall: round.liveWall,
+          deadWall: round.deadWall,
+          doraIndicatorCount: round.doraIndicatorCount,
+          rinshanDrawCount: round.rinshanDrawCount
+        }
+      : null;
+
+  const haiteiCandidates = haiteiInput
+    ? getAkuukanPlayerSkill5_8HaiteiCandidates(haiteiInput)
+    : [];
+
+  let drawIndex = getAkuukanLiveWallDrawIndex(
+    state,
+    currentPlayer,
+    random,
+    haiteiCandidates
+  );
+
+  if (
+    haiteiInput &&
+    haiteiCandidates.length > 0 &&
+    drawIndex !== null
+  ) {
+    const walls = exchangeAkuukanPlayerSkill5_8HaiteiTile({
+      ...haiteiInput,
+      selected: haiteiCandidates[drawIndex]
+    });
+
+    round = { ...round, ...walls };
+    drawIndex = 0;
+  }
   const drawnTile =
     drawIndex === null
       ? undefined
