@@ -40,13 +40,7 @@ export function SkillCatalog({
   });
 
   return (
-    <main
-      style={{
-        maxWidth: 640,
-        margin: "0 auto",
-        padding: 24
-      }}
-    >
+    <main className="akuukan-skill-screen">
       <h1>スキル図鑑</h1>
 
       <p>
@@ -55,8 +49,8 @@ export function SkillCatalog({
 
       <button
         type="button"
+        className="akuukan-skill-back"
         onClick={onBack}
-        style={{ minHeight: 44 }}
       >
         開始画面に戻る
       </button>
