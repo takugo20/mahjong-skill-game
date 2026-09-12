@@ -1,4 +1,7 @@
 import {
+  exchangeAkuukanPlayerSkill5_2UraDoraIndicators
+} from "../akuukan/uraDoraIndicatorExchange";
+import {
   getAkuukanPlayerSkill5_1DrawWeightMultiplier
 } from "../akuukan/firstRiichiDrawWeight";
 import {
@@ -4884,6 +4887,50 @@ function finishRoundWithExhaustiveDraw(
   };
 }
 
+function applyAkuukanPlayerSkill5_2BeforeWin(
+  state: GameState,
+  winMethod: "tsumo" | "ron",
+  random: () => number
+): GameState {
+  if (!state.akuukan || !state.round.players[0].riichi) {
+    return state;
+  }
+
+  const player = state.round.players[0];
+  const ronTile = winMethod === "ron"
+    ? getPendingKanChankanSource(state)?.winningTile ??
+      state.round.lastDiscard?.discard.tile
+    : undefined;
+
+  if (winMethod === "ron" && !ronTile) {
+    return state;
+  }
+
+  const walls =
+    exchangeAkuukanPlayerSkill5_2UraDoraIndicators({
+      akuukan: state.akuukan,
+      winnerIsPlayer: true,
+      riichiEstablished: player.riichi,
+      hand: ronTile
+        ? [...player.hand, ronTile]
+        : player.hand,
+      melds: player.melds,
+      liveWall: state.round.liveWall,
+      deadWall: state.round.deadWall,
+      doraIndicatorCount: state.round.doraIndicatorCount,
+      rinshanDrawCount: state.round.rinshanDrawCount,
+      random
+    });
+
+  return {
+    ...state,
+    round: {
+      ...state.round,
+      ...walls
+    }
+  };
+}
+
 export function declarePlayerTsumo(
   state: GameState,
   random: () => number = Math.random
@@ -4894,6 +4941,12 @@ export function declarePlayerTsumo(
       notice: "現在の手牌ではツモ和了できません。"
     };
   }
+
+  state = applyAkuukanPlayerSkill5_2BeforeWin(
+    state,
+    "tsumo",
+    random
+  );
 
   const application =
     applyAkuukanPlayerSkill1_3BeforeWin(
@@ -4954,6 +5007,12 @@ export function declarePlayerRon(
     );
   }
 
+  state = applyAkuukanPlayerSkill5_2BeforeWin(
+    state,
+    "ron",
+    random
+  );
+
   const application =
     applyAkuukanPlayerSkill1_3BeforeWin(
       state,
@@ -4984,7 +5043,12 @@ export function declarePlayerRon(
     candidates.map((candidate) =>
       candidate.winnerSeat === 0
         ? playerResolution
-        : candidate
+        : getValidWinResolution(
+            state,
+            candidate.winnerSeat,
+            "ron",
+            getPendingKanChankanSource(state) ?? undefined
+          ) ?? candidate
     )
   );
 }
