@@ -1,4 +1,8 @@
 import {
+  canActivateAkuukanPlayerSkill4_23,
+  tryActivateAkuukanPlayerSkill4_23
+} from "../akuukan/nextRoundTripletReservation";
+import {
   canActivateAkuukanPlayerSkill4_21,
   tryActivateAkuukanPlayerSkill4_21
 } from "../akuukan/nextRoundPairReservation";
@@ -2116,6 +2120,52 @@ export function activatePlayerSkill4_22(
     playerMp: activation.state.playerMp,
     notice:
       "雲外蒼天【順】を発動し、次の配牌に順子1組を予約しました。"
+  };
+}
+
+export function canActivatePlayerSkill4_23(
+  state: GameState
+): boolean {
+  if (
+    !state.akuukan ||
+    state.round.currentSeat !== 0 ||
+    state.round.phase !== "discarding"
+  ) {
+    return false;
+  }
+
+  return canActivateAkuukanPlayerSkill4_23({
+    akuukan: state.akuukan,
+    playerMp: state.playerMp,
+    maxMp: state.maxMp
+  });
+}
+
+export function activatePlayerSkill4_23(
+  state: GameState
+): GameState {
+  if (
+    !state.akuukan ||
+    !canActivatePlayerSkill4_23(state)
+  ) {
+    return state;
+  }
+
+  const activation =
+    tryActivateAkuukanPlayerSkill4_23({
+      akuukan: state.akuukan,
+      playerMp: state.playerMp,
+      maxMp: state.maxMp
+    });
+
+  if (!activation.succeeded) return state;
+
+  return {
+    ...state,
+    akuukan: activation.state.akuukan,
+    playerMp: activation.state.playerMp,
+    notice:
+      "雲外蒼天【刻】を発動し、次の配牌に暗刻1組を予約しました。"
   };
 }
 
