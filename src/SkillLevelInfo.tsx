@@ -1,3 +1,6 @@
+import {
+  formatSkillEffectValues
+} from "./lib/akuukan/skillEffectText";
 import type {
   PlayerSkillDefinition
 } from "./lib/akuukan/playerSkillCatalogTypes";
@@ -32,6 +35,20 @@ export function SkillLevelInfo({
               }`}
       </p>
 
+      <p>
+        {currentLevel === null
+          ? "解放時の効果"
+          : "現在レベルの効果"}
+      </p>
+
+      <ul>
+        {formatSkillEffectValues(
+          skill.levels[currentLevel ?? 1].effectValues
+        ).map(text => (
+          <li key={text}>{text}</li>
+        ))}
+      </ul>
+
       <details>
         <summary
           style={{
@@ -39,7 +56,7 @@ export function SkillLevelInfo({
             cursor: "pointer"
           }}
         >
-          レベル別のMP・必要EXP
+          レベル別の効果・MP・必要EXP
         </summary>
 
         <table
@@ -91,6 +108,28 @@ export function SkillLevelInfo({
 
         <p>
           必要EXPは各レベルで必要な総量です。
+        </p>
+
+        {PLAYER_SKILL_LEVELS
+          .filter(level => level <= maximum)
+          .map(level => (
+            <div key={level}>
+              <h4>Lv.{level}の効果</h4>
+
+              <ul>
+                {formatSkillEffectValues(
+                  skill.levels[level].effectValues
+                ).map(text => (
+                  <li key={text}>{text}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+        <p>
+          抽選重みの倍率は、その牌を引く確率そのものの
+          倍率ではありません。
+          適用条件はスキル説明をご確認ください。
         </p>
       </details>
     </div>
