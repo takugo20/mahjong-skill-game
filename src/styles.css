@@ -3881,3 +3881,22 @@ body {
   opacity: 0.38;
   box-shadow: none;
 }
+
+/* 闇聴察知：名前欄を一時的に警告色へ */
+.player-status__name.player-status__name--damaten {
+  border-radius: 6px;
+  background: #6a3108;
+  outline: 2px solid #ffe07b;
+  animation: damaten-name-alert 0.45s ease-in-out 4;
+}
+
+@keyframes damaten-name-alert {
+  0%, 100% {
+    box-shadow: 0 0 3px #ffd35e;
+  }
+
+  50% {
+    background: #9c4b0c;
+    box-shadow: 0 0 16px #ffd35e;
+  }
+}
