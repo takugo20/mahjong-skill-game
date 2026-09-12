@@ -1,3 +1,4 @@
+import { MatchGrowthResult } from "./MatchGrowthResult";
 import { useCallback, useRef, useState } from "react";
 import { SkillEquipment } from "./SkillEquipment";
 import { GameBoard } from "./GameBoard";
@@ -111,6 +112,11 @@ export function AkuukanGame() {
         }}
         matchSavePanel={
           <div aria-live="polite">
+            <MatchGrowthResult
+              settlement={
+                finishedRef.current?.matchProgress?.settlement
+              }
+            />
             {saveStatus === "saved" ? (
               <p>成長・解放結果を保存しました。</p>
             ) : saveStatus === "failed" ? (
