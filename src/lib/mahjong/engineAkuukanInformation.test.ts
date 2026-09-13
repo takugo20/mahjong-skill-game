@@ -67,35 +67,14 @@ function createCpuDiscardState(
   enemyId: EnemyId,
   targetSeat: 1 | 2
 ): CreateCpuDiscardResult {
-  const state = createInitialGameState(
-    () => 0.5,
-    {
-      enemyId,
-      equippedSkills: []
-    }
-  );
-  const playerDiscard = createTile(
-    "honor",
-    7
-  );
-  const doraTile = createTile("man", 1);
-  const nonDoraTile = createTile(
-    "pin",
-    5
-  );
-  const protectedDraw = createTile(
-    "sou",
-    5,
-    true
-  );
-  const firstCpuDraw =
-    targetSeat === 1
-      ? protectedDraw
-      : createTile("honor", 1);
-  const secondCpuDraw =
-    targetSeat === 2
-      ? protectedDraw
-      : createTile("honor", 2);
+  const state = createInitialGameState(() => 0.5, {
+    enemyId,
+    equippedSkills: []
+  });
+
+  const playerDiscard = createTile("honor", 7);
+  const doraTile = createTile("honor", 1);
+  const nonDoraTile = createTile("honor", 2);
 
   state.round.players[0] = {
     ...state.round.players[0],
@@ -112,19 +91,32 @@ function createCpuDiscardState(
 
   state.round.players[targetSeat] = {
     ...state.round.players[targetSeat],
-    hand: [doraTile, nonDoraTile]
+    // 立直を避け、同じ向聴数・受け入れでドラ評価だけを比較する。
+    score: 0,
+    hand: [
+      ...[1, 2, 3].map(rank => createTile("man", rank)),
+      ...[1, 2, 3].map(rank => createTile("pin", rank)),
+      ...[1, 2, 3, 7, 8, 9].map(
+        rank => createTile("sou", rank)
+      ),
+      doraTile
+    ]
   };
-  state.round.deadWall[4] = createTile(
-    "man",
-    9
-  );
+
+  state.round.deadWall[4] = createTile("honor", 4);
   state.round.doraIndicatorCount = 1;
+
   state.round.liveWall = [
-    firstCpuDraw,
-    secondCpuDraw,
-    createTile("honor", 3),
-    createTile("honor", 4)
+    targetSeat === 1
+      ? nonDoraTile
+      : createTile("honor", 6),
+    targetSeat === 2
+      ? nonDoraTile
+      : createTile("honor", 6),
+    createTile("honor", 6),
+    createTile("honor", 6)
   ];
+
   state.round.currentSeat = 0;
   state.round.phase = "discarding";
   state.round.lastDiscard = null;
@@ -142,27 +134,22 @@ function getCpuDiscard(
   playerDiscard: Tile,
   targetSeat: SeatIndex
 ): Tile {
-  const progression =
-    createPlayerDiscardProgression(
-      state,
-      playerDiscard.id,
-      () => 0.5
-    );
-  const actionStep =
-    progression.cpuSteps.find(
-      (step) =>
-        step.phase === "action" &&
-        step.seat === targetSeat
-    );
-  const discard =
-    actionStep?.state.round.players[
-      targetSeat
-    ].discards[0]?.tile;
+  const progression = createPlayerDiscardProgression(
+    state,
+    playerDiscard.id,
+    () => 0
+  );
+
+  const actionStep = progression.cpuSteps.find(
+    step => step.phase === "action" && step.seat === targetSeat
+  );
+
+  const discard = actionStep?.state.round.players[
+    targetSeat
+  ].discards[0]?.tile;
 
   if (!discard) {
-    throw new Error(
-      "対象CPUの打牌を取得できません。"
-    );
+    throw new Error("対象CPUの打牌を取得できません。");
   }
 
   return discard;
