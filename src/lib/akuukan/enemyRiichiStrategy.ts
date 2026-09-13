@@ -1,3 +1,4 @@
+import { chooseEnemySixteenLastRoundRiichi } from "./enemySixteenLastRound";
 import {
   isEnemySixteenStrategyEnabled,
   preferEnemySixteenDamaten
@@ -123,6 +124,17 @@ export function chooseEnemyRiichi(
   input: CpuRiichiDecisionInput
 ): CpuRiichiDecision | null {
   const standard = chooseCpuRiichi(input);
+
+  if (
+    standard
+    && isEnemySixteenStrategyEnabled(state, input.player)
+  ) {
+    return chooseEnemySixteenLastRoundRiichi(
+      state,
+      input,
+      standard
+    );
+  }
 
   // 敵2のノーテン立直を含め、既存の判断を基本とする。
   if (
