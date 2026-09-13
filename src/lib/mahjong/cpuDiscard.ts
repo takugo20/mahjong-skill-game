@@ -1,4 +1,8 @@
 import {
+  breaksDoraTriplet,
+  getEnemySpeedId
+} from "../akuukan/enemySpeedStrategy";
+import {
   calculateShanten,
   getTileTypeFromIndex,
   getTileTypeIndex
@@ -26,6 +30,8 @@ export interface CpuDiscardInput {
   visibleTiles: readonly Tile[];
   tendencies: EnemyAiTendencies;
   forbiddenTileIds: readonly string[];
+  preserveDoraTriplets?: boolean;
+  speedFirst?: boolean;
 }
 
 function owner(seat: number) {
@@ -36,7 +42,6 @@ function owner(seat: number) {
       : "normalOpponent" as const;
 }
 
-// 判断に渡すのは、自分の手牌と、そのCPUに見える牌だけ。
 export function createCpuDiscardInput(
   state: GameState,
   player: PlayerState,
@@ -87,6 +92,10 @@ export function createCpuDiscardInput(
     doraIndicators,
     visibleTiles,
     forbiddenTileIds,
+    preserveDoraTriplets: getEnemySpeedId(state, player) === 9,
+    speedFirst: [10, 11].includes(
+      getEnemySpeedId(state, player) ?? 0
+    ),
     tendencies: akuukan && player.seat === 2
       ? getEnemyDefinition(akuukan.setup.enemyId).aiTendencies
       : NORMAL_TENDENCIES
@@ -123,7 +132,6 @@ export function evaluateCpuDiscards(
     counts[getTileTypeIndex(tile)] += 1;
   }
 
-  // 同じ牌種は手の形が同じなので、同一判断内で計算結果を共有する。
   const shapes = new Map<number, {
     hand: Tile[];
     shanten: number;
@@ -156,49 +164,63 @@ export function evaluateCpuDiscards(
     ...candidates.map(candidate => candidate.shape.shanten)
   );
 
-  // 今回の共通打牌では、最小向聴の候補同士で受け入れとドラを比較する。
-  return candidates
-    .filter(candidate => candidate.shape.shanten === minimum)
-    .map(({ tile, shape }) => {
-      if (shape.acceptance === undefined) {
-        shape.acceptance = 0;
+  const nearest = candidates.filter(
+    candidate => candidate.shape.shanten === minimum
+  );
 
-        for (let index = 0; index < 34; index += 1) {
-          const remaining = Math.max(0, 4 - counts[index]);
-          if (remaining === 0) continue;
+  const preserved = input.preserveDoraTriplets
+    ? nearest.filter(
+        candidate => !breaksDoraTriplet(
+          player.hand,
+          candidate.tile,
+          input.doraIndicators
+        )
+      )
+    : nearest;
 
-          const drawn: Tile = {
-            ...getTileTypeFromIndex(index),
-            id: `cpu-hypothetical-${index}`,
-            red: false
-          };
+  const selected = preserved.length > 0 ? preserved : nearest;
 
-          const nextShanten = calculateShanten(
-            [...shape.hand, drawn],
-            player.melds
-          ).minimum;
+  return selected.map(({ tile, shape }) => {
+    if (shape.acceptance === undefined) {
+      shape.acceptance = 0;
 
-          if (nextShanten < minimum) {
-            shape.acceptance += remaining;
-          }
+      for (let index = 0; index < 34; index += 1) {
+        const remaining = Math.max(0, 4 - counts[index]);
+        if (remaining === 0) continue;
+
+        const drawn: Tile = {
+          ...getTileTypeFromIndex(index),
+          id: `cpu-hypothetical-${index}`,
+          red: false
+        };
+
+        const nextShanten = calculateShanten(
+          [...shape.hand, drawn],
+          player.melds
+        ).minimum;
+
+        if (nextShanten < minimum) {
+          shape.acceptance += remaining;
         }
       }
+    }
 
-      const discardedBonus = Number(tile.red)
-        + input.doraIndicators.filter(
-          indicator => isDora(tile, indicator)
-        ).length;
+    const discardedBonus = Number(tile.red)
+      + input.doraIndicators.filter(
+        indicator => isDora(tile, indicator)
+      ).length;
 
-      return {
-        tile,
-        shanten: minimum,
-        acceptance: shape.acceptance,
-        discardedBonus,
-        // 係数はAI調整値。READMEの打点傾向が高いほどドラを残す。
-        score: shape.acceptance
+    return {
+      tile,
+      shanten: minimum,
+      acceptance: shape.acceptance,
+      discardedBonus,
+      score: input.speedFirst
+        ? shape.acceptance * 100 - discardedBonus
+        : shape.acceptance
           - discardedBonus * input.tendencies.handValue
-      };
-    });
+    };
+  });
 }
 
 export function chooseStrategicCpuDiscard(
