@@ -1,3 +1,4 @@
+import { scoreEnemyThreeExtraYaku } from "./enemyThreeYakuPlan";
 import type {
   GameState, PlayerState, Tile, Wind
 } from "../mahjong/types";
@@ -225,5 +226,14 @@ export function scoreEnemyHand(
   }
 
   score += weight("honitsu") * flush;
+
+  score += scoreEnemyThreeExtraYaku(
+    plan.previousYaku,
+    hand,
+    player.melds
+  );
+
+  return score;
+}
   return score;
 }
