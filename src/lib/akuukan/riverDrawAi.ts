@@ -1,17 +1,13 @@
 import {
   calculateShanten,
-  getWinningTileTypes,
-  isWinningHand
+  getTileTypeFromIndex,
+  getTileTypeIndex,
+  getWinningTileTypes
 } from "../mahjong/hand";
-import {
-  getDoraTileType
-} from "../mahjong/dora";
-import {
-  isDiscardFuriten
-} from "../mahjong/furiten";
+import { isDora } from "../mahjong/tiles";
+import { evaluateWinningHand } from "../mahjong/winning";
 import type {
-  PlayerState,
-  Tile
+  PlayerState, Tile, Wind
 } from "../mahjong/types";
 import type {
   AkuukanE28RiverDrawCandidate
@@ -22,451 +18,276 @@ export interface SelectAkuukanE28RiverDrawCandidateInput {
   readonly players?: readonly PlayerState[];
   readonly candidates:
     readonly AkuukanE28RiverDrawCandidate[];
-  readonly liveWall?: readonly Tile[];
+  readonly visibleTiles?: readonly Tile[];
+  readonly prevailingWind?: Wind;
   readonly doraIndicators?: readonly Tile[];
+
+  // 旧呼び出しとの互換用。山の中身は判断に使わない。
+  readonly liveWall?: readonly Tile[];
 }
 
-interface AkuukanE28RiverDrawEvaluation {
-  readonly candidate:
-    AkuukanE28RiverDrawCandidate;
-  readonly winning: boolean;
-  readonly shantenAfter: number;
-  readonly handsAfterDiscard:
-    readonly (readonly Tile[])[];
-}
-
-interface AkuukanE28PostDrawHands {
-  readonly shanten: number;
-  readonly hands: readonly Tile[][];
-}
-
-function getBestHandsAfterDraw(
-  drawer: PlayerState,
-  drawnTile: Tile
-): AkuukanE28PostDrawHands {
-  const handAfterDraw = [
-    ...drawer.hand,
-    drawnTile
-  ];
-
-  if (
-    isWinningHand(
-      handAfterDraw,
-      drawer.melds
-    )
-  ) {
-    return {
-      shanten: -1,
-      hands: []
-    };
-  }
-
-  let bestShanten =
-    Number.POSITIVE_INFINITY;
-  let bestHands: Tile[][] = [];
-
-  for (
-    let discardIndex = 0;
-    discardIndex < handAfterDraw.length;
-    discardIndex += 1
-  ) {
-    const handAfterDiscard = [
-      ...handAfterDraw.slice(
-        0,
-        discardIndex
-      ),
-      ...handAfterDraw.slice(
-        discardIndex + 1
-      )
-    ];
-    const shanten = calculateShanten(
-      handAfterDiscard,
-      drawer.melds
-    ).minimum;
-
-    if (shanten < bestShanten) {
-      bestShanten = shanten;
-      bestHands = [handAfterDiscard];
-    } else if (
-      shanten === bestShanten
-    ) {
-      bestHands.push(handAfterDiscard);
-    }
-  }
-
-  return {
-    shanten: bestShanten,
-    hands: bestHands
-  };
-}
-
-function evaluateCandidate(
-  drawer: PlayerState,
-  candidate:
-    AkuukanE28RiverDrawCandidate
-): AkuukanE28RiverDrawEvaluation {
-  const handAfterDraw = [
-    ...drawer.hand,
-    candidate.tile
-  ];
-  const winning = isWinningHand(
-    handAfterDraw,
-    drawer.melds
-  );
-  const postDrawHands =
-    getBestHandsAfterDraw(
-      drawer,
-      candidate.tile
-    );
-
-  return {
-    candidate,
-    winning,
-    shantenAfter: postDrawHands.shanten,
-    handsAfterDiscard:
-      postDrawHands.hands
-  };
-}
-
-function isSameTileType(
-  left: Pick<Tile, "suit" | "rank">,
-  right: Pick<Tile, "suit" | "rank">
-): boolean {
-  return (
-    left.suit === right.suit &&
-    left.rank === right.rank
-  );
-}
-
-function countImprovingLiveWallTiles(
-  hand: readonly Tile[],
-  drawer: PlayerState,
-  liveWall: readonly Tile[]
-): number {
-  const currentShanten = calculateShanten(
-    hand,
-    drawer.melds
-  ).minimum;
-
-  return liveWall.filter((tile) => {
-    const handAfterDraw = [
-      ...hand,
-      tile
-    ];
-
-    if (
-      isWinningHand(
-        handAfterDraw,
-        drawer.melds
-      )
-    ) {
-      return true;
-    }
-
-    return (
-      calculateShanten(
-        handAfterDraw,
-        drawer.melds
-      ).minimum < currentShanten
-    );
-  }).length;
-}
-
-function getAcceptanceAfterCandidate(
-  evaluation:
-    AkuukanE28RiverDrawEvaluation,
-  drawer: PlayerState,
-  liveWall: readonly Tile[]
-): number {
-  return evaluation.handsAfterDiscard.reduce(
-    (bestAcceptance, hand) =>
-      Math.max(
-        bestAcceptance,
-        countImprovingLiveWallTiles(
-          hand,
-          drawer,
-          liveWall
-        )
-      ),
-    0
-  );
-}
-
-function getBonusTileValue(
-  tile: Tile,
-  doraIndicators: readonly Tile[]
-): number {
-  const doraValue =
-    doraIndicators.filter(
-      (indicator) =>
-        isSameTileType(
-          tile,
-          getDoraTileType(indicator)
-        )
-    ).length;
-
-  return doraValue + (tile.red ? 1 : 0);
-}
-
-function doesCandidateLiftOwnFuriten(
-  drawer: PlayerState,
-  candidate:
-    AkuukanE28RiverDrawCandidate
-): boolean {
-  if (
-    candidate.riverOwnerSeat !==
-    drawer.seat
-  ) {
-    return false;
-  }
-
-  const winningTileTypes =
-    getWinningTileTypes(
-      drawer.hand,
-      drawer.melds
-    );
-
-  if (winningTileTypes.length === 0) {
-    return false;
-  }
-
-  const isWinningDiscard = (
-    tile: Tile
-  ): boolean =>
-    winningTileTypes.some(
-      (winningTileType) =>
-        isSameTileType(
-          tile,
-          winningTileType
-        )
-    );
-  const currentlyFuriten =
-    drawer.discards.some(
-      (discard) =>
-        isWinningDiscard(discard.tile)
-    );
-  const remainsFuritenAfterRemoval =
-    drawer.discards.some(
-      (discard, discardIndex) =>
-        discardIndex !==
-          candidate.discardIndex &&
-        isWinningDiscard(discard.tile)
-    );
-
-  return (
-    currentlyFuriten &&
-    !remainsFuritenAfterRemoval
-  );
-}
-
-function doesCandidateLiftOtherPlayerFuriten(
-  drawer: PlayerState,
-  candidate:
-    AkuukanE28RiverDrawCandidate,
-  players: readonly PlayerState[]
-): boolean {
-  if (
-    candidate.riverOwnerSeat ===
-    drawer.seat
-  ) {
-    return false;
-  }
-
-  const riverOwner = players.find(
-    (player) =>
-      player.seat ===
-      candidate.riverOwnerSeat
-  );
-
-  if (!riverOwner) {
-    return false;
-  }
-
-  const furitenInput = {
-    concealedTiles: riverOwner.hand,
-    melds: riverOwner.melds
-  };
-  const currentlyFuriten =
-    isDiscardFuriten({
-      ...furitenInput,
-      discards: riverOwner.discards
-    });
-  const discardsAfterRemoval =
-    riverOwner.discards.filter(
-      (_discard, discardIndex) =>
-        discardIndex !==
-        candidate.discardIndex
-    );
-  const remainsFuritenAfterRemoval =
-    isDiscardFuriten({
-      ...furitenInput,
-      discards: discardsAfterRemoval
-    });
-
-  return (
-    currentlyFuriten &&
-    !remainsFuritenAfterRemoval
-  );
+function same(
+  a: Pick<Tile, "suit" | "rank">,
+  b: Pick<Tile, "suit" | "rank">
+) {
+  return a.suit === b.suit && a.rank === b.rank;
 }
 
 export function selectAkuukanE28RiverDrawCandidate(
-  input:
-    SelectAkuukanE28RiverDrawCandidateInput
+  input: SelectAkuukanE28RiverDrawCandidateInput
 ): AkuukanE28RiverDrawCandidate | null {
-  const visibleCandidates =
-    input.candidates.filter(
-      (candidate) => !candidate.faceDown
-    );
+  const { drawer } = input;
+  const candidates = input.candidates.filter(
+    c => !c.faceDown
+  );
 
-  if (visibleCandidates.length === 0) {
-    return null;
+  if (!candidates.length) return null;
+
+  const indicators = input.doraIndicators ?? [];
+  const known = new Map<string, Tile>();
+
+  const publicTiles = (input.players ?? []).flatMap(p => [
+    ...p.melds.flatMap(m => m.tiles),
+    ...p.discards
+      .filter(d => p.seat === drawer.seat || !d.faceDown)
+      .map(d => d.tile)
+  ]);
+
+  for (const tile of [
+    ...drawer.hand,
+    ...drawer.melds.flatMap(m => m.tiles),
+    ...drawer.discards.map(d => d.tile),
+    ...publicTiles,
+    ...(input.visibleTiles ?? []),
+    ...indicators,
+    ...candidates.map(c => c.tile)
+  ]) {
+    known.set(tile.id, tile);
   }
 
-  const evaluations =
-    visibleCandidates.map(
-      (candidate) =>
-        evaluateCandidate(
-          input.drawer,
-          candidate
-        )
-    );
-  const winningCandidate =
-    evaluations.find(
-      (evaluation) => evaluation.winning
-    );
+  const remaining = Array<number>(34).fill(4);
 
-  if (winningCandidate) {
-    return winningCandidate.candidate;
+  for (const tile of known.values()) {
+    remaining[getTileTypeIndex(tile)]--;
   }
 
-    const currentShanten = calculateShanten(
-    input.drawer.hand,
-    input.drawer.melds
+  const bonus = (hand: readonly Tile[]) =>
+    hand.reduce(
+      (sum, t) =>
+        sum + Number(t.red)
+        + indicators.filter(d => isDora(t, d)).length,
+      0
+    );
+
+  const baselineBonus = bonus(drawer.hand);
+  const acceptanceCache = new Map<string, number>();
+
+  const handKey = (hand: readonly Tile[]) =>
+    hand.map(getTileTypeIndex)
+      .sort((a, b) => a - b)
+      .join(",");
+
+  const acceptance = (
+    hand: readonly Tile[],
+    shanten: number
+  ): number => {
+    const key = handKey(hand);
+    const cached = acceptanceCache.get(key);
+
+    if (cached !== undefined) return cached;
+
+    let total = 0;
+
+    for (let i = 0; i < 34; i++) {
+      if (remaining[i] <= 0) continue;
+
+      const tile: Tile = {
+        ...getTileTypeFromIndex(i),
+        id: `e28-estimate-${i}`,
+        red: false
+      };
+
+      if (
+        calculateShanten(
+          [...hand, tile],
+          drawer.melds
+        ).minimum < shanten
+      ) {
+        total += remaining[i];
+      }
+    }
+
+    acceptanceCache.set(key, total);
+    return total;
+  };
+
+  const currentShanten = calculateShanten(
+    drawer.hand,
+    drawer.melds
   ).minimum;
-  const players = input.players ?? [];
-  const liftsOtherPlayerFuriten = (
-    evaluation:
-      AkuukanE28RiverDrawEvaluation
-  ): boolean =>
-    doesCandidateLiftOtherPlayerFuriten(
-      input.drawer,
-      evaluation.candidate,
-      players
-    );
-  const improvingCandidates =
-    evaluations
-      .filter(
-        (evaluation) =>
-          evaluation.shantenAfter <
-          currentShanten
-      )
-      .sort(
-        (left, right) => {
-          const shantenDifference =
-            left.shantenAfter -
-            right.shantenAfter;
 
-          if (shantenDifference !== 0) {
-            return shantenDifference;
-          }
+  const currentAcceptance = acceptance(
+    drawer.hand,
+    currentShanten
+  );
 
-          return (
-            Number(
-              liftsOtherPlayerFuriten(
-                left
-              )
-            ) -
-            Number(
-              liftsOtherPlayerFuriten(
-                right
-              )
-            )
-          );
-        }
-      );
+  const shapeCache = new Map<
+    string,
+    {
+      winPoints: number;
+      shanten: number;
+      hands: Tile[][];
+    }
+  >();
 
-  if (improvingCandidates.length > 0) {
-    return improvingCandidates[0].candidate;
-  }
+  const evaluations = candidates.map(candidate => {
+    const key =
+      `${getTileTypeIndex(candidate.tile)}-${candidate.tile.red}`;
 
-  const lowRiskEvaluations =
-    evaluations.filter(
-      (evaluation) =>
-        !liftsOtherPlayerFuriten(
-          evaluation
-        )
-    );
-  
-  const liveWall = input.liveWall ?? [];
+    let shape = shapeCache.get(key);
 
-  if (liveWall.length > 0) {
-    const currentAcceptance =
-      countImprovingLiveWallTiles(
-        input.drawer.hand,
-        input.drawer,
-        liveWall
-      );
-    const acceptanceCandidates =
-      lowRiskEvaluations
-        .map((evaluation) => ({
-          evaluation,
-          acceptance:
-            getAcceptanceAfterCandidate(
-              evaluation,
-              input.drawer,
-              liveWall
-            )
-        }))
-        .filter(
-          ({ acceptance }) =>
-            acceptance > currentAcceptance
-        )
-        .sort(
-          (left, right) =>
-            right.acceptance -
-            left.acceptance
+    if (!shape) {
+      const hand = [...drawer.hand, candidate.tile];
+
+      const win = evaluateWinningHand({
+        concealedTiles: hand,
+        melds: drawer.melds,
+        winningTile: candidate.tile,
+        winMethod: "tsumo",
+        seatWind: drawer.seatWind,
+        prevailingWind: input.prevailingWind ?? "east",
+        doraIndicators: indicators,
+        riichi: drawer.riichi,
+        doubleRiichi: drawer.doubleRiichi,
+        ippatsu: drawer.ippatsu
+      });
+
+      // 立直後は、和了しなければ取得牌をツモ切りする。
+      const choices = (
+        drawer.riichi ? [candidate.tile] : hand
+      ).map(discard => {
+        const after = hand.filter(
+          t => t.id !== discard.id
         );
 
-    if (acceptanceCandidates.length > 0) {
-      return acceptanceCandidates[0]
-        .evaluation.candidate;
+        return {
+          hand: after,
+          shanten: calculateShanten(
+            after,
+            drawer.melds
+          ).minimum
+        };
+      });
+
+      const minimum = Math.min(
+        ...choices.map(c => c.shanten)
+      );
+
+      shape = {
+        winPoints: win.valid
+          ? win.best.score.totalPoints
+          : 0,
+        shanten: minimum,
+        hands: choices
+          .filter(c => c.shanten === minimum)
+          .map(c => c.hand)
+      };
+
+      shapeCache.set(key, shape);
     }
-  }
 
-  const doraIndicators =
-    input.doraIndicators ?? [];
-  const bonusCandidates =
-    lowRiskEvaluations
-    .map((evaluation) => ({
-      evaluation,
-      bonusValue: getBonusTileValue(
-        evaluation.candidate.tile,
-        doraIndicators
-      )
-    }))
-    .filter(
-      ({ bonusValue }) => bonusValue > 0
-    )
+    // 他家の手牌を参照せず、公開情報から警戒する。
+    const owner = input.players?.find(
+      p => p.seat === candidate.riverOwnerSeat
+    );
+
+    const risky = !!owner
+      && owner.seat !== drawer.seat
+      && (owner.riichi || owner.melds.length >= 2)
+      && !owner.discards.some(
+        (d, i) =>
+          i !== candidate.discardIndex
+          && !d.faceDown
+          && same(d.tile, candidate.tile)
+      );
+
+    return {
+      candidate,
+      ...shape,
+      risky
+    };
+  });
+
+  const winning = evaluations
+    .filter(e => e.winPoints > 0)
+    .sort((a, b) => b.winPoints - a.winPoints);
+
+  if (winning.length) return winning[0].candidate;
+
+  const scored = evaluations
+    .filter(e => e.shanten <= currentShanten)
+    .map(e => {
+      const options = e.hands.map(hand => ({
+        acceptance: acceptance(hand, e.shanten),
+        bonus: bonus(hand) - baselineBonus
+      })).sort(
+        (a, b) =>
+          b.acceptance - a.acceptance
+          || b.bonus - a.bonus
+      );
+
+      return {
+        ...e,
+        acceptance: options[0]?.acceptance ?? 0,
+        bonus: Math.max(0, ...options.map(o => o.bonus))
+      };
+    });
+
+  const improved = scored
+    .filter(e => e.shanten < currentShanten)
     .sort(
-      (left, right) =>
-        right.bonusValue - left.bonusValue
+      (a, b) =>
+        a.shanten - b.shanten
+        || b.acceptance - a.acceptance
+        || Number(a.risky) - Number(b.risky)
+        || b.bonus - a.bonus
     );
 
-  if (bonusCandidates.length > 0) {
-    return bonusCandidates[0]
-      .evaluation.candidate;
-  }
+  if (improved.length) return improved[0].candidate;
 
-  const furitenRecoveryCandidate =
-    evaluations.find((evaluation) =>
-      doesCandidateLiftOwnFuriten(
-        input.drawer,
-        evaluation.candidate
-      )
+  const lowRisk = scored.filter(e => !e.risky);
+
+  const wider = lowRisk
+    .filter(e => e.acceptance > currentAcceptance)
+    .sort(
+      (a, b) =>
+        b.acceptance - a.acceptance
+        || b.bonus - a.bonus
     );
 
-  return (
-    furitenRecoveryCandidate?.candidate ??
-    null
+  if (wider.length) return wider[0].candidate;
+
+  const valuable = lowRisk
+    .filter(e => e.bonus > 0)
+    .sort((a, b) => b.bonus - a.bonus);
+
+  if (valuable.length) return valuable[0].candidate;
+
+  const waits = getWinningTileTypes(
+    drawer.hand,
+    drawer.melds
   );
+
+  const ownRecovery = lowRisk.find(
+    e =>
+      e.candidate.riverOwnerSeat === drawer.seat
+      && waits.some(w => same(w, e.candidate.tile))
+      && !drawer.discards.some(
+        (d, i) =>
+          i !== e.candidate.discardIndex
+          && waits.some(w => same(w, d.tile))
+      )
+  );
+
+  return ownRecovery?.candidate ?? null;
 }
