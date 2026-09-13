@@ -193,6 +193,7 @@ function prepareCpuOpenKan(
     drawnTileSource: null
   };
   setShortLiveWall(state);
+  state.round.liveWall.push(...createTiles("man", [7, 8]));
 
   return {
     state,
