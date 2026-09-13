@@ -80,19 +80,44 @@ function finishRoundWithWinner(
   };
 }
 
-function startNextRoundWithSeed(
-  seed: number
-): GameState {
-  const state = createInitialGameState(
-    () => 0.5
-  );
+function startNextRoundWithSeed(seed: number): GameState {
+  // 副露の検証はCPUの打牌傾向に依存させず、対象牌を確実に捨てさせる。
+  const state = createInitialGameState(() => 0.5);
+  const discard = createTile("pin", 9);
+  const chi = seed === 2;
 
-  finishRoundWithWinner(state, 1);
+  state.round.players[0] = {
+    ...state.round.players[0],
+    hand: [
+      ...createTiles(
+        chi ? "pin" : "honor",
+        chi ? [2, 3] : [4, 4]
+      ),
+      ...createTiles("man", [1, 4, 7]),
+      ...createTiles("sou", [1, 4, 7]),
+      ...createTiles("honor", [1, 2, 3, 5, 7]),
+      discard
+    ],
+    drawnTileId: discard.id
+  };
 
-  return startNextRound(
-    state,
-    createSeededRandom(seed)
-  );
+  emptyCpuHands(state);
+
+  state.round.liveWall = chi
+    ? [
+        createTile("honor", 6),
+        createTile("honor", 6),
+        createTile("pin", 1),
+        createTile("honor", 6)
+      ]
+    : [
+        createTile("honor", 4),
+        createTile("honor", 6),
+        createTile("honor", 6),
+        createTile("honor", 6)
+      ];
+
+  return playPlayerDiscard(state, discard.id, () => 0.5);
 }
 
 function emptyCpuHands(
