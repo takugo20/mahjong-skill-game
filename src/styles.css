@@ -4026,3 +4026,60 @@ body {
   padding: 10px 4px;
   font-size: 14px;
 }
+
+/* プレイヤー向けスキル説明 */
+.akuukan-skill-screen .player-skill-card {
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #527762;
+  border-radius: 12px;
+  background: #10291e;
+}
+
+.player-skill-card h2 {
+  margin: 0 0 10px;
+  line-height: 1.6;
+}
+
+.player-skill-level {
+  color: #f0ca74;
+  font-size: 0.78em;
+  white-space: nowrap;
+}
+
+.player-skill-choice {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.player-skill-description {
+  margin: 8px 0;
+  line-height: 1.85;
+}
+
+.player-skill-values,
+.player-skill-value {
+  color: #5899a6;
+}
+
+.player-skill-value--current {
+  color: #9df4ff;
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.player-skill-unlock {
+  margin: 10px 0 0;
+  color: #9ca9a2;
+  font-size: 0.9em;
+}
+
+.akuukan-skill-screen .player-skill-card--locked {
+  color: #929e97;
+  border-color: #3d4c44;
+  background: #101d17;
+}
