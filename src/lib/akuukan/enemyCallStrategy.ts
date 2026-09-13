@@ -1,3 +1,4 @@
+import { getEnemySpeedId } from "./enemySpeedStrategy";
 import type {
   GameState,
   Meld,
@@ -11,7 +12,7 @@ import {
 } from "./winningEvaluationEnemyAbilityAdjustments";
 
 export interface EnemyCallStrategy {
-  enemy: 4 | 5 | 8;
+  enemy: 4 | 5 | 8 | 9 | 10 | 11;
   targetSuit?: NumberSuit;
   openRiichi: boolean;
   stealPoints: number;
@@ -32,11 +33,13 @@ export function getEnemyCallStrategy(
   ) => isEnemyAbilityEnabled(a, id);
 
   const id = a.setup.enemyId;
+  const speed = getEnemySpeedId(state, player);
 
   const enemy =
     id === "enemy-4" && enabled("E-12") ? 4
     : id === "enemy-5" && (enabled("E-5") || enabled("E-14")) ? 5
     : id === "enemy-8" && enabled("E-15") ? 8
+    : speed === 9 || speed === 10 || speed === 11 ? speed
     : null;
 
   if (enemy === null) return undefined;
@@ -106,7 +109,6 @@ function valueHonor(tile: Tile, p: Position): boolean {
   );
 }
 
-// 役牌・タンヤオに加え、染め手と対々和へ進める形も評価する。
 function hasYakuRoute(p: Position): boolean {
   if (p.reliableYaku) return true;
 
@@ -165,7 +167,12 @@ export function scoreEnemyCall(
     return null;
   }
 
-  if (s.threatened && p.shantenAfter > 1) {
+  if (
+    s.enemy !== 10
+    && s.enemy !== 11
+    && s.threatened
+    && p.shantenAfter > 1
+  ) {
     return null;
   }
 
@@ -173,6 +180,25 @@ export function scoreEnemyCall(
   const base =
     -100 * p.shantenAfter
     - (p.discardedTile?.red ? 5 : 0);
+
+  if (s.enemy === 9 || s.enemy === 10 || s.enemy === 11) {
+    if (!yaku) return null;
+
+    const improved = p.shantenAfter < p.shantenBefore;
+    const valueCall =
+      valueHonor(p.calledTile, p)
+      && p.kind !== "chi";
+
+    if (s.enemy === 11 && valueCall) {
+      return base + 30;
+    }
+
+    if (!improved || p.shantenAfter > 1) {
+      return null;
+    }
+
+    return base + (valueCall ? 20 : 0);
+  }
 
   if (s.enemy === 4) {
     if (p.kind === "chi") {
