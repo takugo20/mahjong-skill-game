@@ -1,4 +1,10 @@
 import {
+  getEnemyHandPlan,
+  selectEnemyHandCandidates,
+  scoreEnemyHand
+} from "../akuukan/enemyHandStrategy";
+import type { EnemyHandPlan } from "../akuukan/enemyHandStrategy";
+import {
   breaksDoraTriplet,
   getEnemySpeedId
 } from "../akuukan/enemySpeedStrategy";
@@ -32,14 +38,13 @@ export interface CpuDiscardInput {
   forbiddenTileIds: readonly string[];
   preserveDoraTriplets?: boolean;
   speedFirst?: boolean;
+  handPlan?: EnemyHandPlan;
 }
 
 function owner(seat: number) {
-  return seat === 0
-    ? "player" as const
-    : seat === 2
-      ? "selectedEnemy" as const
-      : "normalOpponent" as const;
+  return seat === 0 ? "player" as const
+    : seat === 2 ? "selectedEnemy" as const
+    : "normalOpponent" as const;
 }
 
 export function createCpuDiscardInput(
@@ -54,9 +59,8 @@ export function createCpuDiscardInput(
 
   for (const other of state.round.players) {
     const own = other.seat === player.seat;
-
-    const riverVisible = own || !akuukan
-      || areAkuukanRiverTilesVisible({
+    const riverVisible =
+      own || !akuukan || areAkuukanRiverTilesVisible({
         akuukan,
         viewer,
         riverOwner: owner(other.seat)
@@ -75,13 +79,11 @@ export function createCpuDiscardInput(
     );
 
     if (
-      own || (
-        akuukan && areAkuukanHandTilesVisible({
-          akuukan,
-          viewer,
-          viewerIsHandOwner: own
-        })
-      )
+      own || (akuukan && areAkuukanHandTilesVisible({
+        akuukan,
+        viewer,
+        viewerIsHandOwner: own
+      }))
     ) {
       visibleTiles.push(...other.hand);
     }
@@ -92,10 +94,11 @@ export function createCpuDiscardInput(
     doraIndicators,
     visibleTiles,
     forbiddenTileIds,
-    preserveDoraTriplets: getEnemySpeedId(state, player) === 9,
-    speedFirst: [10, 11].includes(
-      getEnemySpeedId(state, player) ?? 0
-    ),
+    handPlan: getEnemyHandPlan(state, player),
+    preserveDoraTriplets:
+      getEnemySpeedId(state, player) === 9,
+    speedFirst:
+      [10, 11].includes(getEnemySpeedId(state, player) ?? 0),
     tendencies: akuukan && player.seat === 2
       ? getEnemyDefinition(akuukan.setup.enemyId).aiTendencies
       : NORMAL_TENDENCIES
@@ -127,16 +130,18 @@ export function evaluateCpuDiscards(
   }
 
   const counts = Array<number>(34).fill(0);
-
   for (const tile of known.values()) {
     counts[getTileTypeIndex(tile)] += 1;
   }
 
-  const shapes = new Map<number, {
-    hand: Tile[];
-    shanten: number;
-    acceptance?: number;
-  }>();
+  const shapes = new Map<
+    number,
+    {
+      hand: Tile[];
+      shanten: number;
+      acceptance?: number;
+    }
+  >();
 
   const candidates = player.hand
     .filter(tile => !forbidden.has(tile.id))
@@ -151,7 +156,10 @@ export function evaluateCpuDiscards(
 
         shape = {
           hand,
-          shanten: calculateShanten(hand, player.melds).minimum
+          shanten: calculateShanten(
+            hand,
+            player.melds
+          ).minimum
         };
 
         shapes.set(type, shape);
@@ -160,25 +168,26 @@ export function evaluateCpuDiscards(
       return { tile, shape };
     });
 
-  const minimum = Math.min(
-    ...candidates.map(candidate => candidate.shape.shanten)
-  );
-
-  const nearest = candidates.filter(
-    candidate => candidate.shape.shanten === minimum
+  const nearest = selectEnemyHandCandidates(
+    input.handPlan,
+    player,
+    candidates,
+    [...input.visibleTiles, ...input.doraIndicators]
   );
 
   const preserved = input.preserveDoraTriplets
-    ? nearest.filter(
-        candidate => !breaksDoraTriplet(
-          player.hand,
-          candidate.tile,
-          input.doraIndicators
-        )
+    ? nearest.filter(candidate =>
+      !breaksDoraTriplet(
+        player.hand,
+        candidate.tile,
+        input.doraIndicators
       )
+    )
     : nearest;
 
-  const selected = preserved.length > 0 ? preserved : nearest;
+  const selected = preserved.length > 0
+    ? preserved
+    : nearest;
 
   return selected.map(({ tile, shape }) => {
     if (shape.acceptance === undefined) {
@@ -194,12 +203,12 @@ export function evaluateCpuDiscards(
           red: false
         };
 
-        const nextShanten = calculateShanten(
-          [...shape.hand, drawn],
-          player.melds
-        ).minimum;
-
-        if (nextShanten < minimum) {
+        if (
+          calculateShanten(
+            [...shape.hand, drawn],
+            player.melds
+          ).minimum < shape.shanten
+        ) {
           shape.acceptance += remaining;
         }
       }
@@ -212,13 +221,14 @@ export function evaluateCpuDiscards(
 
     return {
       tile,
-      shanten: minimum,
+      shanten: shape.shanten,
       acceptance: shape.acceptance,
       discardedBonus,
       score: input.speedFirst
         ? shape.acceptance * 100 - discardedBonus
         : shape.acceptance
           - discardedBonus * input.tendencies.handValue
+          + scoreEnemyHand(input.handPlan, player, tile)
     };
   });
 }
@@ -236,7 +246,6 @@ export function chooseStrategicCpuDiscard(
   const bestScore = Math.max(
     ...candidates.map(candidate => candidate.score)
   );
-
   const best = candidates.filter(
     candidate => candidate.score === bestScore
   );
