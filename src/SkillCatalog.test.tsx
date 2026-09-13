@@ -143,7 +143,7 @@ it("開始画面から往復してもセーブを書き換えない", () => {
   render(<AkuukanGame />);
 
   fireEvent.click(
-    screen.getByText("スキル図鑑を見る")
+    screen.getByText("スキル図鑑")
   );
 
   expect(
