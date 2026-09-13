@@ -1,3 +1,4 @@
+import { preferEnemySixteenLastRoundDamaten } from "./enemySixteenLastRound";
 import type {
   GameState, PlayerState, Tile
 } from "../mahjong/types";
@@ -132,6 +133,14 @@ export function preferEnemySixteenDamaten(
   decision: CpuRiichiDecision,
   indicators: readonly Tile[]
 ): boolean {
+  const lastRound = preferEnemySixteenLastRoundDamaten(
+    state,
+    player,
+    decision,
+    indicators
+  );
+
+  if (lastRound !== null) return lastRound;
   if (
     !isEnemySixteenStrategyEnabled(state, player)
     || decision.shanten !== 0
