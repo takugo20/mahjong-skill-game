@@ -1,3 +1,8 @@
+import { useState } from "react";
+import {
+  EnemyPortrait,
+  ENEMY_NAMES
+} from "./enemy-art/EnemyPortrait";
 import type { EnemyProgressState } from "./lib/akuukan/enemyProgress";
 import type { EnemyId } from "./lib/akuukan/types";
 import { ENEMY_CATALOG } from "./lib/akuukan/enemyCatalog";
@@ -71,7 +76,92 @@ interface Props {
   progress: EnemyProgressState;
 }
 
-export function EnemyGuide({ selectedEnemyId, progress }: Props) {
+function EnemyGuideEntry({
+  enemyId,
+  initiallyOpen,
+  wins
+}: {
+  enemyId: EnemyId;
+  initiallyOpen: boolean;
+  wins: number;
+}) {
+  const [open, setOpen] = useState(initiallyOpen);
+
+  return (
+    <details
+      className="enemy-guide-entry"
+      open={open}
+      onToggle={event => {
+        setOpen(event.currentTarget.open);
+      }}
+    >
+      <summary>
+        <span
+          style={{
+            display: "inline-flex",
+            width: "calc(100% - 1.5em)",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            verticalAlign: "top",
+            lineHeight: 1.6
+          }}
+        >
+          <span style={{ minWidth: 0 }}>
+            <span
+              style={{
+                display: "block",
+                fontWeight: 700
+              }}
+            >
+              {ENEMY_NAMES[enemyId]}
+            </span>
+
+            {open && (
+              <span
+                style={{
+                  display: "block",
+                  marginTop: 8,
+                  fontWeight: 400,
+                  fontSize: "0.95em"
+                }}
+              >
+                <span style={{ display: "block" }}>
+                  勝利回数：
+                </span>
+                <span>{wins}回</span>
+              </span>
+            )}
+          </span>
+
+          {open && (
+            <EnemyPortrait enemyId={enemyId} />
+          )}
+        </span>
+      </summary>
+
+      <dl className="enemy-guide-content">
+        <dt>特殊能力：</dt>
+        <dd>
+          <ul>
+            {DESCRIPTIONS[enemyId].map(
+              description => (
+                <li key={description}>
+                  {description}
+                </li>
+              )
+            )}
+          </ul>
+        </dd>
+      </dl>
+    </details>
+  );
+}
+
+export function EnemyGuide({
+  selectedEnemyId,
+  progress
+}: Props) {
   return (
     <section
       aria-label="対戦相手の情報"
@@ -89,33 +179,20 @@ export function EnemyGuide({ selectedEnemyId, progress }: Props) {
               disabled
             >
               <span aria-hidden="true">▶︎ </span>
-              {enemy.displayName}（未解放）
+              {ENEMY_NAMES[enemy.id]}（未解放）
             </button>
           );
         }
 
         return (
-          <details
+          <EnemyGuideEntry
             key={`${selectedEnemyId}:${enemy.id}`}
-            className="enemy-guide-entry"
-            open={enemy.id === selectedEnemyId}
-          >
-            <summary>{enemy.displayName}</summary>
-
-            <dl className="enemy-guide-content">
-              <dt>勝利回数：</dt>
-              <dd>{record.firstPlaceCount}回</dd>
-
-              <dt>特殊能力：</dt>
-              <dd>
-                <ul>
-                  {DESCRIPTIONS[enemy.id].map(description => (
-                    <li key={description}>{description}</li>
-                  ))}
-                </ul>
-              </dd>
-            </dl>
-          </details>
+            enemyId={enemy.id}
+            initiallyOpen={
+              enemy.id === selectedEnemyId
+            }
+            wins={record.firstPlaceCount}
+          />
         );
       })}
     </section>
