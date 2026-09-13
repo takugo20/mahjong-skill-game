@@ -1,3 +1,7 @@
+import {
+  getHighValueReadyDiscardIds,
+  getEnemyFifteenForbiddenTileIds
+} from "./enemyPushDefense";
 import type {
   GameState,
   PlayerState,
@@ -158,14 +162,28 @@ export function getEnemySixForbiddenTileIds(
   if (!risks?.length) return forbidden;
 
   const safe = risks.filter(r => r.ronCount === 0);
+
+  const high = new Set(
+    getHighValueReadyDiscardIds(
+      state,
+      player,
+      indicators,
+      safe.map(r => r.tileId)
+    )
+  );
+
+  const preferred = high.size
+    ? safe.filter(r => high.has(r.tileId))
+    : safe;
+
   const minimum = Math.min(
     ...risks.map(r => r.estimatedLoss)
   );
 
   const allowed = new Set(
     (
-      safe.length
-        ? safe
+      preferred.length
+        ? preferred
         : risks.filter(r => r.estimatedLoss === minimum)
     ).map(r => r.tileId)
   );
@@ -173,9 +191,27 @@ export function getEnemySixForbiddenTileIds(
   return [
     ...new Set([
       ...forbidden,
-      ...risks
-        .filter(r => !allowed.has(r.tileId))
+      ...risks.filter(r => !allowed.has(r.tileId))
         .map(r => r.tileId)
     ])
   ];
+}
+
+export function getEnemyDefenseForbiddenTileIds(
+  state: GameState,
+  player: PlayerState,
+  indicators: readonly Tile[],
+  forbidden: readonly string[] = []
+): readonly string[] {
+  return getEnemyFifteenForbiddenTileIds(
+    state,
+    player,
+    indicators,
+    getEnemySixForbiddenTileIds(
+      state,
+      player,
+      indicators,
+      forbidden
+    )
+  );
 }
