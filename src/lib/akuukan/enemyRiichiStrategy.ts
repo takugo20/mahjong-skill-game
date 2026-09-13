@@ -1,3 +1,4 @@
+import { chooseEnemyFourteenRiichi } from "./enemyFourteenRiichi";
 import { chooseEnemySixteenLastRoundRiichi } from "./enemySixteenLastRound";
 import {
   isEnemySixteenStrategyEnabled,
@@ -125,6 +126,14 @@ export function chooseEnemyRiichi(
 ): CpuRiichiDecision | null {
   const standard = chooseCpuRiichi(input);
 
+  const fourteen = chooseEnemyFourteenRiichi(
+    state,
+    input,
+    standard
+  );
+
+  if (fourteen) return fourteen;
+  
   if (
     standard
     && isEnemySixteenStrategyEnabled(state, input.player)
