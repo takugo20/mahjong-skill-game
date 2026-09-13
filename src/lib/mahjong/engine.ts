@@ -1,4 +1,8 @@
 import {
+  createCpuDiscardInput,
+  chooseStrategicCpuDiscard
+} from "./cpuDiscard";
+import {
   settleAkuukanGameMatchProgress
 } from "../akuukan/gameMatchProgress";
 import {
@@ -3471,100 +3475,22 @@ export function discardTile(
   );
 }
 
-function calculateDiscardPriority(
-  tile: Tile,
-  player: PlayerState,
-  doraIndicators: readonly Tile[],
-  random: () => number
-): number {
-  const sameTypeCount = player.hand.filter(
-    (handTile) =>
-      getTileTypeKey(handTile) ===
-      getTileTypeKey(tile)
-  ).length;
-
-  const tileIsDora = doraIndicators.some(
-    (indicator) => isDora(tile, indicator)
-  );
-
-  let priority = random() * 0.25;
-
-  if (tile.red) {
-    priority -= 8;
-  }
-
-  if (tileIsDora) {
-    priority -= 6;
-  }
-
-  if (sameTypeCount >= 2) {
-    priority -= 4;
-  }
-
-  if (tile.suit === "honor") {
-    priority += sameTypeCount === 1 ? 5 : -1;
-    return priority;
-  }
-
-  const hasNearbyTile = player.hand.some(
-    (handTile) =>
-      handTile.suit === tile.suit &&
-      handTile.id !== tile.id &&
-      Math.abs(handTile.rank - tile.rank) <= 2
-  );
-
-  if (!hasNearbyTile) {
-    priority += 4;
-  }
-
-  if (tile.rank === 1 || tile.rank === 9) {
-    priority += 3;
-  } else if (
-    tile.rank === 2 ||
-    tile.rank === 8
-  ) {
-    priority += 2;
-  }
-
-  return priority;
-}
-
 function chooseCpuDiscard(
+  state: GameState,
   player: PlayerState,
   doraIndicators: readonly Tile[],
   random: () => number,
   forbiddenTileIds: readonly string[] = []
 ): Tile {
-  const forbiddenTileIdSet = new Set(
-    forbiddenTileIds
+  return chooseStrategicCpuDiscard(
+    createCpuDiscardInput(
+      state,
+      player,
+      doraIndicators,
+      forbiddenTileIds
+    ),
+    random
   );
-  const candidates = player.hand
-    .filter(
-      (tile) =>
-        !forbiddenTileIdSet.has(tile.id)
-    )
-    .map((tile) => ({
-      tile,
-      priority: calculateDiscardPriority(
-        tile,
-        player,
-        doraIndicators,
-        random
-      )
-    }));
-
-  candidates.sort(
-    (left, right) =>
-      right.priority - left.priority
-  );
-
-  const selectedTile = candidates[0]?.tile;
-
-  if (!selectedTile) {
-    throw new Error("CPUに捨てられる牌がありません。");
-  }
-
-  return selectedTile;
 }
 
 function getUraDoraIndicators(
@@ -6432,6 +6358,7 @@ function applyCpuMeldCall(
   const selectedTile =
     requestedTile ??
     chooseCpuDiscard(
+      callState,
       callerAfterCall,
       getDoraIndicatorsForCpu(
         callState,
@@ -6538,6 +6465,7 @@ function applyCpuOpenKanCall(
       option.callerSeat
     ];
   const selectedTile = chooseCpuDiscard(
+    kanState,
     updatedCaller,
     getDoraIndicatorsForCpu(
       kanState,
@@ -7122,12 +7050,14 @@ function playCpuDiscardingTurn(
             cpuPlayer.drawnTileId
         ) ??
         chooseCpuDiscard(
+          state,
           cpuPlayer,
           cpuDoraIndicators,
           random,
           forbiddenTileIds
         )
       : chooseCpuDiscard(
+          state,
           cpuPlayer,
           cpuDoraIndicators,
           random,
