@@ -171,34 +171,74 @@ function playRound(
 }
 
 for (let enemy = 1; enemy <= 16; enemy++) {
-  for (const seed of [17, 29]) {
-    it(
-      `敵${enemy}・seed${seed}: 2局の進行と状態の整合性`,
-      () => {
-        const random = seededRandom(
-          enemy * 1000 + seed
+  it(
+    `敵${enemy}: 半荘終了までの進行と最終順位`,
+    () => {
+      const random = seededRandom(
+        enemy * 1000 + 17
+      );
+
+      let state = createInitialGameState(random, {
+        enemyId: `enemy-${enemy}` as EnemyId,
+        equippedSkills: []
+      });
+
+      // 固定乱数のテストが停止しない場合に検知する上限。
+      // ゲーム本体の連荘回数は制限しない。
+      for (let round = 0; round < 40; round++) {
+        state = playRound(state, random);
+
+        expect(["roundEnd", "matchEnd"]).toContain(
+          state.round.phase
         );
 
-        let state = createInitialGameState(random, {
-          enemyId: `enemy-${enemy}` as EnemyId,
-          equippedSkills: []
-        });
-
-        for (let round = 0; round < 2; round++) {
-          state = playRound(state, random);
-
-          expect(["roundEnd", "matchEnd"]).toContain(
-            state.round.phase
-          );
-
-          if (state.round.phase === "matchEnd") break;
-
-          if (round === 0) {
-            state = startNextRound(state, random);
-          }
+        if (state.round.phase === "matchEnd") {
+          break;
         }
-      },
-      30000
-    );
-  }
+
+        state = startNextRound(state, random);
+      }
+
+      expect(state.round.phase).toBe("matchEnd");
+      checkState(state);
+
+      expect(state.matchResult).not.toBeNull();
+
+      const rankings = state.matchResult!.rankings;
+
+      expect(rankings).toHaveLength(4);
+
+      expect(
+        rankings.map(r => r.rank)
+      ).toEqual([1, 2, 3, 4]);
+
+      expect(
+        new Set(rankings.map(r => r.seat)).size
+      ).toBe(4);
+
+      expect(
+        rankings.reduce(
+          (sum, r) => sum + r.finalPoints,
+          0
+        )
+      ).toBe(100000);
+
+      for (let i = 0; i < rankings.length; i++) {
+        const result = rankings[i];
+
+        expect(result.finalPoints).toBe(
+          state.round.players[result.seat].score
+        );
+
+        if (i > 0) {
+          expect(
+            rankings[i - 1].finalPoints
+          ).toBeGreaterThanOrEqual(
+            result.finalPoints
+          );
+        }
+      }
+    },
+    120000
+  );
 }
