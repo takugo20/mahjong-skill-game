@@ -1,4 +1,8 @@
 import {
+  chooseEnemySixteenDiscard,
+  getEnemySixteenForbiddenTileIds
+} from "../akuukan/enemySixteenStrategy";
+import {
   chooseEnemyThirteenDiscard
 } from "../akuukan/enemyThirteenStrategy";
 import {
@@ -3510,6 +3514,16 @@ function chooseCpuDiscard(
   );
 
   if (planned) return planned;
+
+  const ranked = chooseEnemySixteenDiscard(
+    state,
+    player,
+    doraIndicators,
+    forbiddenTileIds,
+    random
+  );
+
+  if (ranked) return ranked;
 
   return chooseStrategicCpuDiscard(
     createCpuDiscardInput(
@@ -7305,9 +7319,13 @@ function getCpuRiichiDecision(
       state,
       cpuPlayer,
       getDoraIndicatorsForCpu(state, cpuSeat),
-      getForbiddenDiscardTileIdsForPlayer(
+      getEnemySixteenForbiddenTileIds(
         state,
-        cpuPlayer
+        cpuPlayer,
+        getForbiddenDiscardTileIdsForPlayer(
+          state,
+          cpuPlayer
+        )
       )
     )
   );
