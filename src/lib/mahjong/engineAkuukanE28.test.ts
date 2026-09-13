@@ -604,8 +604,9 @@ describe("敵15 E-28のエンジン統合", () => {
     ).toBe(unrelatedRiverTile);
   });
 
-    it("小さな改善で他家の振聴を解除する河牌を避けて通常山からツモる", () => {
+  it("立直者の唯一の同種捨て牌を避けて通常山からツモる", () => {
     const state = prepareDrawState();
+    state.round.players[0].riichi = true;
     const riskyRiverTile = createTile(
       "pin",
       6
