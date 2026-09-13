@@ -1,3 +1,4 @@
+import { chooseSelectiveEnemySelfKan } from "../akuukan/selectiveEnemyCalls";
 import {
   chooseEnemySixteenDiscard,
   getEnemySixteenForbiddenTileIds
@@ -6916,7 +6917,7 @@ function getCpuSelfKanDecision(
     )
   );
 
-  return chooseCpuSelfKan({
+  return chooseSelectiveEnemySelfKan(state, {
     player: cpuPlayer,
     options
   });
