@@ -103,10 +103,10 @@ describe("亜空間麻雀の開始・保存画面", () => {
   it("終了結果を保存して次の対局へ進める", () => {
     render(<AkuukanGame />);
 
-    const lockedEnemy = screen.getByRole("option", {
+    const lockedEnemy = screen.getByRole("button", {
       name: "敵2（未解放）"
-    }) as HTMLOptionElement;
-
+    }) as HTMLButtonElement;
+    
     expect(lockedEnemy.disabled).toBe(true);
 
     startAndFinish();
