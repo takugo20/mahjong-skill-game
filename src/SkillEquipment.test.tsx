@@ -34,7 +34,7 @@ it("装備を保存し、開き直して解除できる", () => {
   render(<AkuukanGame />);
 
   fireEvent.click(
-    screen.getByText("スキル装備を変更")
+    screen.getByText("装備スキル変更")
   );
   fireEvent.click(
     screen.getByRole("checkbox", {
@@ -49,7 +49,7 @@ it("装備を保存し、開き直して解除できる", () => {
   ).toEqual([{ id: "1-1", level: 1 }]);
 
   fireEvent.click(
-    screen.getByText("スキル装備を変更")
+    screen.getByText("装備スキル変更")
   );
 
   const checkbox = screen.getByRole("checkbox", {
@@ -158,7 +158,7 @@ it("変更を破棄すると保存済み装備が維持される", () => {
   render(<AkuukanGame />);
 
   fireEvent.click(
-    screen.getByText("スキル装備を変更")
+    screen.getByText("装備スキル変更")
   );
   fireEvent.click(
     screen.getByRole("checkbox", {
@@ -172,7 +172,7 @@ it("変更を破棄すると保存済み装備が維持される", () => {
   expect(localStorage.getItem(KEY)).toBe(previous);
 
   fireEvent.click(
-    screen.getByText("スキル装備を変更")
+    screen.getByText("装備スキル変更")
   );
 
   expect(
