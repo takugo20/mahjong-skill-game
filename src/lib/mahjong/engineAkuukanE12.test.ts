@@ -174,6 +174,7 @@ function prepareEnemyOpenKan(): {
     drawnTileSource: null
   };
   setShortLiveWall(state);
+  state.round.liveWall.push(...createTiles("man", [7, 8]));
   state.round.deadWall[0] =
     createTile("honor", 7);
 
