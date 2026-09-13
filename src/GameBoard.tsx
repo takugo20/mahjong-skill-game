@@ -1,3 +1,7 @@
+import {
+  EnemyPortrait,
+  ENEMY_NAMES
+} from "./enemy-art/EnemyPortrait";
 import { MeldTiles } from "./components/MeldTiles";
 import { useDamatenAlert } from "./useDamatenAlert";
 import { WinResultHand } from "./components/WinResultHand";
@@ -300,6 +304,7 @@ interface RiverProps {
 }
 
 interface OpponentAreaProps {
+  enemyId?: keyof typeof ENEMY_NAMES;
   damatenDetected?: boolean;
   player: PlayerState;
   position: OpponentPosition;
@@ -789,6 +794,7 @@ function MeldArea({
 }
 
 function OpponentArea({
+  enemyId,
   damatenDetected = false,
   player,
   position,
@@ -797,6 +803,14 @@ function OpponentArea({
   snapshotTiles,
   declarationTargetTileIds
 }: OpponentAreaProps) {
+  const characterId = player.seat === 2
+    ? enemyId
+    : undefined;
+
+  const displayName = characterId
+    ? ENEMY_NAMES[characterId]
+    : player.name;
+
   const displayedHand =
     snapshotTiles ?? player.hand;
 
@@ -813,14 +827,16 @@ function OpponentArea({
       data-declaration-active={
         isDeclaring ? "true" : undefined
       }
-      aria-label={player.name}
+      aria-label={displayName}
     >
       <div
         className="opponent-hand"
         data-count={`${displayedHand.length}枚`}
-        aria-label={`${player.name}の手牌${displayedHand.length}枚`}
+        aria-label={
+          `${displayName}の手牌${displayedHand.length}枚`
+        }
       >
-        {displayedHand.map((tile) => {
+        {displayedHand.map(tile => {
           const isVisible =
             snapshotTiles !== null ||
             visibleTileIds.includes(tile.id);
@@ -828,9 +844,7 @@ function OpponentArea({
           return (
             <TileView
               key={tile.id}
-              tile={
-                isVisible ? tile : undefined
-              }
+              tile={isVisible ? tile : undefined}
               faceDown={!isVisible}
               compact
             />
@@ -858,15 +872,23 @@ function OpponentArea({
               }`
             }
           >
+            {characterId && (
+              <EnemyPortrait
+                enemyId={characterId}
+                size="board"
+              />
+            )}
+
             <span className="wind-badge">
               {getWindLabel(player.seatWind)}
             </span>
 
-            <span>{player.name}</span>
+            <span>{displayName}</span>
+
             {player.riichi && (
-            <span className="riichi-status-badge">
-              {getRiichiStatusLabel(player)}
-            </span>
+              <span className="riichi-status-badge">
+                {getRiichiStatusLabel(player)}
+              </span>
             )}
           </div>
 
@@ -2379,6 +2401,7 @@ function handlePlayerSkill4_21() {
           damatenDetected={
             damatenPlayerIds.includes(round.players[2].id)
           }
+          enemyId={gameState.akuukan?.setup.enemyId}
           player={round.players[2]}
           position="top"
           isDeclaring={
