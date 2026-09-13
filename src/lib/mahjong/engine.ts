@@ -1,3 +1,4 @@
+import { getEnemyCallStrategy } from "../akuukan/enemyCallStrategy";
 import {
   createCpuDiscardInput,
   chooseStrategicCpuDiscard
@@ -6008,7 +6009,9 @@ function getCpuCallDecisions(
             state.round.prevailingWind,
           calledTile:
             lastDiscard.discard.tile,
-          options: meldCallOptions
+          options: meldCallOptions,
+          strategy: getEnemyCallStrategy(state, player),
+          forbiddenTileIds: getForbiddenDiscardTileIdsForPlayer(state, player)
         });
       const openKanCallOptions =
         isCallAllowed(
@@ -6041,7 +6044,8 @@ function getCpuCallDecisions(
             state.round.prevailingWind,
           calledTile:
             lastDiscard.discard.tile,
-          options: openKanCallOptions
+          options: openKanCallOptions,
+          strategy: getEnemyCallStrategy(state, player)
         });
       const decisions: CpuCallDecision[] = [];
 
