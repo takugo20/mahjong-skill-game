@@ -1,479 +1,268 @@
-import { scoreEnemyCall } from "../akuukan/enemyCallStrategy";
-import type { EnemyCallStrategy } from "../akuukan/enemyCallStrategy";
-import { calculateShanten } from "./hand";
-import type { OpenKanCallOption } from "./kan";
 import type {
-  Meld,
   MeldCallOption,
-  PlayerState,
-  Tile,
-  Wind
+  SeatIndex,
+  Tile
 } from "./types";
 
-export interface CpuMeldCallDecisionInput {
-  player: PlayerState;
-  prevailingWind: Wind;
+export interface MeldCallOptionInput {
+  callerSeat: SeatIndex;
+  discarderSeat: SeatIndex;
   calledTile: Tile;
-  options: readonly MeldCallOption[];
-  strategy?: EnemyCallStrategy;
-  forbiddenTileIds?: readonly string[];
+  concealedTiles: readonly Tile[];
+  callerRiichi: boolean;
+  liveWallTileCount: number;
 }
 
-export interface CpuMeldCallDecision {
-  option: MeldCallOption;
-  discardTileId: string;
-  shantenBefore: number;
-  shantenAfter: number;
+interface ChiPattern {
+  handRanks: [number, number];
+  sujiForbiddenRank: number | null;
 }
 
-export interface CpuOpenKanCallDecisionInput {
-  player: PlayerState;
-  prevailingWind: Wind;
-  calledTile: Tile;
-  options: readonly OpenKanCallOption[];
-  strategy?: EnemyCallStrategy;
+function nextSeat(seat: SeatIndex): SeatIndex {
+  return ((seat + 1) % 4) as SeatIndex;
 }
-
-export interface CpuOpenKanCallDecision {
-  option: OpenKanCallOption;
-  shantenBefore: number;
-  shantenAfter: number;
-}
-
-interface EvaluatedOption {
-  decision: CpuMeldCallDecision;
-  yakuPriority: number;
-  discardsRedTile: boolean;
-  strategyScore?: number;
-}
-
-const WIND_RANKS: Record<Wind, number> = {
-  east: 1,
-  south: 2,
-  west: 3,
-  north: 4
-};
 
 function isSameTileType(
-  left: Pick<Tile, "suit" | "rank">,
-  right: Pick<Tile, "suit" | "rank">
+  left: Tile,
+  right: Tile
 ): boolean {
-  return left.suit === right.suit && left.rank === right.rank;
-}
-
-function isSimpleTile(tile: Tile): boolean {
-  return tile.suit !== "honor" && tile.rank >= 2 && tile.rank <= 8;
-}
-
-function isValueHonor(
-  tile: Tile,
-  seatWind: Wind,
-  prevailingWind: Wind
-): boolean {
-  if (tile.suit !== "honor") return false;
-
   return (
-    tile.rank >= 5
-    || tile.rank === WIND_RANKS[seatWind]
-    || tile.rank === WIND_RANKS[prevailingWind]
+    left.suit === right.suit &&
+    left.rank === right.rank
   );
 }
 
-function hasValueHonorMeld(
-  melds: readonly Meld[],
-  seatWind: Wind,
-  prevailingWind: Wind
+function canOfferMeldCall(
+  input: MeldCallOptionInput
 ): boolean {
-  return melds.some(meld => {
-    if (meld.kind === "chi") return false;
-    const tile = meld.tiles[0];
+  return (
+    input.callerSeat !== input.discarderSeat &&
+    !input.callerRiichi &&
+    input.liveWallTileCount > 0
+  );
+}
 
-    return tile !== undefined
-      && isValueHonor(tile, seatWind, prevailingWind);
+function createTilePairs(
+  tiles: readonly Tile[]
+): Array<[Tile, Tile]> {
+  const pairs: Array<[Tile, Tile]> = [];
+
+  for (
+    let leftIndex = 0;
+    leftIndex < tiles.length - 1;
+    leftIndex += 1
+  ) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < tiles.length;
+      rightIndex += 1
+    ) {
+      pairs.push([
+        tiles[leftIndex],
+        tiles[rightIndex]
+      ]);
+    }
+  }
+
+  return pairs;
+}
+
+function getRemainingTiles(
+  concealedTiles: readonly Tile[],
+  handTiles: readonly [Tile, Tile]
+): Tile[] {
+  const usedTileIds = new Set(
+    handTiles.map((tile) => tile.id)
+  );
+
+  return concealedTiles.filter(
+    (tile) => !usedTileIds.has(tile.id)
+  );
+}
+
+function createOption(
+  input: MeldCallOptionInput,
+  kind: MeldCallOption["kind"],
+  handTiles: [Tile, Tile]
+): MeldCallOption {
+  const handTileIds: [string, string] = [
+    handTiles[0].id,
+    handTiles[1].id
+  ];
+
+  return {
+    id: [
+      kind,
+      input.callerSeat,
+      input.discarderSeat,
+      input.calledTile.id,
+      ...handTileIds
+    ].join(":"),
+    kind,
+    callerSeat: input.callerSeat,
+    discarderSeat: input.discarderSeat,
+    calledTileId: input.calledTile.id,
+    handTileIds
+  };
+}
+
+function hasLegalPonDiscard(
+  input: MeldCallOptionInput,
+  handTiles: [Tile, Tile]
+): boolean {
+  return getRemainingTiles(
+    input.concealedTiles,
+    handTiles
+  ).some(
+    (tile) => !isSameTileType(tile, input.calledTile)
+  );
+}
+
+export function getPonCallOptions(
+  input: MeldCallOptionInput
+): MeldCallOption[] {
+  if (!canOfferMeldCall(input)) {
+    return [];
+  }
+
+  const matchingTiles = input.concealedTiles.filter(
+    (tile) => isSameTileType(tile, input.calledTile)
+  );
+
+  return createTilePairs(matchingTiles)
+    .filter((handTiles) =>
+      hasLegalPonDiscard(input, handTiles)
+    )
+    .map((handTiles) =>
+      createOption(input, "pon", handTiles)
+    );
+}
+
+function getChiPatterns(
+  calledRank: number
+): ChiPattern[] {
+  const patterns: ChiPattern[] = [
+    {
+      handRanks: [
+        calledRank - 2,
+        calledRank - 1
+      ],
+      sujiForbiddenRank: calledRank - 3
+    },
+    {
+      handRanks: [
+        calledRank - 1,
+        calledRank + 1
+      ],
+      sujiForbiddenRank: null
+    },
+    {
+      handRanks: [
+        calledRank + 1,
+        calledRank + 2
+      ],
+      sujiForbiddenRank: calledRank + 3
+    }
+  ];
+
+  return patterns
+    .filter((pattern) =>
+      pattern.handRanks.every(
+        (rank) => rank >= 1 && rank <= 9
+      )
+    )
+    .map((pattern) => ({
+      ...pattern,
+      sujiForbiddenRank:
+        pattern.sujiForbiddenRank !== null &&
+        pattern.sujiForbiddenRank >= 1 &&
+        pattern.sujiForbiddenRank <= 9
+          ? pattern.sujiForbiddenRank
+          : null
+    }));
+}
+
+function hasLegalChiDiscard(
+  input: MeldCallOptionInput,
+  handTiles: [Tile, Tile],
+  sujiForbiddenRank: number | null
+): boolean {
+  return getRemainingTiles(
+    input.concealedTiles,
+    handTiles
+  ).some((tile) => {
+    if (isSameTileType(tile, input.calledTile)) {
+      return false;
+    }
+
+    return !(
+      sujiForbiddenRank !== null &&
+      tile.suit === input.calledTile.suit &&
+      tile.rank === sujiForbiddenRank
+    );
   });
 }
 
-function isAllSimplesHand(
-  concealedTiles: readonly Tile[],
-  melds: readonly Meld[]
-): boolean {
-  return concealedTiles.every(isSimpleTile)
-    && melds.every(meld => meld.tiles.every(isSimpleTile));
-}
-
-function findHandTiles(
-  player: PlayerState,
-  option: MeldCallOption
-): [Tile, Tile] | null {
-  const firstTile = player.hand.find(
-    tile => tile.id === option.handTileIds[0]
-  );
-  const secondTile = player.hand.find(
-    tile => tile.id === option.handTileIds[1]
-  );
-
+export function getChiCallOptions(
+  input: MeldCallOptionInput
+): MeldCallOption[] {
   if (
-    !firstTile
-    || !secondTile
-    || firstTile.id === secondTile.id
+    !canOfferMeldCall(input) ||
+    input.calledTile.suit === "honor" ||
+    input.callerSeat !== nextSeat(input.discarderSeat)
   ) {
-    return null;
+    return [];
   }
 
-  return [firstTile, secondTile];
-}
+  const options: MeldCallOption[] = [];
 
-function getSujiForbiddenRank(
-  option: MeldCallOption,
-  calledTile: Tile,
-  handTiles: readonly [Tile, Tile]
-): number | null {
-  if (option.kind !== "chi" || calledTile.suit === "honor") {
-    return null;
-  }
-
-  const ranks = [
-    calledTile.rank,
-    handTiles[0].rank,
-    handTiles[1].rank
-  ].sort((left, right) => left - right);
-
-  if (calledTile.rank === ranks[0] && ranks[2] < 9) {
-    return ranks[2] + 1;
-  }
-
-  if (calledTile.rank === ranks[2] && ranks[0] > 1) {
-    return ranks[0] - 1;
-  }
-
-  return null;
-}
-
-function isLegalDiscardAfterCall(
-  tile: Tile,
-  option: MeldCallOption,
-  calledTile: Tile,
-  handTiles: readonly [Tile, Tile]
-): boolean {
-  if (isSameTileType(tile, calledTile)) return false;
-
-  const sujiForbiddenRank = getSujiForbiddenRank(
-    option,
-    calledTile,
-    handTiles
-  );
-
-  return !(
-    sujiForbiddenRank !== null
-    && tile.suit === calledTile.suit
-    && tile.rank === sujiForbiddenRank
-  );
-}
-
-function createCalledMeld(
-  option: MeldCallOption,
-  calledTile: Tile,
-  handTiles: readonly [Tile, Tile]
-): Meld {
-  return {
-    kind: option.kind,
-    tiles: [handTiles[0], handTiles[1], calledTile],
-    calledFrom: option.discarderSeat,
-    calledTileId: calledTile.id
-  };
-}
-
-function getYakuPriority(
-  calledTile: Tile,
-  nextMelds: readonly Meld[],
-  seatWind: Wind,
-  prevailingWind: Wind
-): number {
-  if (isValueHonor(calledTile, seatWind, prevailingWind)) {
-    return 2;
-  }
-
-  return hasValueHonorMeld(nextMelds, seatWind, prevailingWind)
-    ? 1
-    : 0;
-}
-
-function evaluateOption(
-  input: CpuMeldCallDecisionInput,
-  option: MeldCallOption,
-  shantenBefore: number
-): EvaluatedOption | null {
-  if (
-    option.callerSeat !== input.player.seat
-    || option.discarderSeat === input.player.seat
-    || option.calledTileId !== input.calledTile.id
+  for (
+    const pattern of getChiPatterns(input.calledTile.rank)
   ) {
-    return null;
-  }
-
-  const handTiles = findHandTiles(input.player, option);
-  if (!handTiles) return null;
-
-  const handTileIds = new Set(option.handTileIds);
-  const remainingTiles = input.player.hand.filter(
-    tile => !handTileIds.has(tile.id)
-  );
-
-  const nextMelds = [
-    ...input.player.melds,
-    createCalledMeld(option, input.calledTile, handTiles)
-  ];
-
-  const hasValueYaku = hasValueHonorMeld(
-    nextMelds,
-    input.player.seatWind,
-    input.prevailingWind
-  );
-
-  const discardCandidates = remainingTiles
-    .filter(tile =>
-      !input.forbiddenTileIds?.includes(tile.id)
-      && isLegalDiscardAfterCall(
-        tile,
-        option,
-        input.calledTile,
-        handTiles
-      )
-    )
-    .map(tile => {
-      const handAfterDiscard = remainingTiles.filter(
-        candidate => candidate.id !== tile.id
-      );
-
-      const hasReliableYaku = hasValueYaku
-        || isAllSimplesHand(handAfterDiscard, nextMelds);
-
-      const shanten = calculateShanten(
-        handAfterDiscard,
-        nextMelds
-      ).minimum;
-
-      const strategyScore = input.strategy
-        ? scoreEnemyCall(input.strategy, {
-            kind: option.kind,
-            hand: handAfterDiscard,
-            melds: nextMelds,
-            calledTile: input.calledTile,
-            discardedTile: tile,
-            shantenBefore,
-            shantenAfter: shanten,
-            reliableYaku: hasReliableYaku,
-            seatWind: input.player.seatWind,
-            prevailingWind: input.prevailingWind
-          })
-        : undefined;
-
-      return {
-        tile,
-        hasReliableYaku,
-        shanten,
-        strategyScore
-      };
-    })
-    .filter(candidate =>
-      (
-        input.strategy
-          ? candidate.strategyScore !== null
-          : candidate.hasReliableYaku
-      )
-      && Number.isFinite(candidate.shanten)
-    )
-    .sort((left, right) => {
-      if (
-        input.strategy
-        && left.strategyScore !== right.strategyScore
-      ) {
-        return (right.strategyScore ?? 0)
-          - (left.strategyScore ?? 0);
-      }
-
-      if (left.shanten !== right.shanten) {
-        return left.shanten - right.shanten;
-      }
-
-      if (left.tile.red !== right.tile.red) {
-        return left.tile.red ? 1 : -1;
-      }
-
-      return left.tile.id.localeCompare(right.tile.id);
-    });
-
-  const bestDiscard = discardCandidates[0];
-
-  if (
-    !bestDiscard
-    || (!input.strategy && bestDiscard.shanten >= shantenBefore)
-  ) {
-    return null;
-  }
-
-  return {
-    decision: {
-      option,
-      discardTileId: bestDiscard.tile.id,
-      shantenBefore,
-      shantenAfter: bestDiscard.shanten
-    },
-    yakuPriority: getYakuPriority(
-      input.calledTile,
-      nextMelds,
-      input.player.seatWind,
-      input.prevailingWind
-    ),
-    discardsRedTile: bestDiscard.tile.red,
-    strategyScore: bestDiscard.strategyScore ?? undefined
-  };
-}
-
-export function chooseCpuMeldCall(
-  input: CpuMeldCallDecisionInput
-): CpuMeldCallDecision | null {
-  if (
-    input.player.seat === 0
-    || input.player.riichi
-    || input.options.length === 0
-  ) {
-    return null;
-  }
-
-  const shantenBefore = calculateShanten(
-    input.player.hand,
-    input.player.melds
-  ).minimum;
-
-  if (!Number.isFinite(shantenBefore)) return null;
-
-  const candidates = input.options
-    .map(option => evaluateOption(input, option, shantenBefore))
-    .filter(
-      (candidate): candidate is EvaluatedOption => candidate !== null
-    )
-    .sort((left, right) => {
-      if (
-        input.strategy
-        && left.strategyScore !== right.strategyScore
-      ) {
-        return (right.strategyScore ?? 0)
-          - (left.strategyScore ?? 0);
-      }
-
-      if (left.decision.shantenAfter !== right.decision.shantenAfter) {
-        return left.decision.shantenAfter - right.decision.shantenAfter;
-      }
-
-      if (left.yakuPriority !== right.yakuPriority) {
-        return right.yakuPriority - left.yakuPriority;
-      }
-
-      if (left.decision.option.kind !== right.decision.option.kind) {
-        return left.decision.option.kind === "pon" ? -1 : 1;
-      }
-
-      if (left.discardsRedTile !== right.discardsRedTile) {
-        return left.discardsRedTile ? 1 : -1;
-      }
-
-      return left.decision.option.id.localeCompare(
-        right.decision.option.id
-      );
-    });
-
-  return candidates[0]?.decision ?? null;
-}
-
-export function chooseCpuOpenKanCall(
-  input: CpuOpenKanCallDecisionInput
-): CpuOpenKanCallDecision | null {
-  if (
-    input.player.seat === 0
-    || input.player.riichi
-    || input.options.length === 0
-  ) {
-    return null;
-  }
-
-  const shantenBefore = calculateShanten(
-    input.player.hand,
-    input.player.melds
-  ).minimum;
-
-  if (!Number.isFinite(shantenBefore)) return null;
-
-  for (const option of input.options) {
-    if (
-      option.callerSeat !== input.player.seat
-      || option.discarderSeat === input.player.seat
-      || option.calledTileId !== input.calledTile.id
-      || new Set(option.handTileIds).size !== 3
-    ) {
-      continue;
-    }
-
-    const handTiles = option.handTileIds
-      .map(tileId => input.player.hand.find(tile => tile.id === tileId))
-      .filter((tile): tile is Tile => tile !== undefined);
-
-    if (
-      handTiles.length !== 3
-      || handTiles.some(tile => !isSameTileType(tile, input.calledTile))
-    ) {
-      continue;
-    }
-
-    const usedTileIds = new Set(option.handTileIds);
-    const remainingTiles = input.player.hand.filter(
-      tile => !usedTileIds.has(tile.id)
+    const leftTiles = input.concealedTiles.filter(
+      (tile) =>
+        tile.suit === input.calledTile.suit &&
+        tile.rank === pattern.handRanks[0]
     );
 
-    const calledMeld: Meld = {
-      kind: "openKan",
-      tiles: [...handTiles, input.calledTile],
-      calledFrom: option.discarderSeat,
-      calledTileId: input.calledTile.id
-    };
+    const rightTiles = input.concealedTiles.filter(
+      (tile) =>
+        tile.suit === input.calledTile.suit &&
+        tile.rank === pattern.handRanks[1]
+    );
 
-    const nextMelds = [...input.player.melds, calledMeld];
+    for (const leftTile of leftTiles) {
+      for (const rightTile of rightTiles) {
+        const handTiles: [Tile, Tile] = [
+          leftTile,
+          rightTile
+        ];
 
-    const hasReliableYaku = hasValueHonorMeld(
-      nextMelds,
-      input.player.seatWind,
-      input.prevailingWind
-    ) || isAllSimplesHand(remainingTiles, nextMelds);
+        if (
+          !hasLegalChiDiscard(
+            input,
+            handTiles,
+            pattern.sujiForbiddenRank
+          )
+        ) {
+          continue;
+        }
 
-    const shantenAfter = calculateShanten(
-      remainingTiles,
-      nextMelds
-    ).minimum;
-
-    const strategyScore = input.strategy
-      ? scoreEnemyCall(input.strategy, {
-          kind: "openKan",
-          hand: remainingTiles,
-          melds: nextMelds,
-          calledTile: input.calledTile,
-          shantenBefore,
-          shantenAfter,
-          reliableYaku: hasReliableYaku,
-          seatWind: input.player.seatWind,
-          prevailingWind: input.prevailingWind
-        })
-      : undefined;
-
-    if (
-      (input.strategy ? strategyScore === null : !hasReliableYaku)
-      || !Number.isFinite(shantenAfter)
-      || shantenAfter > shantenBefore
-    ) {
-      continue;
+        options.push(
+          createOption(input, "chi", handTiles)
+        );
+      }
     }
-
-    return { option, shantenBefore, shantenAfter };
   }
 
-  return null;
+  return options;
+}
+
+export function getMeldCallOptions(
+  input: MeldCallOptionInput
+): MeldCallOption[] {
+  return [
+    ...getPonCallOptions(input),
+    ...getChiCallOptions(input)
+  ];
 }
