@@ -3263,7 +3263,12 @@ export function drawCpuTile(
       drawer,
       players: state.round.players,
       candidates,
-      liveWall: state.round.liveWall,
+      prevailingWind: state.round.prevailingWind,
+      visibleTiles: createCpuDiscardInput(
+        state,
+        drawer,
+        getDoraIndicatorsForCpu(state, seat)
+      ).visibleTiles,
       doraIndicators:
         getDoraIndicatorsForCpu(
           state,
