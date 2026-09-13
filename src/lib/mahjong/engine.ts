@@ -1,4 +1,7 @@
 import {
+  chooseEnemyThirteenDiscard
+} from "../akuukan/enemyThirteenStrategy";
+import {
   getEnemySixForbiddenTileIds
 } from "../akuukan/enemySixDefense";
 import {
@@ -3498,6 +3501,16 @@ function chooseCpuDiscard(
   random: () => number,
   forbiddenTileIds: readonly string[] = []
 ): Tile {
+  const planned = chooseEnemyThirteenDiscard(
+    state,
+    player,
+    doraIndicators,
+    forbiddenTileIds,
+    random
+  );
+
+  if (planned) return planned;
+
   return chooseStrategicCpuDiscard(
     createCpuDiscardInput(
       state,
