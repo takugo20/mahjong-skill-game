@@ -235,5 +235,4 @@ export function scoreEnemyHand(
 
   return score;
 }
-  return score;
-}
+
