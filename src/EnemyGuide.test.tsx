@@ -38,7 +38,7 @@ it("勝利回数と短い能力説明だけを表示する", () => {
     />
   );
 
-  const details = screen.getByText("敵1").closest("details")!;
+  const details = screen.getByText("MR1号").closest("details")!;
   expect(details.open).toBe(true);
 
   const view = within(details);
@@ -66,7 +66,7 @@ it("未解放の敵はタップしても説明を開けない", () => {
   );
 
   const locked = screen.getByRole("button", {
-    name: "敵2（未解放）"
+    name: "ジン（未解放）"
   }) as HTMLButtonElement;
 
   expect(locked.disabled).toBe(true);
@@ -133,10 +133,10 @@ it("対戦相手の選択に合わせて詳細が切り替わる", () => {
   );
 
   expect(
-    screen.getByText("敵2").closest("details")!.open
+    screen.getByText("ジン").closest("details")!.open
   ).toBe(true);
   expect(
-    screen.getByText("敵1").closest("details")!.open
+    screen.getByText("MR1号").closest("details")!.open
   ).toBe(false);
 
   fireEvent.click(
