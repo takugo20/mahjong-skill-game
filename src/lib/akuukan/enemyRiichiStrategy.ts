@@ -1,3 +1,7 @@
+import {
+  isEnemySixteenStrategyEnabled,
+  preferEnemySixteenDamaten
+} from "./enemySixteenStrategy";
 import { chooseCpuRiichi } from "../mahjong/cpuRiichi";
 import type {
   CpuRiichiDecision,
@@ -173,6 +177,14 @@ export function shouldEnemyStayDamaten(
   decision: CpuRiichiDecision,
   indicators: readonly Tile[]
 ): boolean {
+  if (isEnemySixteenStrategyEnabled(state, player)) {
+    return preferEnemySixteenDamaten(
+      state,
+      player,
+      decision,
+      indicators
+    );
+  }
   if (
     enabled(state, player, 1)
     && decision.shanten === 0
