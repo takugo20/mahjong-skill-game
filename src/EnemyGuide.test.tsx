@@ -129,9 +129,44 @@ it("対戦相手の選択に合わせて詳細が切り替わる", () => {
 
   render(<AkuukanGame />);
 
-  fireEvent.change(
-    screen.getByLabelText("対戦相手"),
-    { target: { value: "enemy-2" } }
+  expect(
+    screen.getAllByRole("button", {
+      name: /^敵\d/
+    })
+  ).toHaveLength(16);
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "敵3（未解放）"
+    })
+  );
+
+  expect(
+    screen.getByRole("button", {
+      name: "敵1"
+    }).getAttribute("aria-pressed")
+  ).toBe("true");
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "敵2"
+    })
+  );
+
+  expect(
+    screen.getByRole("button", {
+      name: "敵2"
+    }).getAttribute("aria-pressed")
+  ).toBe("true");
+
+  expect(
+    screen.queryByText("対戦相手の情報")
+  ).toBeNull();
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "敵図鑑"
+    })
   );
 
   expect(
@@ -147,4 +182,16 @@ it("対戦相手の選択に合わせて詳細が切り替わる", () => {
       .closest("details")!
       .open
   ).toBe(false);
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "タイトルに戻る"
+    })
+  );
+
+  expect(
+    screen.getByRole("button", {
+      name: "敵2"
+    }).getAttribute("aria-pressed")
+  ).toBe("true");
 });
