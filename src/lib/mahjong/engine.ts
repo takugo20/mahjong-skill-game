@@ -1,3 +1,7 @@
+import {
+  preferEnemyDamaten,
+  preserveEnemyDoraTriplet
+} from "../akuukan/enemySpeedStrategy";
 import { getEnemyCallStrategy } from "../akuukan/enemyCallStrategy";
 import {
   createCpuDiscardInput,
@@ -7008,6 +7012,15 @@ function playCpuDiscardingTurn(
     );
 
   if (riichiDecision) {
+    if (preferEnemyDamaten(state, cpuPlayer, riichiDecision)) {
+      return discardTile(
+        state,
+        riichiDecision.discardTileId,
+        false,
+        random
+      );
+    }
+
     return playCpuRiichiDeclaration(
       state,
       cpuSeat,
@@ -7288,7 +7301,7 @@ function getCpuRiichiDecision(
       cpuPlayer
     )
   );
-  const candidateTileIds =
+  const legalCandidateTileIds =
     getRiichiDiscardTileIds({
       concealedTiles: cpuPlayer.hand,
       melds: cpuPlayer.melds,
@@ -7315,6 +7328,13 @@ function getCpuRiichiDecision(
       (tileId) =>
         !forbiddenTileIdSet.has(tileId)
     );
+
+  const candidateTileIds = preserveEnemyDoraTriplet(
+    state,
+    cpuPlayer,
+    legalCandidateTileIds,
+    getDoraIndicatorsForCpu(state, cpuSeat)
+  );
 
   return chooseCpuRiichi({
     player: cpuPlayer,
