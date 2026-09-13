@@ -341,6 +341,8 @@ describe("敵15 E-28の河牌選択AI", () => {
       [riskyTile]
     );
 
+    riverOwner.riichi = true;
+
     expect(
       selectAkuukanE28RiverDrawCandidate({
         drawer,
