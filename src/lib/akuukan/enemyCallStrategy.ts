@@ -1,18 +1,19 @@
+import {
+  getSelectiveCallContext,
+  scoreSelectiveEnemyCall
+} from "./selectiveEnemyCalls";
+import type {
+  SelectiveCallContext
+} from "./selectiveEnemyCalls";
 import { getEnemySpeedId } from "./enemySpeedStrategy";
 import type {
-  GameState,
-  Meld,
-  PlayerState,
-  Tile,
-  NumberSuit,
-  Wind
+  GameState, Meld, PlayerState, Tile, NumberSuit, Wind
 } from "../mahjong/types";
-import {
-  isEnemyAbilityEnabled
-} from "./winningEvaluationEnemyAbilityAdjustments";
+import { isEnemyAbilityEnabled } from "./winningEvaluationEnemyAbilityAdjustments";
 
 export interface EnemyCallStrategy {
-  enemy: 4 | 5 | 8 | 9 | 10 | 11;
+  enemy: 4 | 5 | 8 | 9 | 10 | 11 | 13 | 16;
+  selective?: SelectiveCallContext;
   targetSuit?: NumberSuit;
   openRiichi: boolean;
   stealPoints: number;
@@ -39,6 +40,8 @@ export function getEnemyCallStrategy(
     id === "enemy-4" && enabled("E-12") ? 4
     : id === "enemy-5" && (enabled("E-5") || enabled("E-14")) ? 5
     : id === "enemy-8" && enabled("E-15") ? 8
+    : id === "enemy-13" && enabled("E-25") ? 13
+    : id === "enemy-16" && enabled("E-29") ? 16
     : speed === 9 || speed === 10 || speed === 11 ? speed
     : null;
 
@@ -46,6 +49,10 @@ export function getEnemyCallStrategy(
 
   return {
     enemy,
+    selective:
+      enemy === 13 || enemy === 16
+        ? getSelectiveCallContext(state, player)
+        : undefined,
     targetSuit:
       enemy === 5 && enabled("E-5")
         ? a.e5TargetSuit
@@ -81,7 +88,7 @@ export function getEnemyCallStrategy(
   };
 }
 
-interface Position {
+export interface Position {
   kind: "chi" | "pon" | "openKan";
   hand: readonly Tile[];
   melds: readonly Meld[];
@@ -95,10 +102,7 @@ interface Position {
 }
 
 const WINDS = {
-  east: 1,
-  south: 2,
-  west: 3,
-  north: 4
+  east: 1, south: 2, west: 3, north: 4
 };
 
 function valueHonor(tile: Tile, p: Position): boolean {
@@ -118,8 +122,7 @@ function hasYakuRoute(p: Position): boolean {
   ];
 
   const suits = new Set(
-    all
-      .filter(tile => tile.suit !== "honor")
+    all.filter(tile => tile.suit !== "honor")
       .map(tile => tile.suit)
   );
 
@@ -142,11 +145,9 @@ function hasYakuRoute(p: Position): boolean {
     return true;
   }
 
-  return (
-    p.melds.every(meld => meld.kind !== "chi")
+  return p.melds.every(meld => meld.kind !== "chi")
     && [...counts.values()].filter(count => count >= 2).length
-      >= 4 - p.melds.length
-  );
+      >= 4 - p.melds.length;
 }
 
 export function scoreEnemyCall(
@@ -176,6 +177,10 @@ export function scoreEnemyCall(
     return null;
   }
 
+  if (s.enemy === 13 || s.enemy === 16) {
+    return scoreSelectiveEnemyCall(s, p);
+  }
+
   const yaku = hasYakuRoute(p);
   const base =
     -100 * p.shantenAfter
@@ -189,24 +194,19 @@ export function scoreEnemyCall(
       valueHonor(p.calledTile, p)
       && p.kind !== "chi";
 
-    if (s.enemy === 11 && valueCall) {
-      return base + 30;
-    }
-
-    if (!improved || p.shantenAfter > 1) {
-      return null;
-    }
+    if (s.enemy === 11 && valueCall) return base + 30;
+    if (!improved || p.shantenAfter > 1) return null;
 
     return base + (valueCall ? 20 : 0);
   }
 
   if (s.enemy === 4) {
     if (p.kind === "chi") {
-      return (
-        yaku
+      return yaku
         && p.shantenAfter <= 1
         && p.shantenAfter < p.shantenBefore
-      ) ? base : null;
+        ? base
+        : null;
     }
 
     if (!yaku && s.stealPoints <= 0) return null;
