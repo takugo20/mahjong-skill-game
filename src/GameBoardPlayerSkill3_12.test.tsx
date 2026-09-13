@@ -108,7 +108,7 @@ describe("プレイヤースキル3-12の画面操作", () => {
 
     const targetArea = screen.getByRole(
       "region",
-      { name: target.name }
+      { name: "MR1号" }
     );
 
     expect(
