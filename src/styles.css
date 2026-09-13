@@ -3962,3 +3962,67 @@ body {
   left: 50%;
   transform: translate(-50%, -50%) rotate(90deg);
 }
+
+/* タイトル：敵16人の選択と3つのメニュー */
+.akuukan-lobby-header {
+  margin-bottom: 18px;
+}
+
+.akuukan-enemy-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.akuukan-enemy-picker legend {
+  margin-bottom: 12px;
+  padding: 0;
+  font-weight: bold;
+}
+
+.akuukan-enemy-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.akuukan-lobby .akuukan-enemy-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 68px;
+  padding: 8px 4px;
+  border: 2px solid #719782;
+  cursor: pointer;
+}
+
+.akuukan-enemy-button span {
+  font-weight: bold;
+}
+
+.akuukan-enemy-button small {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.akuukan-lobby .akuukan-enemy-button[aria-pressed="true"] {
+  color: #17271c;
+  background: #f0ca74;
+  border-color: #fff0bb;
+}
+
+.akuukan-lobby .akuukan-enemy-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.akuukan-lobby-actions.akuukan-lobby-actions--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.akuukan-lobby-actions--three button {
+  padding: 10px 4px;
+  font-size: 14px;
+}
