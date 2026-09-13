@@ -6058,12 +6058,11 @@ function getCpuCallDecisions(
           calledTile:
             lastDiscard.discard.tile,
           options: meldCallOptions,
-          strategy: 
-            getEnemyCallStrategy(
-              state,
-              player,
-              getDoraIndicatorsForCpu(state, player.seat)
-            )
+          strategy: getEnemyCallStrategy(
+            state,
+            player,
+            getDoraIndicatorsForCpu(state, player.seat)
+          ),
           forbiddenTileIds: getForbiddenDiscardTileIdsForPlayer(state, player)
         });
       const openKanCallOptions =
