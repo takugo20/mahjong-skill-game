@@ -8,7 +8,7 @@ import { getTileTypeIndex } from "../mahjong/hand";
 import { isEnemyAbilityEnabled } from "./winningEvaluationEnemyAbilityAdjustments";
 
 export interface EnemyHandPlan {
-  enemy: 3 | 7;
+  enemy: 3 | 7 | 12;
   previousYaku: readonly NormalYakuId[];
   prevailingWind: Wind;
   early: boolean;
@@ -28,7 +28,10 @@ export function getEnemyHandPlan(
       : a.setup.enemyId === "enemy-7"
         && isEnemyAbilityEnabled(a, "E-11")
         ? 7
-        : undefined;
+        : a.setup.enemyId === "enemy-12"
+          && isEnemyAbilityEnabled(a, "E-24")
+          ? 12
+          : undefined;
 
   return enemy ? {
     enemy,
@@ -172,7 +175,13 @@ export function scoreEnemyHand(
 
   const history = new Set(plan.previousYaku);
   const weight = (id: NormalYakuId) =>
-    history.has(id) ? 3 : history.size === 0 ? 1 : 0;
+    plan.enemy === 12
+      ? (
+          ["tanyao", "pinfu", "iipeikou"].includes(id)
+            ? 2
+            : 1
+        )
+      : history.has(id) ? 3 : history.size === 0 ? 1 : 0;
 
   const openSimple = player.melds.every(
     m => m.tiles.every(simple)
@@ -228,7 +237,7 @@ export function scoreEnemyHand(
   score += weight("honitsu") * flush;
 
   score += scoreEnemyThreeExtraYaku(
-    plan.previousYaku,
+    plan.enemy === 3 ? plan.previousYaku : [],
     hand,
     player.melds
   );
