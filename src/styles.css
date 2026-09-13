@@ -4083,3 +4083,60 @@ body {
   border-color: #3d4c44;
   background: #101d17;
 }
+
+/* プレイヤー向け敵図鑑 */
+.enemy-guide {
+  margin: 16px 0;
+}
+
+.enemy-guide-entry,
+.akuukan-skill-screen .enemy-guide-locked {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid #527762;
+  border-radius: 10px;
+  background: #10291e;
+  color: inherit;
+  text-align: left;
+  font-size: 18px;
+}
+
+.enemy-guide-entry summary {
+  min-height: 44px;
+  line-height: 44px;
+  cursor: pointer;
+}
+
+.akuukan-skill-screen .enemy-guide-locked {
+  min-height: 70px;
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.enemy-guide-content {
+  margin: 8px 0 0;
+  line-height: 1.8;
+}
+
+.enemy-guide-content dt {
+  font-weight: bold;
+}
+
+.enemy-guide-content dd {
+  margin: 0 0 12px;
+}
+
+.enemy-guide-content dd:last-child {
+  margin-bottom: 0;
+}
+
+.enemy-guide-content ul {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.enemy-guide-content li + li {
+  margin-top: 8px;
+}
