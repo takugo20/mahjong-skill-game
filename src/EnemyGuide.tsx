@@ -1,147 +1,120 @@
-import type {
-  EnemyProgressState
-} from "./lib/akuukan/enemyProgress";
-import type {
-  EnemyId
-} from "./lib/akuukan/types";
-import {
-  ENEMY_CATALOG,
-  getEnemyDefinition
-} from "./lib/akuukan/enemyCatalog";
-import {
-  calculatePlayerSkillMatchExperience
-} from "./lib/akuukan/playerSkillMatchExperience";
+import type { EnemyProgressState } from "./lib/akuukan/enemyProgress";
+import type { EnemyId } from "./lib/akuukan/types";
+import { ENEMY_CATALOG } from "./lib/akuukan/enemyCatalog";
+
+const DESCRIPTIONS: Readonly<Record<EnemyId, readonly string[]>> = {
+  "enemy-1": [
+    "他家にはドラ表示牌が裏返しに見える。",
+    "自分が追っかけ立直をすると、先制立直していた他家は、通常のツモでは和了牌をツモれなくなる。"
+  ],
+  "enemy-2": [
+    "他家は1,000点を供託しないと副露できない。",
+    "自分は聴牌していなくても立直することができる。立直後は副露することができなくなるが、手替わりは可能。"
+  ],
+  "enemy-3": [
+    "他家は立直できない。",
+    "自分の和了時、前回の和了時と同じ役が含まれていたら、その役の翻数が2倍になる。"
+  ],
+  "enemy-4": [
+    "他家はチー・ポン・大明槓・暗槓ができない（加槓は可能）。",
+    "自分がポン、大明槓するたびに他家から1,000点ずつ奪う。"
+  ],
+  "enemy-5": [
+    "自分はいずれか一種の数牌だけをツモる。",
+    "自分は副露しても門前扱いになる。"
+  ],
+  "enemy-6": [
+    "自分以外の他家の全能力を無効化する。",
+    "自分は常に他家の手牌が見える。"
+  ],
+  "enemy-7": [
+    "他家は役満を含む全ての2翻以上の役が成立しなくなる。",
+    "他家の配牌・通常ツモを制限し、風牌が自分に集まりやすくなる。"
+  ],
+  "enemy-8": [
+    "プレイヤーから他家の河が裏返しに見え、副露やロンもできない。",
+    "自分が副露して晒した牌が赤ドラになる。"
+  ],
+  "enemy-9": [
+    "自分の配牌にドラ暗刻が含まれる。",
+    "他家は立直以外の全ての1翻の役が成立しなくなる。"
+  ],
+  "enemy-10": [
+    "他家はランダムな3枚の牌を捨てられなくなる。副露・暗槓・加槓、和了には使用可能。",
+    "自分の和了点が2倍になる。"
+  ],
+  "enemy-11": [
+    "他家は手牌にある牌と同種の牌を山からツモれなくなる。",
+    "自分の満貫未満の和了を満貫として処理する。"
+  ],
+  "enemy-12": [
+    "他家は直前に捨てた牌と同種の牌を50％の確率でツモる。",
+    "自分の捨て牌が裏返しになり、ロンや副露の対象にならない。"
+  ],
+  "enemy-13": [
+    "自分の手番に「ツモ→打牌」を2回行う。1回目の捨て牌を鳴かれると、2回目は行えない。"
+  ],
+  "enemy-14": [
+    "自分は配牌で聴牌する。"
+  ],
+  "enemy-15": [
+    "他家の満貫未満の和了を無効化し、途中流局にする。",
+    "自分は山からの通常ツモの代わりに河拾いが可能。"
+  ],
+  "enemy-16": [
+    "自分の配牌が一向聴以下になり、他家は四向聴以上になる。"
+  ]
+};
 
 interface Props {
   selectedEnemyId: EnemyId;
   progress: EnemyProgressState;
 }
 
-export function EnemyGuide({
-  selectedEnemyId,
-  progress
-}: Props) {
+export function EnemyGuide({ selectedEnemyId, progress }: Props) {
   return (
     <section
       aria-label="対戦相手の情報"
-      style={{ margin: "16px 0" }}
+      className="enemy-guide"
     >
-      <h2>対戦相手の情報</h2>
-
-      <p>
-        敵の名前を押すと、能力と解放条件を確認できます。
-      </p>
-
       {ENEMY_CATALOG.map(enemy => {
         const record = progress.enemies[enemy.id];
-        const condition = enemy.unlockCondition;
+
+        if (!record.isUnlocked) {
+          return (
+            <button
+              key={enemy.id}
+              type="button"
+              className="enemy-guide-locked"
+              disabled
+            >
+              <span aria-hidden="true">▶︎ </span>
+              {enemy.displayName}（未解放）
+            </button>
+          );
+        }
 
         return (
           <details
             key={`${selectedEnemyId}:${enemy.id}`}
+            className="enemy-guide-entry"
             open={enemy.id === selectedEnemyId}
-            style={{
-              border: "1px solid #777",
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 8
-            }}
           >
-            <summary
-              style={{
-                minHeight: 44,
-                cursor: "pointer"
-              }}
-            >
-              {enemy.displayName}
-              （{record.isUnlocked ? "挑戦可能" : "未解放"}）
-              {enemy.id === selectedEnemyId ? "・選択中" : ""}
-            </summary>
+            <summary>{enemy.displayName}</summary>
 
-            <p>
-              この敵との対局で1位になった回数：
-              {record.firstPlaceCount}回
-            </p>
+            <dl className="enemy-guide-content">
+              <dt>勝利回数：</dt>
+              <dd>{record.firstPlaceCount}回</dd>
 
-            {condition ? (
-              <>
-                <p>
-                  解放条件：{condition.description}
-                </p>
-
-                <p>
-                  {
-                    getEnemyDefinition(
-                      condition.requiredEnemyId
-                    ).displayName
-                  }
-                  での1位回数：
-                  {
-                    progress.enemies[
-                      condition.requiredEnemyId
-                    ].firstPlaceCount
-                  }
-                  {" / "}
-                  {condition.requiredFirstPlaceCount}回
-                </p>
-              </>
-            ) : (
-              <p>最初から挑戦できます。</p>
-            )}
-
-            <p>基本EXP：{enemy.baseExperience}</p>
-
-            <p>
-              順位別EXP（装備スキル1個あたり・最大レベルを除く）
-            </p>
-
-            <table
-              style={{
-                width: "100%",
-                textAlign: "center"
-              }}
-            >
-              <thead>
-                <tr>
-                  {([1, 2, 3, 4] as const).map(rank => (
-                    <th key={rank} scope="col">
-                      {rank}位
-                    </th>
+              <dt>特殊能力：</dt>
+              <dd>
+                <ul>
+                  {DESCRIPTIONS[enemy.id].map(description => (
+                    <li key={description}>{description}</li>
                   ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                <tr>
-                  {([1, 2, 3, 4] as const).map(rank => (
-                    <td key={rank}>
-                      {
-                        calculatePlayerSkillMatchExperience(
-                          enemy.baseExperience,
-                          rank
-                        )
-                      }
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-
-            <h3>特殊能力</h3>
-
-            <ul>
-              {enemy.abilities.map(ability => (
-                <li key={ability.id}>
-                  {ability.description}
-                </li>
-              ))}
-            </ul>
-
-            <h3>
-              打ち方の傾向：{enemy.strategy.archetype}
-            </h3>
-
-            <p>{enemy.strategy.description}</p>
+                </ul>
+              </dd>
+            </dl>
           </details>
         );
       })}
