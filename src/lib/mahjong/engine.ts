@@ -1,4 +1,7 @@
 import {
+  getEnemySixForbiddenTileIds
+} from "../akuukan/enemySixDefense";
+import {
   preserveEnemyDoraTriplet
 } from "../akuukan/enemySpeedStrategy";
 import {
@@ -3495,7 +3498,12 @@ function chooseCpuDiscard(
       state,
       player,
       doraIndicators,
-      forbiddenTileIds
+      getEnemySixForbiddenTileIds(
+        state,
+        player,
+        doraIndicators,
+        forbiddenTileIds
+      )
     ),
     random
   );
@@ -7275,9 +7283,14 @@ function getCpuRiichiDecision(
   const cpuPlayer =
     state.round.players[cpuSeat];
   const forbiddenTileIdSet = new Set(
-    getForbiddenDiscardTileIdsForPlayer(
+    getEnemySixForbiddenTileIds(
       state,
-      cpuPlayer
+      cpuPlayer,
+      getDoraIndicatorsForCpu(state, cpuSeat),
+      getForbiddenDiscardTileIdsForPlayer(
+        state,
+        cpuPlayer
+      )
     )
   );
   const legalCandidateTileIds =
