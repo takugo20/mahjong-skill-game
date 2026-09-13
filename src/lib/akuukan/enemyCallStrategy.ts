@@ -1,3 +1,4 @@
+import { scoreEnemyTwelveCall } from "./enemyTwelveCalls";
 import {
   getSelectiveCallContext,
   scoreSelectiveEnemyCall
@@ -12,7 +13,9 @@ import type {
 import { isEnemyAbilityEnabled } from "./winningEvaluationEnemyAbilityAdjustments";
 
 export interface EnemyCallStrategy {
-  enemy: 4 | 5 | 8 | 9 | 10 | 11 | 13 | 16;
+  enemy: 4 | 5 | 8 | 9 | 10 | 11 | 12 | 13 | 16;
+  doraIndicators?: readonly Tile[];
+  lastRoundAttack?: boolean;
   selective?: SelectiveCallContext;
   targetSuit?: NumberSuit;
   openRiichi: boolean;
@@ -24,7 +27,8 @@ export interface EnemyCallStrategy {
 
 export function getEnemyCallStrategy(
   state: GameState,
-  player: PlayerState
+  player: PlayerState,
+  doraIndicators: readonly Tile[] = []
 ): EnemyCallStrategy | undefined {
   const a = state.akuukan;
   if (!a || player.seat !== 2) return undefined;
@@ -40,6 +44,7 @@ export function getEnemyCallStrategy(
     id === "enemy-4" && enabled("E-12") ? 4
     : id === "enemy-5" && (enabled("E-5") || enabled("E-14")) ? 5
     : id === "enemy-8" && enabled("E-15") ? 8
+    : id === "enemy-12" && enabled("E-24") ? 12
     : id === "enemy-13" && enabled("E-25") ? 13
     : id === "enemy-16" && enabled("E-29") ? 16
     : speed === 9 || speed === 10 || speed === 11 ? speed
@@ -47,12 +52,20 @@ export function getEnemyCallStrategy(
 
   if (enemy === null) return undefined;
 
+  const selective =
+    enemy === 12 || enemy === 13 || enemy === 16
+      ? getSelectiveCallContext(state, player)
+      : undefined;
+
   return {
     enemy,
-    selective:
-      enemy === 13 || enemy === 16
-        ? getSelectiveCallContext(state, player)
-        : undefined,
+    doraIndicators,
+    lastRoundAttack:
+      enemy === 12
+      && state.round.prevailingWind === "south"
+      && state.round.handNumber === 4
+      && (selective?.rank ?? 1) > 1,
+    selective,
     targetSuit:
       enemy === 5 && enabled("E-5")
         ? a.e5TargetSuit
@@ -74,16 +87,18 @@ export function getEnemyCallStrategy(
           )
         : 0,
     redMelds: enemy === 8,
-    threatened: state.round.players.some(
-      other =>
-        other.seat !== player.seat
-        && other.riichi
-        && !(
-          enemy === 8
-          && other.seat === 0
-          && enabled("E-13")
-        )
-    ),
+    threatened:
+      enemy !== 12
+      && state.round.players.some(
+        other =>
+          other.seat !== player.seat
+          && other.riichi
+          && !(
+            enemy === 8
+            && other.seat === 0
+            && enabled("E-13")
+          )
+      ),
     liveWallCount: state.round.liveWall.length
   };
 }
@@ -175,6 +190,10 @@ export function scoreEnemyCall(
     && p.shantenAfter > 1
   ) {
     return null;
+  }
+
+  if (s.enemy === 12) {
+    return scoreEnemyTwelveCall(s, p);
   }
 
   if (s.enemy === 13 || s.enemy === 16) {
