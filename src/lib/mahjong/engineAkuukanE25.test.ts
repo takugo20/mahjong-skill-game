@@ -536,7 +536,11 @@ describe("敵13 E-25のエンジン統合", () => {
       createTile("honor", 4),
       createTile("man", 9),
       createTile("pin", 9),
-      createTile("sou", 9)
+      createTile("sou", 9),
+      createTile("man", 1),
+      createTile("pin", 1),
+      createTile("sou", 2),
+      createTile("honor", 3)
     ];
 
     const progression =
