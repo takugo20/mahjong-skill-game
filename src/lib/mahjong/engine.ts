@@ -1,7 +1,10 @@
 import {
-  preferEnemyDamaten,
   preserveEnemyDoraTriplet
 } from "../akuukan/enemySpeedStrategy";
+import {
+  chooseEnemyRiichi,
+  shouldEnemyStayDamaten
+} from "../akuukan/enemyRiichiStrategy";
 import { getEnemyCallStrategy } from "../akuukan/enemyCallStrategy";
 import {
   createCpuDiscardInput,
@@ -7012,7 +7015,14 @@ function playCpuDiscardingTurn(
     );
 
   if (riichiDecision) {
-    if (preferEnemyDamaten(state, cpuPlayer, riichiDecision)) {
+    if (
+      shouldEnemyStayDamaten(
+        state,
+        cpuPlayer,
+        riichiDecision,
+        getDoraIndicatorsForCpu(state, cpuSeat)
+      )
+    ) {
       return discardTile(
         state,
         riichiDecision.discardTileId,
@@ -7189,43 +7199,12 @@ function getVisibleTilesForCpuRiichi(
   state: GameState,
   cpuSeat: SeatIndex
 ): Tile[] {
-  const publicTiles =
-    state.round.players.flatMap(
-      (player) => [
-        ...player.discards.map(
-          (discard) => discard.tile
-        ),
-        ...player.melds.flatMap(
-          (meld) => meld.tiles
-        )
-      ]
-    );
-  const akuukan = state.akuukan;
-
-  if (!akuukan) {
-    return publicTiles;
-  }
-
-  const viewer =
-    getAkuukanInformationViewer(
-      cpuSeat
-    );
-  const visibleHandTiles =
-    state.round.players.flatMap(
-      (player) =>
-        areAkuukanHandTilesVisible({
-          akuukan,
-          viewer,
-          viewerIsHandOwner:
-            player.seat === cpuSeat
-        })
-          ? player.hand
-          : []
-    );
-
   return [
-    ...publicTiles,
-    ...visibleHandTiles
+    ...createCpuDiscardInput(
+      state,
+      state.round.players[cpuSeat],
+      getDoraIndicatorsForCpu(state, cpuSeat)
+    ).visibleTiles
   ];
 }
 
@@ -7336,7 +7315,7 @@ function getCpuRiichiDecision(
     getDoraIndicatorsForCpu(state, cpuSeat)
   );
 
-  return chooseCpuRiichi({
+  return chooseEnemyRiichi(state, {
     player: cpuPlayer,
     riichiDiscardTileIds:
       candidateTileIds,
