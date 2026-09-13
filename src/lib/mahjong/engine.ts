@@ -7,7 +7,7 @@ import {
   chooseEnemyThirteenDiscard
 } from "../akuukan/enemyThirteenStrategy";
 import {
-  getEnemySixForbiddenTileIds
+  getEnemyDefenseForbiddenTileIds
 } from "../akuukan/enemySixDefense";
 import {
   preserveEnemyDoraTriplet
@@ -3531,7 +3531,7 @@ function chooseCpuDiscard(
       state,
       player,
       doraIndicators,
-      getEnemySixForbiddenTileIds(
+      getEnemyDefenseForbiddenTileIds(
         state,
         player,
         doraIndicators,
@@ -7316,7 +7316,7 @@ function getCpuRiichiDecision(
   const cpuPlayer =
     state.round.players[cpuSeat];
   const forbiddenTileIdSet = new Set(
-    getEnemySixForbiddenTileIds(
+    getEnemyDefenseForbiddenTileIds(
       state,
       cpuPlayer,
       getDoraIndicatorsForCpu(state, cpuSeat),
