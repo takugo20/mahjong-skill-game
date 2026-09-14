@@ -1,3 +1,6 @@
+import {
+  replaceEnemyNumbers
+} from "./enemy-art/EnemyPortrait";
 import type { PlayerSkillDefinition } from "./lib/akuukan/playerSkillCatalogTypes";
 import { getPlayerSkillMaxLevel } from "./lib/akuukan/playerSkillCatalogTypes";
 import type { PlayerSkillProgress } from "./lib/akuukan/playerSkillProgress";
@@ -79,11 +82,11 @@ export function PlayerSkillCard({
       )}
 
       <p className="player-skill-unlock">
-        解放条件：{
+        解放条件：{replaceEnemyNumbers(
           PLAYER_SKILL_UNLOCK_TEXT[skill.catalogNumber]
           ?? skill.unlockCondition?.description
           ?? "初期から解放"
-        }
+        )}
       </p>
     </article>
   );
