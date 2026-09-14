@@ -1,6 +1,7 @@
 import type { GameState } from "../mahjong/types";
 import type { AkuukanSaveData } from "./saveData";
 import { isAkuukanSaveData } from "./saveDataValidation";
+import { completedStatistics } from "./matchStatistics";
 
 export function applyAkuukanMatchResultToSaveData(
   saveData: AkuukanSaveData,
@@ -16,24 +17,38 @@ export function applyAkuukanMatchResultToSaveData(
     return saveData;
   }
 
-  const equippedSkills = saveData.equippedSkills.map(skill => {
-    const progress = settlement.growth.skills[skill.id];
+  const equippedSkills = saveData.equippedSkills.map(
+    skill => {
+      const progress = settlement.growth.skills[skill.id];
 
-    if (!progress.isUnlocked) {
-      throw new Error(
-        "装備スキルが解放済みではありません。"
-      );
+      if (!progress.isUnlocked) {
+        throw new Error(
+          "装備スキルが解放済みではありません。"
+        );
+      }
+
+      return {
+        ...skill,
+        level: progress.level
+      };
     }
+  );
 
-    return {
-      ...skill,
-      level: progress.level
-    };
-  });
+  const statistics = completedStatistics(gameState);
 
-  // 経験値を再計算せず、確定済みの成長結果を反映する。
   const result: AkuukanSaveData = {
     ...saveData,
+    ...(
+      statistics && gameState.matchProgress
+        ? {
+            statistics: {
+              ...saveData.statistics,
+              [gameState.matchProgress.initialSetup.enemyId]:
+                statistics
+            }
+          }
+        : {}
+    ),
     playerSkillGrowth: settlement.growth,
     enemyProgress: settlement.enemyProgress,
     equippedSkills
