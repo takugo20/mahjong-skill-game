@@ -92,6 +92,7 @@ export function AkuukanGame() {
       <EnemyCatalog
         selectedEnemyId={enemyId}
         progress={loaded.saveData.enemyProgress}
+        statistics={saveRef.current.statistics}
         onBack={() => setEnemyCatalogOpen(false)}
       />
     );
