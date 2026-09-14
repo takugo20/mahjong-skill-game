@@ -1,4 +1,5 @@
 import type { GameState } from "../mahjong/types";
+import { recordStatisticsRound } from "./matchStatistics";
 import {
   recordPlayerSkillMatchDrawProgress
 } from "./playerSkillMatchDrawProgress";
@@ -6,6 +7,8 @@ import {
 export function recordAkuukanGameDrawProgress(
   state: GameState
 ): GameState {
+  state = recordStatisticsRound(state);
+
   if (!state.akuukan || !state.playerSkillDrawProgress) {
     return state;
   }
@@ -29,7 +32,10 @@ export function advanceAkuukanDrawProgressRound(
 ): GameState {
   const recorded = recordAkuukanGameDrawProgress(state);
 
-  if (!recorded.akuukan || !recorded.playerSkillDrawProgress) {
+  if (
+    !recorded.akuukan ||
+    !recorded.playerSkillDrawProgress
+  ) {
     return recorded;
   }
 
