@@ -1,3 +1,4 @@
+import { createStatisticsProgress } from "./matchStatistics";
 import {
   createAkuukanGameMatchProgress
 } from "./gameMatchProgress";
@@ -62,10 +63,15 @@ export function tryStartAkuukanMatchFromSaveData(
         random,
         setupResult.setup
       ),
-      matchProgress: createAkuukanGameMatchProgress(
-        setupResult.setup,
-        saveData.enemyProgress
-      ),      
+      matchProgress: {
+        ...createAkuukanGameMatchProgress(
+          setupResult.setup,
+          saveData.enemyProgress
+        ),
+        statistics: createStatisticsProgress(
+          saveData.statistics?.[enemyId]
+        )
+      },     
       roundSequence: 1,
       playerSkillDrawProgress: createPlayerSkillMatchDrawProgress(
         saveData.playerSkillGrowth
