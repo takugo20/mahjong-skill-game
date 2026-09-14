@@ -1,3 +1,4 @@
+import { ENEMY_NAMES } from "./enemy-art/EnemyPortrait";
 import { unlockGameAudio } from "./lib/gameAudio";
 import { EnemyCatalog } from "./EnemyCatalog";
 import { SkillCatalog } from "./SkillCatalog";
@@ -218,13 +219,13 @@ export function AkuukanGame() {
                     disabled={!unlocked}
                     aria-pressed={enemyId === enemy.id}
                     aria-label={
-                      `${enemy.displayName}${
+                      `${ENEMY_NAMES[enemy.id]}${
                         unlocked ? "" : "（未解放）"
                       }`
                     }
                     onClick={() => setEnemyId(enemy.id)}
                   >
-                    <span>{enemy.displayName}</span>
+                    <span>{ENEMY_NAMES[enemy.id]}</span>
 
                     <small>
                       {!unlocked
