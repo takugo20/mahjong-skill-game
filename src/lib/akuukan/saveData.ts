@@ -18,6 +18,7 @@ export const AKUUKAN_SAVE_DATA_VERSION =
   1 as const;
 
 export interface AkuukanSaveData {
+  readonly statistics?: import("./matchStatistics").EnemyStatistics;  
   readonly version:
     typeof AKUUKAN_SAVE_DATA_VERSION;
   readonly playerSkillGrowth:
