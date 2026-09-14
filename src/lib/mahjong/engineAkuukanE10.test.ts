@@ -1,3 +1,4 @@
+import { createCpuDiscardInput } from "./cpuDiscard";
 import {
   describe,
   expect,
@@ -225,9 +226,67 @@ describe("敵6 E-10のエンジン統合", () => {
       1
     );
 
+    const hiddenIds = new Set(
+      scenario.state.round.players[0].hand
+        .filter(
+          tile => tile.id !== scenario.playerDiscard.id
+        )
+        .map(tile => tile.id)
+    );
+
+    const input = createCpuDiscardInput(
+      scenario.state,
+      scenario.state.round.players[1],
+      []
+    );
+
+    // 敵6戦の無能力者CPUは「ふつう」。
+    expect(input.normalCpuLevel).toBe(2);
+
+    // 判断に渡す情報に、他家の非公開手牌がない。
     expect(
-      getRiichiDiscard(scenario, 1).id
-    ).toBe(scenario.normalDiscard.id);
+      input.visibleTiles.some(
+        tile => hiddenIds.has(tile.id)
+      )
+    ).toBe(false);
+
+    const originalDiscard = getRiichiDiscard(
+      scenario,
+      1
+    );
+
+    // 公開情報は変えず、他家の非公開手牌だけを変更。
+    const changed: E10RiichiState = {
+      ...scenario,
+      state: {
+        ...scenario.state,
+        round: {
+          ...scenario.state.round,
+          players: scenario.state.round.players.map(
+            player =>
+              player.seat === 0
+                ? {
+                    ...player,
+                    hand: player.hand.map(tile =>
+                      hiddenIds.has(tile.id)
+                        ? {
+                            ...tile,
+                            suit: "sou" as const
+                          }
+                        : tile
+                    )
+                  }
+                : player
+          )
+        }
+      }
+    };
+
+    // 同じ乱数・公開情報なら、
+    // 非公開手牌を変えても判断は変わらない。
+    expect(
+      getRiichiDiscard(changed, 1).id
+    ).toBe(originalDiscard.id);
   });
 
   it("E-10が無効なら敵6本人も非公開手牌を数えない", () => {
