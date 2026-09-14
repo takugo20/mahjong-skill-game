@@ -7,6 +7,7 @@ import {
 } from "./matchProgressSettlement";
 
 export interface AkuukanGameMatchProgress {
+  readonly statistics?: import("./matchStatistics").MatchStatisticsProgress;  
   readonly initialSetup: AkuukanMatchSetup;
   readonly initialEnemyProgress: EnemyProgressState;
   readonly settlement: AkuukanMatchProgressSettlement | null;
