@@ -1,4 +1,9 @@
 import {
+  getNormalCpuLevel,
+  selectNormalCpuCandidates,
+  type NormalCpuLevel
+} from "./normalCpuLevel";
+import {
   getEnemyHandPlan,
   selectEnemyHandCandidates,
   scoreEnemyHand
@@ -31,6 +36,7 @@ const NORMAL_TENDENCIES: EnemyAiTendencies = {
 };
 
 export interface CpuDiscardInput {
+  normalCpuLevel?: NormalCpuLevel;  
   player: PlayerState;
   doraIndicators: readonly Tile[];
   visibleTiles: readonly Tile[];
@@ -95,6 +101,10 @@ export function createCpuDiscardInput(
     visibleTiles,
     forbiddenTileIds,
     handPlan: getEnemyHandPlan(state, player),
+    normalCpuLevel: getNormalCpuLevel(
+      state,
+      player.seat
+    ),    
     preserveDoraTriplets:
       getEnemySpeedId(state, player) === 9,
     speedFirst:
@@ -237,23 +247,27 @@ export function chooseStrategicCpuDiscard(
   input: CpuDiscardInput,
   random: () => number = Math.random
 ): Tile {
+  // 既存の向聴数・受け入れ・ドラの評価を使用する。
   const candidates = evaluateCpuDiscards(input);
 
   if (candidates.length === 0) {
-    throw new Error("CPUに捨てられる牌がありません。");
+    throw new Error(
+      "CPUに捨てられる牌がありません。"
+    );
   }
 
-  const bestScore = Math.max(
-    ...candidates.map(candidate => candidate.score)
-  );
-  const best = candidates.filter(
-    candidate => candidate.score === bestScore
+  const choices = selectNormalCpuCandidates(
+    candidates,
+    input.normalCpuLevel ?? 4
   );
 
   const index = Math.min(
-    best.length - 1,
-    Math.max(0, Math.floor(random() * best.length))
+    choices.length - 1,
+    Math.max(
+      0,
+      Math.floor(random() * choices.length)
+    )
   );
 
-  return best[index].tile;
+  return choices[index].tile;
 }
