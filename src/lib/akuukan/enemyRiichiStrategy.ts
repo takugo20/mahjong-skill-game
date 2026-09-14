@@ -1,3 +1,7 @@
+import {
+  getNormalCpuLevel,
+  chooseLeveledNormalCpuRiichi
+} from "../mahjong/normalCpuLevel";
 import { chooseEnemyFourteenRiichi } from "./enemyFourteenRiichi";
 import { chooseEnemySixteenLastRoundRiichi } from "./enemySixteenLastRound";
 import {
@@ -124,6 +128,10 @@ export function chooseEnemyRiichi(
   state: GameState,
   input: CpuRiichiDecisionInput
 ): CpuRiichiDecision | null {
+  if (getNormalCpuLevel(state, input.player.seat) < 4) {
+    return chooseLeveledNormalCpuRiichi(state, input);
+  }
+
   const standard = chooseCpuRiichi(input);
 
   const fourteen = chooseEnemyFourteenRiichi(
