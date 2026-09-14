@@ -103,3 +103,15 @@ export function EnemyPortrait({
     </span>
   );
 }
+
+export function replaceEnemyNumbers(text: string): string {
+  return text.replace(
+    /敵([0-9]+)/g,
+    (match, number: string) => {
+      const enemyId =
+        `enemy-${Number(number)}` as EnemyId;
+
+      return ENEMY_NAMES[enemyId] ?? match;
+    }
+  );
+}
