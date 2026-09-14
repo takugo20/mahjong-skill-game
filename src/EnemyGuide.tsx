@@ -74,16 +74,19 @@ const DESCRIPTIONS: Readonly<Record<EnemyId, readonly string[]>> = {
 interface Props {
   selectedEnemyId: EnemyId;
   progress: EnemyProgressState;
+  onData?: (enemyId: EnemyId) => void;
 }
 
 function EnemyGuideEntry({
   enemyId,
   initiallyOpen,
-  wins
+  wins,
+  onData
 }: {
   enemyId: EnemyId;
   initiallyOpen: boolean;
   wins: number;
+  onData?: (enemyId: EnemyId) => void;
 }) {
   const [open, setOpen] = useState(initiallyOpen);
 
@@ -140,17 +143,26 @@ function EnemyGuideEntry({
         </span>
       </summary>
 
+      {onData && (
+        <button
+          type="button"
+          className="akuukan-skill-back"
+          aria-label={`${ENEMY_NAMES[enemyId]}のデータ`}
+          onClick={() => onData(enemyId)}
+        >
+          データ
+        </button>
+      )}
+
       <dl className="enemy-guide-content">
         <dt>特殊能力：</dt>
         <dd>
           <ul>
-            {DESCRIPTIONS[enemyId].map(
-              description => (
-                <li key={description}>
-                  {description}
-                </li>
-              )
-            )}
+            {DESCRIPTIONS[enemyId].map(description => (
+              <li key={description}>
+                {description}
+              </li>
+            ))}
           </ul>
         </dd>
       </dl>
@@ -160,7 +172,8 @@ function EnemyGuideEntry({
 
 export function EnemyGuide({
   selectedEnemyId,
-  progress
+  progress,
+  onData
 }: Props) {
   return (
     <section
@@ -188,10 +201,9 @@ export function EnemyGuide({
           <EnemyGuideEntry
             key={`${selectedEnemyId}:${enemy.id}`}
             enemyId={enemy.id}
-            initiallyOpen={
-              enemy.id === selectedEnemyId
-            }
+            initiallyOpen={enemy.id === selectedEnemyId}
             wins={record.firstPlaceCount}
+            onData={onData}
           />
         );
       })}
