@@ -104,7 +104,7 @@ describe("亜空間麻雀の開始・保存画面", () => {
     render(<AkuukanGame />);
 
     const lockedEnemy = screen.getByRole("button", {
-      name: "敵2（未解放）"
+      name: "ジン（未解放）"
     }) as HTMLButtonElement;
     
     expect(lockedEnemy.disabled).toBe(true);
