@@ -512,6 +512,47 @@ function SouBird({
     </g>
   );
 }
+function SouEight({ red }: { red: boolean }) {
+  const color = red ? RED : GREEN;
+
+  const sticks: Array<[number, number, number]> = [
+    [17.75, 29, -24],
+    [29.25, 29, 24],
+    [40.75, 29, -24],
+    [52.25, 29, 24]
+  ];
+
+  return (
+    <g>
+      {[false, true].map(flipped => (
+        <g
+          key={String(flipped)}
+          transform={
+            flipped
+              ? "translate(0 100) scale(1 -1)"
+              : undefined
+          }
+        >
+          {sticks.map(([x, y, angle], index) => (
+            <g
+              key={index}
+              transform={
+                `translate(${x} ${y}) ` +
+                `rotate(${angle}) scale(0.5 1.15)`
+              }
+            >
+              <BambooStick
+                x={0}
+                y={0}
+                color={color}
+              />
+            </g>
+          ))}
+        </g>
+      ))}
+    </g>
+  );
+}
 
 function SouFace({
   rank,
@@ -519,6 +560,10 @@ function SouFace({
 }: FaceProps) {
   if (rank === 1) {
     return <SouBird red={red} />;
+  }
+
+  if (rank === 8) {
+    return <SouEight red={red} />;
   }
 
   const positions = getSouPositions(rank);
