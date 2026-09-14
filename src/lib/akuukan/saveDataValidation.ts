@@ -1,3 +1,4 @@
+import { isEnemyStatistics } from "./matchStatistics";
 import {
   ENEMY_CATALOG
 } from "./enemyCatalog";
@@ -335,20 +336,30 @@ export function isAkuukanSaveData(
       "version",
       "playerSkillGrowth",
       "equippedSkills",
-      "enemyProgress"
+      "enemyProgress",
+      ...(
+        Object.prototype.hasOwnProperty.call(
+          value,
+          "statistics"
+        )
+          ? ["statistics"]
+          : []
+      )
     ]) ||
-    value.version !==
-      AKUUKAN_SAVE_DATA_VERSION ||
-    !isPlayerSkillGrowthState(
-      value.playerSkillGrowth
+    (
+      Object.prototype.hasOwnProperty.call(
+        value,
+        "statistics"
+      ) &&
+      !isEnemyStatistics(value.statistics)
     ) ||
+    value.version !== AKUUKAN_SAVE_DATA_VERSION ||
+    !isPlayerSkillGrowthState(value.playerSkillGrowth) ||
     !isEquippedPlayerSkills(
       value.equippedSkills,
       value.playerSkillGrowth
     ) ||
-    !isEnemyProgressState(
-      value.enemyProgress
-    )
+    !isEnemyProgressState(value.enemyProgress)
   ) {
     return false;
   }
