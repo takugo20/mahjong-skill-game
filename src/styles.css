@@ -4099,3 +4099,30 @@ body {
 .enemy-guide-content li + li {
   margin-top: 8px;
 }
+
+/* Side hands face their owner; reserve the rotated tile's actual footprint. */
+.opponent-hand-tile {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+.opponent-area--left .opponent-hand,
+.opponent-area--right .opponent-hand {
+  --opponent-tile-width: clamp(8px, min(2vw, 3vh), 24px);
+}
+.opponent-area--left .opponent-hand-tile,
+.opponent-area--right .opponent-hand-tile {
+  width: calc(var(--opponent-tile-width) * 1.4);
+  height: var(--opponent-tile-width);
+}
+.opponent-area--left .opponent-hand-tile .mahjong-tile,
+.opponent-area--right .opponent-hand-tile .mahjong-tile {
+  flex: 0 0 auto;
+  width: var(--opponent-tile-width);
+  height: calc(var(--opponent-tile-width) * 1.4);
+  transform: rotate(90deg);
+}
+.opponent-area--right .opponent-hand-tile .mahjong-tile {
+  transform: rotate(-90deg);
+}

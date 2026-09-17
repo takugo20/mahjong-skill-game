@@ -842,12 +842,13 @@ function OpponentArea({
             visibleTileIds.includes(tile.id);
 
           return (
-            <TileView
-              key={tile.id}
-              tile={isVisible ? tile : undefined}
-              faceDown={!isVisible}
-              compact
-            />
+            <span className="opponent-hand-tile" key={tile.id}>
+              <TileView
+                tile={isVisible ? tile : undefined}
+                faceDown={!isVisible}
+                compact
+              />
+            </span>
           );
         })}
       </div>
