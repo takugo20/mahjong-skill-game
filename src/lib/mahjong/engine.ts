@@ -663,6 +663,7 @@ function prepareAkuukanDealComposition(
   const tenpaiHandReservation =
     reserveAkuukanE26TenpaiHand({
       akuukan: activePairReservation.akuukan,
+      random,
       availableTiles:
         doraTripletReservation.remainingTiles
     });

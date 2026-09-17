@@ -271,6 +271,41 @@ describe("E-16のドラ暗刻配牌予約", () => {
 });
 
 describe("E-26の配牌聴牌保証", () => {
+  it("乱数に応じて牌姿を変え、聴牌・牌の保存・再現性を維持する", () => {
+    const availableTiles = (["man", "pin", "sou", "honor"] as const)
+      .flatMap(suit => Array.from({ length: suit === "honor" ? 7 : 9 },
+        (_, i) => createTiles(suit, [i + 1, i + 1, i + 1, i + 1])).flat());
+    const before = [...availableTiles];
+    const patterns = new Set<string>();
+    const waits = new Set<string>();
+    const rng = (initial: number) => {
+      let seed = initial;
+      return () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return seed / 0x100000000;
+      };
+    };
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const input = { akuukan: createAkuukan("enemy-14"), availableTiles };
+      const result = reserveAkuukanE26TenpaiHand({ ...input, random: rng(seed) });
+      expect(result).toEqual(reserveAkuukanE26TenpaiHand({ ...input, random: rng(seed) }));
+      expect(result.tenpaiGuaranteed).toBe(true);
+      expect(result.reservedTiles).toHaveLength(13);
+      expect(calculateShanten(result.reservedTiles).minimum).toBe(0);
+      expect([...result.reservedTiles, ...result.remainingTiles].map(t => t.id).sort())
+        .toEqual(availableTiles.map(t => t.id).sort());
+      patterns.add(result.reservedTiles.map(t => `${t.suit}${t.rank}`).sort().join(","));
+      for (const tile of result.remainingTiles) {
+        if (calculateShanten([...result.reservedTiles, tile]).minimum === -1) {
+          waits.add(`${tile.suit}${tile.rank}`);
+        }
+      }
+    }
+    expect(patterns.size).toBeGreaterThan(30);
+    expect(waits.size).toBeGreaterThan(12);
+    expect(availableTiles).toEqual(before);
+  });
+
   it("通常形で聴牌する13枚を残り牌から予約する", () => {
     const unreservedTile =
       createTile("honor", 4);

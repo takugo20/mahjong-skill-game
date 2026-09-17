@@ -56,6 +56,7 @@ export interface AkuukanE16DoraTripletReservation {
 export interface ReserveAkuukanE26TenpaiHandInput {
   readonly akuukan: AkuukanGameState;
   readonly availableTiles: readonly Tile[];
+  readonly random?: () => number;
 }
 
 export interface AkuukanE26TenpaiHandReservation {
@@ -153,6 +154,35 @@ function changeTileTypeCounts(
     tileTypeIndices) {
     counts[tileTypeIndex] += amount;
   }
+}
+
+function findRandomStandardTenpaiTileTypes(
+  availableCounts: readonly number[],
+  random: () => number
+): number[] | null {
+  // Build a complete hand, then remove a random tile. This varies both
+  // the melds and the wait instead of always choosing four melds + a singleton.
+  for (let attempt = 0; attempt < 64; attempt += 1) {
+    const counts = [...availableCounts];
+    const selected: number[] = [];
+    for (let meld = 0; meld < 4; meld += 1) {
+      const candidates = STANDARD_MELD_CANDIDATES.filter(candidate =>
+        canTakeTileTypes(counts, candidate)
+      );
+      if (candidates.length === 0) break;
+      const candidate = candidates[Math.floor(random() * candidates.length)];
+      selected.push(...candidate);
+      changeTileTypeCounts(counts, candidate, -1);
+    }
+    if (selected.length !== 12) continue;
+    const pairs = counts.flatMap((count, index) => count >= 2 ? [index] : []);
+    if (pairs.length === 0) continue;
+    const pair = pairs[Math.floor(random() * pairs.length)];
+    selected.push(pair, pair);
+    selected.splice(Math.floor(random() * selected.length), 1);
+    return selected;
+  }
+  return null;
 }
 
 function findStandardTenpaiTileTypes(
@@ -421,6 +451,10 @@ export function reserveAkuukanE26TenpaiHand(
       input.availableTiles
     );
   const selectedTileTypeIndices =
+    findRandomStandardTenpaiTileTypes(
+      availableCounts,
+      input.random ?? Math.random
+    ) ??
     findStandardTenpaiTileTypes(
       availableCounts
     ) ??
