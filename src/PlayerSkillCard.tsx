@@ -4,6 +4,7 @@ import {
 import type { PlayerSkillDefinition } from "./lib/akuukan/playerSkillCatalogTypes";
 import { getPlayerSkillMaxLevel } from "./lib/akuukan/playerSkillCatalogTypes";
 import type { PlayerSkillProgress } from "./lib/akuukan/playerSkillProgress";
+import "./SkillExperience.css";
 import {
   PLAYER_SKILL_DESCRIPTIONS,
   PLAYER_SKILL_UNLOCK_TEXT
@@ -15,6 +16,7 @@ interface Props {
   equipped?: boolean;
   disabled?: boolean;
   onToggle?: () => void;
+  showExperience?: boolean;
 }
 
 export function PlayerSkillCard({
@@ -22,7 +24,8 @@ export function PlayerSkillCard({
   progress,
   equipped = false,
   disabled = false,
-  onToggle
+  onToggle,
+  showExperience = false
 }: Props) {
   const title = (
     <>
@@ -80,6 +83,25 @@ export function PlayerSkillCard({
             ))}
         </p>
       )}
+
+      {showExperience && progress.isUnlocked && (() => {
+        const isMax = progress.level >= getPlayerSkillMaxLevel(skill);
+        const required = isMax ? 1 : skill.levels[progress.level].requiredExp;
+        return (
+          <div className={`skill-experience${isMax ? " skill-experience--max" : ""}`}>
+            <div className="skill-experience-label">
+              <span>{isMax ? "最高レベル" : `Lv.${progress.level + 1}まで`}</span>
+              <span>{isMax ? "MAX" : `${progress.currentExp} / ${required} EXP`}</span>
+            </div>
+            <progress
+              aria-label={`${skill.name}の経験値`}
+              aria-valuetext={isMax ? "最高レベル" : `${progress.currentExp} / ${required} EXP`}
+              max={required}
+              value={isMax ? 1 : progress.currentExp}
+            />
+          </div>
+        );
+      })()}
 
       <p className="player-skill-unlock">
         解放条件：{replaceEnemyNumbers(

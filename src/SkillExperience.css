@@ -1,0 +1,43 @@
+.skill-experience {
+  margin: 16px 0;
+  color: #9fdce5;
+  font-size: 0.8rem;
+}
+.skill-experience-label {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.skill-experience progress {
+  display: block;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: #09251e;
+}
+.skill-experience progress::-webkit-progress-bar {
+  background: #09251e;
+  border-radius: 999px;
+}
+.skill-experience progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #359eb2, #a5f0f3);
+  border-radius: 999px;
+}
+.skill-experience progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #359eb2, #a5f0f3);
+  border-radius: 999px;
+}
+.skill-experience--max { color: #f1d38a; }
+.skill-experience--max progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #b98a36, #f1d38a);
+}
+.skill-experience--max progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #b98a36, #f1d38a);
+}

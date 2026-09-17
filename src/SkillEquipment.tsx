@@ -137,6 +137,7 @@ export function SkillEquipment({
               key={skill.id}
               skill={skill}
               progress={progress}
+              showExperience
               equipped={equipped}
               disabled={!equipped && draft.equippedSkills.length >= MAX}
               onToggle={() => toggle(skill.id, equipped)}
