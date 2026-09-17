@@ -1,4 +1,6 @@
-import { ENEMY_NAMES } from "./enemy-art/EnemyPortrait";
+import { ENEMY_NAMES, EnemyPortrait } from "./enemy-art/EnemyPortrait";
+import { ENEMY_DESCRIPTIONS } from "./EnemyGuide";
+import { PLAYER_SKILL_CATALOG } from "./lib/akuukan/playerSkillCatalog";
 import { unlockGameAudio } from "./lib/gameAudio";
 import { EnemyCatalog } from "./EnemyCatalog";
 import { SkillCatalog } from "./SkillCatalog";
@@ -175,7 +177,12 @@ export function AkuukanGame() {
   return (
     <main className="akuukan-lobby">
       <header className="akuukan-lobby-header">
+        <span className="lobby-eyebrow">AKUUKAN MAHJONG</span>
         <h1>亜空間麻雀</h1>
+        <div className="lobby-progress" aria-label="解放状況">
+          <span>対戦相手 <b>{Object.values(loaded.saveData.enemyProgress.enemies).filter(e => e.isUnlocked).length}</b> / 16</span>
+          <span>スキル <b>{PLAYER_SKILL_CATALOG.filter(s => loaded.saveData.playerSkillGrowth.skills[s.id].isUnlocked).length}</b> / 80</span>
+        </div>
       </header>
 
       {loaded.failureReason ? (
@@ -203,8 +210,21 @@ export function AkuukanGame() {
           className="akuukan-lobby-card"
           aria-label="対局の準備"
         >
+          <div className="lobby-matchup">
+            <aside className="lobby-opponent" aria-label="選択した対戦相手">
+              <div className="lobby-portrait-stage" key={enemyId}>
+                <EnemyPortrait enemyId={enemyId} size="hero" />
+                <span className="lobby-portrait-caption">CHALLENGER</span>
+              </div>
+              <div className="lobby-opponent-copy" aria-live="polite">
+                <span className="lobby-eyebrow">対戦相手</span>
+                <h2>{ENEMY_NAMES[enemyId]}</h2>
+                <p className="lobby-wins">勝利回数 <b>{loaded.saveData.enemyProgress.enemies[enemyId].firstPlaceCount}</b> 回</p>
+                <ul>{ENEMY_DESCRIPTIONS[enemyId].map(text => <li key={text}>{text}</li>)}</ul>
+              </div>
+            </aside>
           <fieldset className="akuukan-enemy-picker">
-            <legend>対戦相手</legend>
+            <legend>対戦相手を選択 <small>16 CHALLENGERS</small></legend>
 
             <div className="akuukan-enemy-buttons">
               {ENEMY_CATALOG.map(enemy => {
@@ -226,6 +246,7 @@ export function AkuukanGame() {
                     }
                     onClick={() => setEnemyId(enemy.id)}
                   >
+                    <EnemyPortrait enemyId={enemy.id} size="roster" />
                     <span>{ENEMY_NAMES[enemy.id]}</span>
 
                     <small>
@@ -240,11 +261,17 @@ export function AkuukanGame() {
               })}
             </div>
           </fieldset>
+          </div>
 
-          <p>
+          <div className="lobby-dock">
+          <div className="lobby-launch">
+          <div>
+          <p className="lobby-loadout">
             装備スキル：
             {loaded.saveData.equippedSkills.length} / 10
           </p>
+          <span className="lobby-format">四人打ち・半荘戦・25,000点持ち</span>
+          </div>
 
           <button
             type="button"
@@ -253,6 +280,7 @@ export function AkuukanGame() {
           >
             対局を開始
           </button>
+          </div>
 
           <div className="akuukan-lobby-actions akuukan-lobby-actions--three">
             <button
@@ -278,6 +306,7 @@ export function AkuukanGame() {
           </div>
 
           {message && <p role="status">{message}</p>}
+          </div>
         </section>
       )}
     </main>

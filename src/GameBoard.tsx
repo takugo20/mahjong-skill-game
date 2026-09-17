@@ -2385,7 +2385,13 @@ function handlePlayerSkill4_21() {
         }
         aria-label="麻雀卓"
         aria-busy={isInteractionLocked}
+        data-current-seat={round.currentSeat}
+        data-round-phase={round.phase}
       >
+        <div className="table-emblem" aria-hidden="true">
+          <svg viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" /><circle cx="80" cy="80" r="60" /><path d="M80 5 155 80 80 155 5 80Z M80 20v22 M80 118v22 M20 80h22 M118 80h22" /></svg>
+          <span>亜空間</span>
+        </div>
         <div className="round-corner-panel">
           <span>半荘戦</span>
           <strong>
@@ -3225,6 +3231,11 @@ function handlePlayerSkill4_21() {
               ]
             }
           >
+            <div className="declaration-player" aria-hidden="true">
+              {declarationOverlay.seat === 2 && gameState.akuukan
+                ? ENEMY_NAMES[gameState.akuukan.setup.enemyId]
+                : round.players[declarationOverlay.seat].name}
+            </div>
             <span>
               {
                 DECLARATION_LABELS[

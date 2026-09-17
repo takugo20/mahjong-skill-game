@@ -123,7 +123,7 @@ export function SkillEquipment({
         </p>
       )}
 
-      <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+      <div className="skill-card-grid">
         {visibleSkills.map(skill => {
           const progress = draft.playerSkillGrowth.skills[skill.id];
           if (!progress.isUnlocked) return null;

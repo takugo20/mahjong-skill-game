@@ -89,6 +89,19 @@ function installWebkitAudioContext(
 }
 
 describe("ゲーム効果音", () => {
+  it("ミュートでは音源を作らず、音量を戻すと再生できる", async () => {
+    installAudioContext();
+    const { playGameSound, setGameSoundVolume } = await import("./gameAudio");
+    setGameSoundVolume(0);
+    playGameSound("drawTile");
+    expect(fakeAudioContexts).toHaveLength(0);
+    setGameSoundVolume(.5);
+    playGameSound("drawTile");
+    expect(fakeAudioContexts).toHaveLength(1);
+    expect(oscillatorStart).toHaveBeenCalled();
+    expect(gainRampToValueAtTime).toHaveBeenCalledWith(.06, expect.any(Number));
+  });
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

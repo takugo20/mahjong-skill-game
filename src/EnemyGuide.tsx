@@ -7,7 +7,7 @@ import type { EnemyProgressState } from "./lib/akuukan/enemyProgress";
 import type { EnemyId } from "./lib/akuukan/types";
 import { ENEMY_CATALOG } from "./lib/akuukan/enemyCatalog";
 
-const DESCRIPTIONS: Readonly<Record<EnemyId, readonly string[]>> = {
+export const ENEMY_DESCRIPTIONS: Readonly<Record<EnemyId, readonly string[]>> = {
   "enemy-1": [
     "他家にはドラ表示牌が裏返しに見える。",
     "自分が追っかけ立直をすると、先制立直していた他家は、通常のツモでは和了牌をツモれなくなる。"
@@ -158,7 +158,7 @@ function EnemyGuideEntry({
         <dt>特殊能力：</dt>
         <dd>
           <ul>
-            {DESCRIPTIONS[enemyId].map(description => (
+            {ENEMY_DESCRIPTIONS[enemyId].map(description => (
               <li key={description}>
                 {description}
               </li>

@@ -1,8 +1,10 @@
 import { AkuukanGame } from "./AkuukanGame";
 import "./styles.css";
+import "./presentation.css";
+import { PresentationSettings } from "./PresentationSettings";
 
 function App() {
-  return <AkuukanGame />;
+  return <><AkuukanGame /><PresentationSettings /></>;
 }
 
 export default App;

@@ -67,6 +67,7 @@ export function SkillCatalog({ saveData, onBack }: Props) {
         <p>該当するスキルはありません。</p>
       )}
 
+      <div className="skill-card-grid">
       {visible.map(skill => (
         <PlayerSkillCard
           key={skill.id}
@@ -74,6 +75,7 @@ export function SkillCatalog({ saveData, onBack }: Props) {
           progress={growth.skills[skill.id]}
         />
       ))}
+      </div>
     </main>
   );
 }

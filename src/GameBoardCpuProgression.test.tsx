@@ -1032,7 +1032,7 @@ describe("GameBoardのCPU進行演出", () => {
     );
 
     expect(overlay.textContent).toBe(
-      "ポン"
+      "あなたポン"
     );
     expect(
       overlay.classList.contains(
@@ -1081,7 +1081,7 @@ describe("GameBoardのCPU進行演出", () => {
       screen.getByRole("status", {
         name: "あなたのリーチ"
       }).textContent
-    ).toBe("リーチ");
+    ).toBe("あなたリーチ");
     expect(
       screen.getByText("宣言演出中…")
     ).not.toBeNull();
@@ -1151,7 +1151,7 @@ describe("GameBoardのCPU進行演出", () => {
     );
 
     expect(overlay.textContent).toBe(
-      "ポン"
+      "CPU・右ポン"
     );
     expect(
       overlay.classList.contains(
@@ -1239,7 +1239,7 @@ describe("GameBoardのCPU進行演出", () => {
       screen.getByRole("status", {
         name: "CPU・右のリーチ"
       }).textContent
-    ).toBe("リーチ");
+    ).toBe("CPU・右リーチ");
     expect(
       cpuRiver.querySelector(
         '[data-declaration-target="true"]'
@@ -1302,7 +1302,7 @@ describe("GameBoardのCPU進行演出", () => {
       screen.getByRole("status", {
         name: "あなたのツモ"
       }).textContent
-    ).toBe("ツモ");
+    ).toBe("あなたツモ");
     expect(
       screen.getByText("和了演出中…")
     ).not.toBeNull();
@@ -1359,7 +1359,7 @@ describe("GameBoardのCPU進行演出", () => {
       screen.getByRole("status", {
         name: "あなたのロン"
       }).textContent
-    ).toBe("ロン");
+    ).toBe("あなたロン");
     expect(
       screen.queryByRole("dialog", {
         name: "和了結果"
@@ -1422,7 +1422,7 @@ describe("GameBoardのCPU進行演出", () => {
       screen.getByRole("status", {
         name: "CPU・右のロン"
       }).textContent
-    ).toBe("ロン");
+    ).toBe("CPU・右ロン");
     expect(
       screen.queryByRole("dialog", {
         name: "和了結果"
@@ -1472,7 +1472,7 @@ describe("GameBoardのCPU進行演出", () => {
       screen.getByRole("status", {
         name: "CPU・右のツモ"
       }).textContent
-    ).toBe("ツモ");
+    ).toBe("CPU・右ツモ");
     expect(
       screen.queryByRole("dialog", {
         name: "和了結果"

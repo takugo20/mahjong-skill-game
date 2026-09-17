@@ -37,7 +37,7 @@ export function PlayerSkillCard({
     <article
       aria-label={skill.name}
       className={`player-skill-card${
-        progress.isUnlocked ? "" : " player-skill-card--locked"
+        progress.isUnlocked ? (equipped ? " player-skill-card--equipped" : "") : " player-skill-card--locked"
       }`}
     >
       <h2>

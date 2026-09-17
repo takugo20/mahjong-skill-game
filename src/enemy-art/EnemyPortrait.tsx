@@ -36,7 +36,7 @@ const imageUrl = Object.values(images)[0];
 
 interface Props {
   enemyId: EnemyId;
-  size?: "catalog" | "board";
+  size?: "catalog" | "board" | "roster" | "hero";
 }
 
 export function EnemyPortrait({
@@ -47,7 +47,7 @@ export function EnemyPortrait({
   const column = index % 4;
   const row = Math.floor(index / 4);
 
-  const width = size === "board"
+  const width = size === "hero" ? "100%" : size === "roster" ? "100%" : size === "board"
     ? "clamp(30px, 5vmin, 48px)"
     : "clamp(88px, 22vw, 144px)";
 
@@ -66,6 +66,7 @@ export function EnemyPortrait({
 
   return (
     <span
+      className={`enemy-portrait enemy-portrait--${size}`}
       role="img"
       aria-label={ENEMY_NAMES[enemyId] + "の画像"}
       data-enemy-id={enemyId}

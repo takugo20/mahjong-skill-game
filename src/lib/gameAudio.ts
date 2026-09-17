@@ -96,6 +96,11 @@ const SOUND_PATTERNS:
   };
 
 let audioContext: AudioContext | null = null;
+let soundVolume = 1;
+
+export function setGameSoundVolume(volume: number): void {
+  if (Number.isFinite(volume)) soundVolume = Math.max(0, Math.min(1, volume));
+}
 
 function getAudioContextConstructor():
   AudioContextConstructor | null {
@@ -176,7 +181,7 @@ function scheduleTone(
     startTime
   );
   gain.gain.exponentialRampToValueAtTime(
-    soundTone.volume,
+    Math.max(0.0001, soundTone.volume * soundVolume),
     attackEndTime
   );
   gain.gain.exponentialRampToValueAtTime(
@@ -226,6 +231,7 @@ export async function unlockGameAudio():
 export function playGameSound(
   sound: GameSound
 ): void {
+  if (soundVolume === 0) return;
   const context = getAudioContext();
 
   if (!context) {
@@ -240,7 +246,7 @@ export function playGameSound(
   void context
     .resume()
     .then(() => {
-      if (context.state === "running") {
+      if (context.state === "running" && soundVolume > 0) {
         scheduleSound(context, sound);
       }
     })
