@@ -1,0 +1,28 @@
+.feature-panel { margin: 20px 0; padding: 16px; border: 1px solid #698578; border-radius: 12px; background: #102b21; }
+.feature-panel h2 { margin-top: 0; font-size: 1.1rem; }
+.feature-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.feature-table { overflow-x: auto; margin-bottom: 24px; }
+.feature-table table { width: 100%; border-collapse: collapse; font-size: .85rem; white-space: nowrap; }
+.feature-table th, .feature-table td { padding: 10px; border-bottom: 1px solid #507364; text-align: right; }
+.feature-table th:first-child { text-align: left; }
+.match-tools { position: absolute; left: 1%; top: 8%; z-index: 30; display: flex; flex-direction: column; gap: 4px; font-size: .65rem; }
+.match-tools button, .match-tools summary { padding: 5px 8px; font-size: inherit; background: #103c2e; border: 1px solid #769e8d; border-radius: 6px; color: #effbf5; }
+.skill-event-list { position: absolute; width: min(360px, 85vw); max-height: 45vh; overflow-y: auto; padding: 12px; background: #081c16; border: 1px solid #839c85; font-size: .8rem; }
+.skill-toast { position: absolute; left: 25%; top: 19%; width: 50%; padding: 10px; border: 1px solid #f3d289; border-radius: 8px; background: #122a21ed; color: #ffe3a5; font-size: clamp(.65rem, 1.5vw, .95rem); z-index: 55; pointer-events: none; }
+.feature-error { position: fixed; bottom: 5px; left: 5%; width: 90%; padding: 10px; color: #ffe1d2; background: #471c14; z-index: 150; }
+.game-table[data-win-tier="mangan"] { --win-accent: #e9cd85; }
+.game-table[data-win-tier="haneman"] { --win-accent: #8bedee; }
+.game-table[data-win-tier="baiman"] { --win-accent: #b69cff; }
+.game-table[data-win-tier="sanbaiman"] { --win-accent: #ffa6dc; }
+.game-table[data-win-tier="yakuman"] { --win-accent: #ffe17a; }
+.game-table:not([data-win-tier="normal"]) .win-result-card { border: 2px solid var(--win-accent); box-shadow: 0 0 35px color-mix(in srgb, var(--win-accent) 45%, transparent); }
+.game-table:not([data-win-tier="normal"]) .declaration-overlay { color: var(--win-accent); }
+.game-table[data-win-tier="yakuman"] .win-result-card { background: linear-gradient(150deg, #3c2912, #122c22 50%, #382451); }
+.game-table[data-win-tier="yakuman"] .win-result-header strong { color: #ffe17a; }
+.game-table[data-win-tier="normal"] .win-result-card { animation-duration: .18s; }
+.game-table[data-win-tier="haneman"] .win-result-card { animation-duration: .35s; }
+.game-table[data-win-tier="baiman"] .win-result-card, .game-table[data-win-tier="sanbaiman"] .win-result-card { animation-duration: .45s; }
+.game-table[data-win-tier="yakuman"] .win-result-card { animation-duration: .6s; }
+html[data-motion="reduced"] .game-table .win-result-card { animation: none; }
+@media (max-width: 600px) { .match-tools { top: 12%; font-size: .5rem; } .match-tools button, .match-tools summary { padding: 3px; } }
+@media (prefers-reduced-motion: reduce) { .skill-toast, .game-table .win-result-card { animation: none; } }

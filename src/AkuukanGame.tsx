@@ -35,6 +35,9 @@ export function AkuukanGame() {
   const [saveStatus, setSaveStatus] =
     useState<"idle" | "saved" | "failed">("idle");
   const [message, setMessage] = useState("");
+  const [features, setFeatures] = useState(readFeatures);
+  const [balanceOpen, setBalanceOpen] = useState(false);
+  const [session, setSession] = useState<MatchSession | undefined>();
 
   const finishedRef = useRef<GameState | null>(null);
   const saveRef = useRef(loaded.saveData);
@@ -54,6 +57,10 @@ export function AkuukanGame() {
         failureReason: null
       });
       setSaveStatus("saved");
+      if (!updateFeatures(data => ({ ...data, resume: null }))) {
+        setMessage("対局結果は保存済みですが、中断データを更新できませんでした。");
+      }
+      setFeatures(readFeatures());
     } else {
       setSaveStatus("failed");
     }
@@ -70,6 +77,10 @@ export function AkuukanGame() {
   );
 
   function start() {
+    if (readFeatures().data.resume) {
+      setMessage("中断中の対局を再開するか、破棄してから新しい対局を開始してください。");
+      return;
+    }
     void unlockGameAudio();
     const result = tryStartAkuukanMatchFromSaveData(
       saveRef.current,
@@ -86,8 +97,35 @@ export function AkuukanGame() {
     finishedRef.current = null;
     setSaveStatus("idle");
     setMessage("");
+    setSession(createMatchSession());
     setInitialState(result.gameState);
   }
+
+  const checkpoint = useCallback((state: GameState, currentSession: MatchSession) => {
+    return updateFeatures(data => ({ ...data, resume: {
+      state, session: { ...currentSession, activations: { ...currentSession.activations } },
+      savedAt: Date.now(), progressSignature: progressSignature(saveRef.current)
+    } }));
+  }, []);
+
+  function resume() {
+    const latest = readFeatures();
+    const saved = latest.data.resume;
+    if (!saved) { setMessage(latest.error || "中断データがありません。"); return; }
+    const current = loadAkuukanSaveDataFromBrowser();
+    if (current.failureReason || saved.progressSignature !== progressSignature(current.saveData) || latest.data.runs.some(r => r.id === saved.session.id)) {
+      setMessage("成長データが更新されているため、この中断データは再開できません。破棄して新しい対局を開始してください。"); return;
+    }
+    void unlockGameAudio();
+    saveRef.current = current.saveData;
+    setLoaded(current);
+    finishedRef.current = null;
+    setSaveStatus("idle");
+    setSession(saved.session);
+    setInitialState(saved.state);
+  }
+
+  if (balanceOpen) return <BalanceDashboard onBack={() => setBalanceOpen(false)} />;
 
   if (enemyCatalogOpen) {
     return (
@@ -132,6 +170,9 @@ export function AkuukanGame() {
     return (
       <GameBoard
         initialState={initialState}
+        featureSession={session}
+        onCheckpoint={checkpoint}
+        onSuspend={() => { setInitialState(null); setFeatures(readFeatures()); setMessage("対局を保存しました。"); }}
         onMatchEnd={handleMatchEnd}
         restartDisabled={saveStatus !== "saved"}
         onRestart={() => {
@@ -146,6 +187,7 @@ export function AkuukanGame() {
                 finishedRef.current?.matchProgress?.settlement
               }
             />
+            {message && <p role="status">{message}</p>}
             {saveStatus === "saved" ? (
               <p>成長・解放結果を保存しました。</p>
             ) : saveStatus === "failed" ? (
@@ -184,6 +226,20 @@ export function AkuukanGame() {
           <span>スキル <b>{PLAYER_SKILL_CATALOG.filter(s => loaded.saveData.playerSkillGrowth.skills[s.id].isUnlocked).length}</b> / 80</span>
         </div>
       </header>
+
+      {features.error && <p role="alert">{features.error}</p>}
+      {features.data.resume && <section className="feature-panel" aria-label="中断中の対局">
+        <h2>中断中の対局</h2>
+        <p>{ENEMY_NAMES[features.data.resume.state.akuukan!.setup.enemyId]} ／
+          {features.data.resume.state.round.prevailingWind === "east" ? "東" : "南"}{features.data.resume.state.round.handNumber}局
+          ・{new Date(features.data.resume.savedAt).toLocaleString("ja-JP")}</p>
+        <div className="feature-actions"><button onClick={resume}>続きから再開</button>
+          <button onClick={() => {
+            if (updateFeatures(data => ({ ...data, resume: null }))) { setFeatures(readFeatures()); setMessage("中断対局を破棄しました。"); }
+            else setMessage("中断データを破棄できませんでした。");
+          }}>中断対局を破棄</button></div>
+      </section>}
+      <button onClick={() => setBalanceOpen(true)}>実戦バランス計測</button>
 
       {loaded.failureReason ? (
         <section className="akuukan-lobby-card">
@@ -312,3 +368,6 @@ export function AkuukanGame() {
     </main>
   );
 }
+import { BalanceDashboard } from "./BalanceDashboard";
+import { createMatchSession, progressSignature, readFeatures, updateFeatures, type MatchSession } from "./lib/gameFeatures";
+import "./GameFeatures.css";

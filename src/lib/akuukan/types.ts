@@ -269,6 +269,8 @@ export interface AkuukanPlayerSkill3_13TransferState {
 }
 
 export interface AkuukanGameState {
+  skillEventSequence?: number;
+  skillEvents?: import("./skillEvents").SkillEvent[];
   setup: AkuukanMatchSetup;
   e2DrawRestriction?:
     AkuukanE2DrawRestrictionState;

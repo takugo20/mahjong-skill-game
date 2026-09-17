@@ -324,6 +324,9 @@ interface MeldAreaProps {
 }
 
 interface GameBoardProps {
+  featureSession?: MatchSession;
+  onCheckpoint?: (state: GameState, session: MatchSession) => boolean;
+  onSuspend?: () => void;
   initialState?: ReturnType<typeof createInitialGameState>;
   onMatchEnd?: (
     state: ReturnType<typeof createInitialGameState>
@@ -909,6 +912,9 @@ function OpponentArea({
 }
 
 export function GameBoard({
+  featureSession,
+  onCheckpoint,
+  onSuspend,
   initialState,
   onMatchEnd,
   onRestart,
@@ -973,6 +979,8 @@ export function GameBoard({
     isWinPresenting,
     setIsWinPresenting
   ] = useState(false);
+
+  const [presentedWinTier, setPresentedWinTier] = useState<ReturnType<typeof winTier>>("normal");
 
   const cpuProgressTimerRef = useRef<
     ReturnType<typeof setTimeout> | null
@@ -1543,6 +1551,9 @@ export function GameBoard({
 
     winPresentingRef.current = true;
     setIsWinPresenting(true);
+    const tier = winTier(resultState);
+    setPresentedWinTier(tier);
+    if (tier !== "normal") playGameSound(tier);
     showDeclaration(kind, seat);
 
     winPresentationTimerRef.current =
@@ -2385,10 +2396,13 @@ function handlePlayerSkill4_21() {
             : "game-table"
         }
         aria-label="麻雀卓"
+        data-win-tier={isWinPresenting ? presentedWinTier : winTier(gameState)}
         aria-busy={isInteractionLocked}
         data-current-seat={round.currentSeat}
         data-round-phase={round.phase}
       >
+        {featureSession && onCheckpoint && onSuspend && <MatchTools state={gameState}
+          busy={isInteractionLocked} session={featureSession} onCheckpoint={onCheckpoint} onSuspend={onSuspend} />}
         <div className="table-emblem" aria-hidden="true">
           <svg viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" /><circle cx="80" cy="80" r="60" /><path d="M80 5 155 80 80 155 5 80Z M80 20v22 M80 118v22 M20 80h22 M118 80h22" /></svg>
           <span>亜空間</span>
@@ -4364,3 +4378,5 @@ function handlePlayerSkill4_21() {
     </main>
   );
 }
+import { MatchTools } from "./MatchTools";
+import { winTier, type MatchSession } from "./lib/gameFeatures";

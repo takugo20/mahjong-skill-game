@@ -238,8 +238,11 @@ export function markAkuukanSourceUsed(
     return state;
   }
 
+  const recorded = sourceId.startsWith("player-skill:")
+    ? recordSkillEvent(state, sourceId.slice(13) as import("./types").PlayerSkillId, "発動しました")
+    : state;
   return {
-    ...state,
+    ...recorded,
     usedSources: {
       ...state.usedSources,
       [scope]: [
@@ -410,3 +413,4 @@ export function beginAkuukanRound(
     nextRoundEffects: []
   };
 }
+import { recordSkillEvent } from "./skillEvents";

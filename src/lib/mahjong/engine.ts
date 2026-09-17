@@ -861,7 +861,7 @@ function applyAkuukanDamatenDetection(
   return {
     state: {
       ...state,
-      akuukan: detection.akuukan,
+      akuukan: detectionNotice ? recordSkillEvent(detection.akuukan, "3-3", detectionNotice) : detection.akuukan,
       damatenAlert: detection.detectedPlayerIds.length > 0
         ? {
             sequence: (state.damatenAlert?.sequence ?? 0) + 1,
@@ -902,6 +902,7 @@ function applyAkuukanPlayerDealCompletedEffects(
     });
 
   if (transformation.transformedTileId) {
+    akuukan = recordSkillEvent(akuukan, "1-1", "手牌を1枚、赤ドラに変化");
     player.hand = sortTiles(
       transformation.tiles
     );
@@ -922,7 +923,9 @@ function applyAkuukanPlayerDealCompletedEffects(
     );
   }
 
-  return nextRoundTransformation.akuukan;
+  return nextRoundTransformation.transformedTileId
+    ? recordSkillEvent(nextRoundTransformation.akuukan, "1-6", "手牌を1枚、赤ドラに変化")
+    : nextRoundTransformation.akuukan;
 }
 
 export function createInitialGameState(
@@ -934,7 +937,7 @@ export function createInitialGameState(
         akuukanSetup
       )
     : undefined;
-  const akuukan = initialAkuukan
+  let akuukan = initialAkuukan
     ? assignAkuukanE5TargetSuit({
         akuukan: initialAkuukan,
         random
@@ -953,6 +956,7 @@ export function createInitialGameState(
         random
       })
     : 1;
+  if (akuukan && doraIndicatorCount > 1) akuukan = recordSkillEvent(akuukan, "1-5", `ドラ表示牌を${doraIndicatorCount - 1}枚追加`);
   const availableLiveWall =
     shuffledTiles.slice(0, -14);
   const dealComposition =
@@ -4147,7 +4151,7 @@ function applyAkuukanPlayerSkill1_3BeforeWin(
       (tile) =>
         tile.id === transformedTile.id
     );
-  const stateAfterTransformation =
+  const handAfterTransformation =
     playerHandChanged
       ? {
           ...state,
@@ -4165,6 +4169,11 @@ function applyAkuukanPlayerSkill1_3BeforeWin(
           }
         }
       : state;
+
+  const stateAfterTransformation = {
+    ...handAfterTransformation,
+    akuukan: recordSkillEvent(state.akuukan, "1-3", "和了牌姿の1枚を赤ドラに変化")
+  };
 
   if (
     winMethod !== "ron" ||
@@ -4541,7 +4550,7 @@ function finishRoundWithWinWithoutProgress(
               )
         })
       : recordedAkuukan;
-  const akuukan =
+  let akuukan =
     akuukanAfterPairReservation &&
     resolution.winnerSeat === 0
       ? reservePlayerSkill2_20AfterWin({
@@ -4576,6 +4585,7 @@ function finishRoundWithWinWithoutProgress(
         })
       : state.playerMp;
 
+  if (akuukan && playerMp > state.playerMp) akuukan = recordSkillEvent(akuukan, "2-18", `MPを${playerMp - state.playerMp}回復`);
   return {
     ...state,
     playerMp,
@@ -4665,7 +4675,7 @@ function finishRoundWithRonCandidatesWithoutProgress(
         playerResolution.winnerSeat
       ]
     : undefined;
-  const akuukan =
+  let akuukan =
     akuukanAfterPairReservation &&
     playerResolution &&
     player
@@ -4700,6 +4710,7 @@ function finishRoundWithRonCandidatesWithoutProgress(
         })
       : state.playerMp;
 
+  if (akuukan && playerMp > state.playerMp) akuukan = recordSkillEvent(akuukan, "2-18", `MPを${playerMp - state.playerMp}回復`);
   if (result.kind === "singleRon") {
     const winner =
       state.round.players[
@@ -5706,6 +5717,7 @@ function applyAkuukanPlayerSkill1_2AfterCall(
 
   return {
     ...state,
+    akuukan: recordSkillEvent(state.akuukan, "1-2", "手牌を1枚、赤ドラに変化"),
     round: {
       ...state.round,
       players: replacePlayer(
@@ -8802,6 +8814,7 @@ function dealNextRoundHands(
         random
       })
     : 1;
+  if (akuukan && doraIndicatorCount > 1) akuukan = recordSkillEvent(akuukan, "1-5", `ドラ表示牌を${doraIndicatorCount - 1}枚追加`);
   const availableLiveWall =
     shuffledTiles.slice(0, -14);
   const dealComposition =
@@ -9355,3 +9368,4 @@ function finishMatch(
     finishMatchWithoutProgress(...args)
   );
 }
+import { recordSkillEvent } from "../akuukan/skillEvents";

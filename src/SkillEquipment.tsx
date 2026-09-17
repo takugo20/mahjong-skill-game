@@ -95,6 +95,9 @@ export function SkillEquipment({
         {message && <p role="alert">{message}</p>}
       </div>
 
+      <EquipmentPresets draft={draft} onLoad={skills => {
+        setDraft({ ...draft, equippedSkills: skills }); setMessage("");
+      }} />
       <label>
         装備スキル検索
         <input
@@ -148,3 +151,5 @@ export function SkillEquipment({
     </main>
   );
 }
+import { EquipmentPresets } from "./EquipmentPresets";
+import "./GameFeatures.css";
