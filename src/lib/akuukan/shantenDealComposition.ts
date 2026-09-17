@@ -90,6 +90,7 @@ export type AkuukanE29ReservedTilesBySeat = [
 export interface ReserveAkuukanE29ShantenHandsInput {
   readonly akuukan: AkuukanGameState;
   readonly availableTiles: readonly Tile[];
+  readonly random?: () => number;
 }
 
 export interface AkuukanE29ShantenHandReservation {
@@ -784,6 +785,62 @@ function areE29ConstraintsSatisfied(
   );
 }
 
+function sampleTiles(tiles: readonly Tile[], size: number, random: () => number): Tile[] {
+  const pool = [...tiles];
+  const selected: Tile[] = [];
+  for (let i = 0; i < size && pool.length; i += 1) {
+    selected.push(...pool.splice(Math.floor(random() * pool.length), 1));
+  }
+  return selected;
+}
+
+function reserveRandomShantenHands(
+  availableTiles: readonly Tile[],
+  random: () => number
+): AkuukanE29ShantenHandReservation | null {
+  // Bounded retries keep constrained walls and deterministic RNGs responsive.
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const counts = createAvailableTileTypeCounts(availableTiles);
+    const selectedTypes: number[] = [];
+    for (let meld = 0; meld < 3; meld += 1) {
+      const candidates = STANDARD_MELD_CANDIDATES.filter(candidate =>
+        [...createRequiredTileTypeCounts(candidate)].every(([type, count]) => counts[type] >= count)
+      );
+      if (!candidates.length) break;
+      const candidate = candidates[Math.floor(random() * candidates.length)];
+      selectedTypes.push(...candidate);
+      changeTileTypeCounts(counts, candidate, -1);
+    }
+    if (selectedTypes.length !== 9) continue;
+    const pairs = counts.flatMap((count, type) => count >= 2 ? [type] : []);
+    if (!pairs.length) continue;
+    const pair = pairs[Math.floor(random() * pairs.length)];
+    selectedTypes.push(pair, pair);
+    const core = materializeReservedTiles(availableTiles, selectedTypes);
+    if (!core) continue;
+    const enemyHand = [...core, ...sampleTiles(removeReservedTiles(availableTiles, core), 2, random)];
+    if (enemyHand.length !== 13 || calculateShanten(enemyHand).minimum > 1) continue;
+    const hands = createEmptyReservedTilesBySeat();
+    hands[SELECTED_ENEMY_SEAT] = enemyHand;
+    let remainingTiles = removeReservedTiles(availableTiles, enemyHand);
+    for (const seat of OTHER_PLAYER_SEATS) {
+      for (let trial = 0; trial < 64; trial += 1) {
+        const hand = sampleTiles(remainingTiles, 13, random);
+        if (hand.length === 13 && calculateShanten(hand).minimum >= 4) {
+          hands[seat] = hand;
+          remainingTiles = removeReservedTiles(remainingTiles, hand);
+          break;
+        }
+      }
+      if (hands[seat].length !== 13) break;
+    }
+    if (areE29ConstraintsSatisfied(hands)) {
+      return { reservedTilesBySeat: hands, remainingTiles, constraintsSatisfied: true };
+    }
+  }
+  return null;
+}
+
 export function reserveAkuukanE29ShantenHands(
   input:
     ReserveAkuukanE29ShantenHandsInput
@@ -801,6 +858,10 @@ export function reserveAkuukanE29ShantenHands(
     );
   }
 
+  const randomized = reserveRandomShantenHands(input.availableTiles, input.random ?? Math.random);
+  if (randomized) return randomized;
+
+  // Preserve the existing guarantee when a restricted wall defeats sampling.
   const availableCounts =
     createAvailableTileTypeCounts(
       input.availableTiles

@@ -671,6 +671,7 @@ function prepareAkuukanDealComposition(
   const shantenHandsReservation =
     reserveAkuukanE29ShantenHands({
       akuukan: activePairReservation.akuukan,
+      random,
       availableTiles:
         tenpaiHandReservation.remainingTiles
     });
