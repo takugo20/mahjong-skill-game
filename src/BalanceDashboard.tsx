@@ -20,7 +20,7 @@ export function BalanceDashboard({ onBack }: { onBack: () => void }) {
   };
   return <main className="akuukan-skill-screen">
     <h1>実戦バランス計測</h1><button onClick={onBack}>開始画面に戻る</button>
-    <p>導入後に終了した直近500半荘を、この端末内に記録します。中断中・放棄した対局は含みません。</p>
+    <p>直近500半荘を、この端末内に記録します。中断中・放棄した対局は含みません。</p>
     {loaded.error && <p role="alert">{loaded.error}</p>}
     <label>対戦相手<select value={enemy} onChange={e => setEnemy(e.target.value)}>
       <option value="all">全員</option>{ENEMY_CATALOG.map(e => <option key={e.id} value={e.id}>{ENEMY_NAMES[e.id]}</option>)}
