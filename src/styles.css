@@ -1633,6 +1633,7 @@ body {
 
 .opponent-area--left .opponent-hand,
 .opponent-area--right .opponent-hand {
+  display: flex;
   flex-direction: column;
   gap: 1px;
   max-height: 100%;
