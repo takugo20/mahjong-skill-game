@@ -21,7 +21,7 @@ export const ENEMY_DESCRIPTIONS: Readonly<Record<EnemyId, readonly string[]>> = 
     "自分の和了時、前回の和了時と同じ役が含まれていたら、その役の翻数が2倍になる。"
   ],
   "enemy-4": [
-    "他家はチー・ポン・大明槓・暗槓ができない（加槓は可能）。",
+    "他家はチー・ポン・大明槓・暗槓ができない。",
     "自分がポン、大明槓するたびに他家から1,000点ずつ奪う。"
   ],
   "enemy-5": [
