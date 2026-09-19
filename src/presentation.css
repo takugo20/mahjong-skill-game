@@ -244,3 +244,24 @@ body:has(.win-result-overlay) .presentation-launcher { visibility: hidden; }
 }
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 html[data-motion="reduced"] .game-table--win-presenting::after { display: none; }
+
+/* Keep long skill names and target labels inside the action buttons. */
+.game-table .table-actions { container-type: inline-size; max-height: 78%; overflow-y: auto; }
+.game-table .table-actions .control-buttons { min-width: 0; flex-shrink: 0; }
+.game-table .table-actions .primary-button,
+.game-table .table-actions .secondary-button {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  flex-shrink: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.35;
+}
+.game-table .table-actions .secondary-button {
+  font-size: clamp(10px, 1.3vw, 16px);
+  font-size: clamp(10px, 8cqi, 16px);
+  padding: 6px 4px;
+}
