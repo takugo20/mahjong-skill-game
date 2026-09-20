@@ -79,27 +79,27 @@ describe("プレイヤースキル4-18 手牌整理【索】", () => {
     }[] = [
       {
         level: 1,
-        mpCost: 110,
+        mpCost: 350,
         maximumExchangeTileCount: 1
       },
       {
         level: 2,
-        mpCost: 100,
+        mpCost: 330,
         maximumExchangeTileCount: 2
       },
       {
         level: 3,
-        mpCost: 90,
+        mpCost: 310,
         maximumExchangeTileCount: 2
       },
       {
         level: 4,
-        mpCost: 80,
+        mpCost: 290,
         maximumExchangeTileCount: 3
       },
       {
         level: 5,
-        mpCost: 60,
+        mpCost: 250,
         maximumExchangeTileCount: 3
       }
     ];
@@ -132,7 +132,7 @@ describe("プレイヤースキル4-18 手牌整理【索】", () => {
       );
 
     expect(result.succeeded).toBe(true);
-    expect(result.state.playerMp).toBe(290);
+    expect(result.state.playerMp).toBe(60);
     expect(result.exchanges).toHaveLength(2);
 
     expect(
@@ -209,7 +209,7 @@ describe("プレイヤースキル4-18 手牌整理【索】", () => {
     };
 
     const insufficient =
-      createState(1, 109);
+      createState(1, 349);
 
     expect(
       canActivateAkuukanPlayerSkill4_18(

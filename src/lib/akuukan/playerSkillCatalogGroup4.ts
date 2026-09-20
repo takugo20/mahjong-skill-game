@@ -496,7 +496,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_4 = [
     },
     levels: createActiveLevels(
       9900,
-      [110, 100, 90, 80, 60],
+      [350, 330, 310, 290, 250],
       [
         { maximumExchangeTileCount: 1 },
         { maximumExchangeTileCount: 2 },
@@ -523,7 +523,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_4 = [
     },
     levels: createActiveLevels(
       9900,
-      [110, 100, 90, 80, 60],
+      [350, 330, 310, 290, 250],
       [
         { maximumExchangeTileCount: 1 },
         { maximumExchangeTileCount: 2 },
@@ -552,7 +552,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_4 = [
     },
     levels: createActiveLevels(
       9900,
-      [110, 100, 90, 80, 60],
+      [350, 330, 310, 290, 250],
       [
         { maximumExchangeTileCount: 1 },
         { maximumExchangeTileCount: 2 },

@@ -133,7 +133,7 @@ describe("プレイヤースキル4-19のエンジン統合", () => {
 
     const player = result.round.players[0];
 
-    expect(result.playerMp).toBe(290);
+    expect(result.playerMp).toBe(60);
 
     expect(
       player.hand.filter(

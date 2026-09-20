@@ -95,7 +95,7 @@ describe("4-20の発動から交換和了まで", () => {
     expect(canPlayerTsumo(before)).toBe(false);
 
     const after = exchange(before);
-    expect(after.playerMp).toBe(280);
+    expect(after.playerMp).toBe(40);
     expect(after.round.players[0].hand.some(
       (tile) => tile.id === "4-20-outgoing"
     )).toBe(false);
@@ -133,7 +133,7 @@ describe("4-20の発動から交換和了まで", () => {
     state.round.deadWall[0] = incoming;
 
     const after = exchange(state);
-    expect(after.playerMp).toBe(280);
+    expect(after.playerMp).toBe(40);
     expect(after.round.liveWall).toHaveLength(0);
     expect(canPlayerTsumo(after)).toBe(true);
 

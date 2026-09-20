@@ -230,7 +230,7 @@ describe("プレイヤースキル4-19の画面操作", () => {
 
     expect(
       document.body.textContent?.replace(/\s/g, "")
-    ).toContain("MP290／900");
+    ).toContain("MP60／900");
 
     expect(
       screen.queryByRole("button", {
