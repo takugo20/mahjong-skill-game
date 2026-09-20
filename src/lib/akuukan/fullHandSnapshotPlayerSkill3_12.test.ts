@@ -18,7 +18,7 @@ import type {
 
 function createState(
   level: SkillLevel | null = 1,
-  playerMp = 500
+  playerMp = 900
 ) {
   return {
     akuukan:
@@ -55,11 +55,11 @@ describe("プレイヤースキル3-12 透牌【全】", () => {
       level: SkillLevel;
       mpCost: number;
     }[] = [
-      { level: 1, mpCost: 300 },
-      { level: 2, mpCost: 290 },
-      { level: 3, mpCost: 280 },
-      { level: 4, mpCost: 270 },
-      { level: 5, mpCost: 250 }
+      { level: 1, mpCost: 900 },
+      { level: 2, mpCost: 850 },
+      { level: 3, mpCost: 800 },
+      { level: 4, mpCost: 750 },
+      { level: 5, mpCost: 600 }
     ];
 
     for (const currentCase of cases) {
@@ -73,7 +73,7 @@ describe("プレイヤースキル3-12 透牌【全】", () => {
       expect(result.succeeded).toBe(true);
       expect(result.failureReason).toBeNull();
       expect(result.state.playerMp).toBe(
-        500 - currentCase.mpCost
+        900 - currentCase.mpCost
       );
       expect(result.state.marker).toBe(
         "preserved"
@@ -135,7 +135,7 @@ describe("プレイヤースキル3-12 透牌【全】", () => {
   it("MP不足、未装備、E-18無効化中は発動しない", () => {
     const insufficient =
       tryActivateAkuukanPlayerSkill3_12(
-        createState(1, 299),
+        createState(1, 899),
         "player-1",
         targetTiles
       );

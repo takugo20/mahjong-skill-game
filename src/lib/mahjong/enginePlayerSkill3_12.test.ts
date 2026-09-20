@@ -14,7 +14,7 @@ import type {
 } from "./types";
 
 function createState(
-  playerMp = 500
+  playerMp = 900
 ): GameState {
   const state = createInitialGameState(
     () => 0.5,
@@ -55,7 +55,7 @@ describe("プレイヤースキル3-12 透牌【全】のエンジン統合", ()
         2
       );
 
-    expect(activated.playerMp).toBe(200);
+    expect(activated.playerMp).toBe(0);
     expect(
       activated.akuukan
         ?.playerSkill3_12Snapshot

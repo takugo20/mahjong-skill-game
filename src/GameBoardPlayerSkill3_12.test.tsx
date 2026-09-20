@@ -39,7 +39,7 @@ function createTile(
 }
 
 function createState(
-  playerMp = 500
+  playerMp = 900
 ): GameState {
   const state = createInitialGameState(
     () => 0.5,
@@ -152,7 +152,7 @@ describe("プレイヤースキル3-12の画面操作", () => {
     expect(
       document.body.textContent
         ?.replace(/\s/g, "")
-    ).toContain("MP200／900");
+    ).toContain("MP0／900");
     expect(
       screen.queryAllByRole("button", {
         name: /透牌【全】/
@@ -163,7 +163,7 @@ describe("プレイヤースキル3-12の画面操作", () => {
   it("MP不足なら対象選択ボタンを表示しない", () => {
     render(
       <GameBoard
-        initialState={createState(299)}
+        initialState={createState(899)}
       />
     );
 
