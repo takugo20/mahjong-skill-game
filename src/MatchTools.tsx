@@ -42,13 +42,6 @@ export function MatchTools({ state, busy, session, onCheckpoint, onSuspend }: {
         if (onCheckpoint(state, tracking.current)) onSuspend();
         else setError("中断データを保存できないため、対局を継続しています。");
       }}>保存して中断</button>}
-      <details><summary>スキル通知</summary><div className="skill-event-list">
-        <p>発動成功を記録します。ツモ確率などの常時補正は回数に含めません。</p>
-        {(state.akuukan?.skillEvents ?? []).slice(-20).reverse().map(e => <p key={e.sequence}>
-          {PLAYER_SKILL_CATALOG.find(s => s.id === e.skillId)?.name ?? e.skillId}：{e.detail}
-        </p>)}
-        {!state.akuukan?.skillEvents?.length && <p>発動の記録はまだありません。</p>}
-      </div></details>
     </div>
     {notice && <div className="skill-toast" role="status">{notice}</div>}
     {error && <div className="feature-error" role="alert">{error}<button onClick={() => {
