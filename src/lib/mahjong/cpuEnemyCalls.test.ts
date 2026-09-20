@@ -185,7 +185,7 @@ it("敵4は大明槓を選ぶが、終盤や立直への警戒時には見送る
   ).toBeNull();
 });
 
-it("敵8はプレイヤーの立直を恐れず、通常CPUの立直は警戒する", () => {
+it("敵8はロン禁止中の他家の立直を警戒せず、能力無効時は警戒する", () => {
   const state = createInitialGameState(() => 0.5, {
     enemyId: "enemy-8",
     equippedSkills: []
@@ -197,6 +197,11 @@ it("敵8はプレイヤーの立直を恐れず、通常CPUの立直は警戒す
   ).toBe(false);
 
   state.round.players[1].riichi = true;
+  expect(
+    getEnemyCallStrategy(state, state.round.players[2])?.threatened
+  ).toBe(false);
+
+  state.akuukan!.disabledSources.push("enemy-ability:E-13");
   expect(
     getEnemyCallStrategy(state, state.round.players[2])?.threatened
   ).toBe(true);

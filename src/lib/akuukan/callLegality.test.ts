@@ -344,7 +344,7 @@ describe("E-13のプレイヤー副露禁止", () => {
     }
   });
 
-  it("敵8と通常CPUはすべての副露・槓を宣言できる", () => {
+  it("無能力CPUは副露できず、暗槓・加槓は可能", () => {
     const akuukan = createAkuukan(
       "enemy-8"
     );
@@ -371,7 +371,7 @@ describe("E-13のプレイヤー副露禁止", () => {
             kind,
             score: 0
           })
-        ).toBe(true);
+        ).toBe(owner === "selectedEnemy" || kind === "closedKan" || kind === "addedKan");
       }
     }
   });
@@ -439,7 +439,7 @@ describe("E-13のプレイヤーロン禁止", () => {
     ).toBe(false);
   });
 
-  it("敵8と通常CPUはロンできる", () => {
+  it("錆月はロンできるが無能力CPUはロンできない", () => {
     const akuukan = createAkuukan(
       "enemy-8"
     );
@@ -453,7 +453,7 @@ describe("E-13のプレイヤーロン禁止", () => {
           akuukan,
           winner
         })
-      ).toBe(true);
+      ).toBe(winner === "selectedEnemy");
     }
   });
 

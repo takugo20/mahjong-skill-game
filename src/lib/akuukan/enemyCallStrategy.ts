@@ -95,7 +95,6 @@ export function getEnemyCallStrategy(
           && other.riichi
           && !(
             enemy === 8
-            && other.seat === 0
             && enabled("E-13")
           )
       ),

@@ -227,7 +227,7 @@ describe("E-13の河可視性", () => {
     }
   });
 
-  it("CPUにはすべての河を見せる", () => {
+  it("錆月には河を見せ、無能力CPUには他家の河を見せない", () => {
     const akuukan = createAkuukan(
       "enemy-8"
     );
@@ -247,7 +247,7 @@ describe("E-13の河可視性", () => {
             viewer,
             riverOwner
           })
-        ).toBe(true);
+        ).toBe(viewer === "selectedEnemy");
       }
     }
   });

@@ -72,11 +72,11 @@ function isAkuukanE8CallProhibited(
   );
 }
 
-function isAkuukanE13PlayerCallProhibited(
+function isAkuukanE13OpponentCallProhibited(
   input: AkuukanCallCheckInput
 ): boolean {
   return (
-    input.owner === "player" &&
+    input.owner !== "selectedEnemy" &&
     (
       input.kind === "chi" ||
       input.kind === "pon" ||
@@ -139,7 +139,7 @@ export function isAkuukanCallAllowed(
       input
     ) ||
     isAkuukanE8CallProhibited(input) ||
-    isAkuukanE13PlayerCallProhibited(
+    isAkuukanE13OpponentCallProhibited(
       input
     ) ||
     isAkuukanE24DiscardCallProhibited(
@@ -164,7 +164,7 @@ export function isAkuukanRonAllowed(
       input
     ) &&
     (
-      input.winner !== "player" ||
+      input.winner === "selectedEnemy" ||
       !isEnemyAbilityEnabled(
         input.akuukan,
         "E-13"

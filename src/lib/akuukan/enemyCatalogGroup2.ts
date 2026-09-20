@@ -173,7 +173,7 @@ export const ENEMY_CATALOG_GROUP_2 = [
       {
         id: "E-13",
         description:
-          "プレイヤーは自分の河しか見ることができず、他家の河は裏返しに見える。副露やロンもできなくなる。加槓および国士無双による暗槓への槍槓もできない。",
+          "プレイヤーと無能力CPUは自分の河しか見ることができず、他家の河は裏返しに見える。副露やロンもできなくなる。加槓および国士無双による暗槓への槍槓もできない。",
         activationHooks: [
           "informationVisibility",
           "callLegality",
