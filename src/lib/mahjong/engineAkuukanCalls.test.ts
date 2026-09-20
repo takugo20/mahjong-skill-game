@@ -943,15 +943,15 @@ describe("E-13の副露・槓エンジン統合", () => {
     ).toBe(true);
   });
 
-  it("通常CPUのポン・大明槓を禁止しない", () => {
+  it.each([1, 3] as const)("席%sの無能力CPUはポン・大明槓できない", (seat) => {
     const pon = prepareCpuPon(
-      1,
+      seat,
       25000,
       "enemy-8"
     );
     const openKan = prepareCpuOpenKan(
       25000,
-      1,
+      seat,
       "enemy-8"
     );
 
@@ -968,11 +968,11 @@ describe("E-13の副露・槓エンジン統合", () => {
       );
 
     expect(
-      ponResult.round.players[1].melds[0]
-    ).toMatchObject({ kind: "pon" });
+      ponResult.round.players[seat].melds
+    ).toHaveLength(0);
     expect(
-      openKanResult.round.players[1]
-        .melds[0]
-    ).toMatchObject({ kind: "openKan" });
+      openKanResult.round.players[seat]
+        .melds
+    ).toHaveLength(0);
   });
 });
