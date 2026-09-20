@@ -37,7 +37,7 @@ export const ENEMY_DESCRIPTIONS: Readonly<Record<EnemyId, readonly string[]>> = 
     "他家の配牌・通常ツモを制限し、風牌が自分に集まりやすくなる。"
   ],
   "enemy-8": [
-    "プレイヤーと無能力CPUから他家の河が裏返しに見え、副露やロンもできない。",
+    "他家から他家の河が裏返しに見え、副露やロンもできない。",
     "自分が副露して晒した牌が赤ドラになる。"
   ],
   "enemy-9": [
