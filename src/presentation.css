@@ -265,3 +265,35 @@ html[data-motion="reduced"] .game-table--win-presenting::after { display: none; 
   font-size: clamp(10px, 8cqi, 16px);
   padding: 6px 4px;
 }
+/* E-19: show discard restrictions without blocking meld/skill selection. */
+.mahjong-tile--discard-locked > .tile-face-svg {
+  filter: grayscale(0.8) brightness(0.58);
+}
+.tile-discard-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgb(12 20 27 / 20%);
+  color: #f1e4be;
+  pointer-events: none;
+}
+.tile-discard-lock > svg {
+  width: 72%;
+  height: 60%;
+  filter: drop-shadow(0 1px 2px #000) drop-shadow(0 0 1px #000);
+}
+.tile-discard-lock > span {
+  width: 100%;
+  padding: 3px 0;
+  background: rgb(15 23 29 / 90%);
+  color: #fff0cb;
+  font-size: clamp(9px, 0.85vw, 13px);
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-align: center;
+}

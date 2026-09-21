@@ -44,6 +44,7 @@ import {
   useState
 } from "react";
 import { TileView } from "./components/TileView";
+import { getAkuukanE19ForbiddenTileIds } from "./lib/akuukan/discardLegality";
 import {
   areAkuukanDoraIndicatorsVisible,
   areAkuukanRiverTilesVisible
@@ -1123,6 +1124,9 @@ export function GameBoard({
 
   const round = gameState.round;
   const player = round.players[0];
+  const discardLockedTileIds = gameState.akuukan
+    ? getAkuukanE19ForbiddenTileIds(gameState.akuukan, player.id)
+    : [];
   const isDeclarationPresenting =
     declarationOverlay !== null &&
     declarationOverlay.kind !== "tsumo" &&
@@ -2349,6 +2353,7 @@ function handlePlayerSkill4_21() {
       <TileView
         key={tile.id}
         tile={tile}
+        discardLocked={discardLockedTileIds.includes(tile.id)}
         selected={
           selectedTileId === tile.id ||
           playerSkill4_17SelectedTileIds.includes(
