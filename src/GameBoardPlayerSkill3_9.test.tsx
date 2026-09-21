@@ -77,12 +77,12 @@ describe("プレイヤースキル3-9の画面操作", () => {
     expect(
       document.body.textContent
         ?.replace(/\s/g, "")
-    ).toContain("MP180／900");
+    ).toContain("MP120／900");
     expect(
       document.body.textContent
         ?.replace(/\s/g, "")
     ).toContain(
-      "防御結界【破】残り2巡"
+      "防御結界【破】残り1巡"
     );
     expect(
       screen.queryByRole("button", {
@@ -94,7 +94,7 @@ describe("プレイヤースキル3-9の画面操作", () => {
   it("MP不足なら発動ボタンを表示しない", () => {
     render(
       <GameBoard
-        initialState={createState(319)}
+        initialState={createState(379)}
       />
     );
 

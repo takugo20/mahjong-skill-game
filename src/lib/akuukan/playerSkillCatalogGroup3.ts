@@ -321,13 +321,13 @@ export const PLAYER_SKILL_CATALOG_GROUP_3 = [
     },
     levels: createActiveLevels(
       13000,
-      [360, 320, 280, 240, 200],
+      [400, 380, 360, 340, 300],
       [
         { durationTurns: 1 },
+        { durationTurns: 1 },
         { durationTurns: 2 },
-        { durationTurns: 3 },
-        { durationTurns: 4 },
-        { durationTurns: 6 }
+        { durationTurns: 2 },
+        { durationTurns: 3 }
       ]
     )
   },
@@ -423,7 +423,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_3 = [
     },
     levels: createActiveLevels(
       10000,
-      [900, 850, 800, 750, 600],
+      [300, 290, 280, 270, 250],
       [
         { snapshotOpponentCount: 1 },
         { snapshotOpponentCount: 1 },

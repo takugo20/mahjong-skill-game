@@ -126,7 +126,7 @@ describe("プレイヤースキル3-9 防御結界【破】のエンジン統合
       activatePlayerSkill3_9(initial);
 
     expect(activated).not.toBe(initial);
-    expect(activated.playerMp).toBe(140);
+    expect(activated.playerMp).toBe(100);
     expect(
       activated.akuukan?.activeEffects
     ).toEqual([
@@ -277,7 +277,7 @@ describe("プレイヤースキル3-9 防御結界【破】のエンジン統合
     expect(
       completed.akuukan?.activeEffects[0]
         ?.remainingTurns
-    ).toBe(2);
+    ).toBe(1);
 
     completed.round.phase = "drawing";
     completed.round.currentSeat = 0;
@@ -290,6 +290,6 @@ describe("プレイヤースキル3-9 防御結界【破】のエンジン統合
     expect(
       nextPlayerAction.akuukan
         ?.activeEffects[0]?.remainingTurns
-    ).toBe(1);
+    ).toBeUndefined();
   });
 });

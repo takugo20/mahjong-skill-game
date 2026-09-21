@@ -45,11 +45,11 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
       mpCost: number;
       durationTurns: number;
     }[] = [
-      { level: 1, mpCost: 360, durationTurns: 1 },
-      { level: 2, mpCost: 320, durationTurns: 2 },
-      { level: 3, mpCost: 280, durationTurns: 3 },
-      { level: 4, mpCost: 240, durationTurns: 4 },
-      { level: 5, mpCost: 200, durationTurns: 6 }
+      { level: 1, mpCost: 400, durationTurns: 1 },
+      { level: 2, mpCost: 380, durationTurns: 1 },
+      { level: 3, mpCost: 360, durationTurns: 2 },
+      { level: 4, mpCost: 340, durationTurns: 2 },
+      { level: 5, mpCost: 300, durationTurns: 3 }
     ];
 
     for (const currentCase of cases) {
@@ -116,13 +116,13 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
     expect(second.failureReason).toBe(
       "sourceUnavailable"
     );
-    expect(second.state.playerMp).toBe(180);
+    expect(second.state.playerMp).toBe(120);
   });
 
   it("次のプレイヤー行動前に巡数を進め、終了後は再発動できる", () => {
     const activated =
       tryActivateAkuukanPlayerSkill3_9(
-        createState(2)
+        createState(3)
       );
     const afterFirstProtectedDiscard =
       advanceAkuukanPlayerSkill3_9BeforePlayerAction(
@@ -159,7 +159,7 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
       )
     ).toBe(false);
     expect(reactivation.succeeded).toBe(true);
-    expect(reactivation.state.playerMp).toBe(180);
+    expect(reactivation.state.playerMp).toBe(140);
   });
 
   it("CPUの手番開始では継続巡数を減らさない", () => {
@@ -174,7 +174,7 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
     expect(
       advanced.activeEffects[0]
         ?.remainingTurns
-    ).toBe(3);
+    ).toBe(2);
   });
 
   it("局が終了したら残り巡数にかかわらず効果を終了する", () => {
@@ -195,7 +195,7 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
   });
 
   it("MP不足では発動せず使用済みにしない", () => {
-    const initial = createState(1, 359);
+    const initial = createState(1, 399);
     const result =
       tryActivateAkuukanPlayerSkill3_9(
         initial
@@ -206,7 +206,7 @@ describe("プレイヤースキル3-9 防御結界【破】", () => {
       "insufficientMp"
     );
     expect(result.state).toBe(initial);
-    expect(result.state.playerMp).toBe(359);
+    expect(result.state.playerMp).toBe(399);
     expect(
       result.state.akuukan.activeEffects
     ).toEqual([]);
