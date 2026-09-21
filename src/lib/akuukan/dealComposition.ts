@@ -160,14 +160,27 @@ function findRandomStandardTenpaiTileTypes(
   availableCounts: readonly number[],
   random: () => number
 ): number[] | null {
-  // Build a complete hand, then remove a random tile. This varies both
-  // the melds and the wait instead of always choosing four melds + a singleton.
+  // Choose the shape before tile types: equal sampling of all 55 melds
+  // overweights the 34 triplets relative to the 21 sequences.
+  // These are game-balance weights, not measured real-world frequencies.
   for (let attempt = 0; attempt < 64; attempt += 1) {
     const counts = [...availableCounts];
     const selected: number[] = [];
+    const roll = random();
+    const tripletCount = roll < 0.45 ? 0 : roll < 0.9 ? 1 : 2;
+    // Also prevent repeated/overlapping sequences from constructing a
+    // disguised three/four-triplet hand (e.g. 123 + 123 + 123).
+    const hasTooManyTripletTypes = (extra: readonly number[]) => {
+      const handCounts = Array<number>(MAHJONG_TILE_TYPE_COUNT).fill(0);
+      for (const type of [...selected, ...extra]) handCounts[type] += 1;
+      return handCounts.filter(count => count >= 3).length > 2;
+    };
     for (let meld = 0; meld < 4; meld += 1) {
+      const wantsTriplet = meld < tripletCount;
       const candidates = STANDARD_MELD_CANDIDATES.filter(candidate =>
-        canTakeTileTypes(counts, candidate)
+        (candidate[0] === candidate[1]) === wantsTriplet &&
+        canTakeTileTypes(counts, candidate) &&
+        !hasTooManyTripletTypes(candidate)
       );
       if (candidates.length === 0) break;
       const candidate = candidates[Math.floor(random() * candidates.length)];
@@ -175,7 +188,9 @@ function findRandomStandardTenpaiTileTypes(
       changeTileTypeCounts(counts, candidate, -1);
     }
     if (selected.length !== 12) continue;
-    const pairs = counts.flatMap((count, index) => count >= 2 ? [index] : []);
+    const pairs = counts.flatMap((count, index) =>
+      count >= 2 && !hasTooManyTripletTypes([index, index]) ? [index] : []
+    );
     if (pairs.length === 0) continue;
     const pair = pairs[Math.floor(random() * pairs.length)];
     selected.push(pair, pair);

@@ -271,6 +271,37 @@ describe("E-16のドラ暗刻配牌予約", () => {
 });
 
 describe("E-26の配牌聴牌保証", () => {
+  it("通常の山では順子中心の聴牌を作り、暗刻3組以上の配牌に偏らない", () => {
+    const availableTiles = (["man", "pin", "sou", "honor"] as const)
+      .flatMap(suit => Array.from({ length: suit === "honor" ? 7 : 9 },
+        (_, i) => createTiles(suit, [i + 1, i + 1, i + 1, i + 1])).flat());
+    let seed = 90210;
+    const random = () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+    let handsWithAtMostOneTriplet = 0;
+    for (let n = 0; n < 240; n += 1) {
+      const result = reserveAkuukanE26TenpaiHand({
+        akuukan: createAkuukan("enemy-14"), availableTiles, random
+      });
+      expect(result.tenpaiGuaranteed).toBe(true);
+      expect(result.reservedTiles).toHaveLength(13);
+      expect(calculateShanten(result.reservedTiles).minimum).toBe(0);
+      const counts = new Map<string, number>();
+      for (const tile of result.reservedTiles) {
+        const key = tile.suit + tile.rank;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      const triplets = [...counts.values()].filter(count => count >= 3).length;
+      expect(triplets).toBeLessThanOrEqual(2);
+      if (triplets <= 1) handsWithAtMostOneTriplet += 1;
+      expect([...result.reservedTiles, ...result.remainingTiles].map(t => t.id).sort())
+        .toEqual(availableTiles.map(t => t.id).sort());
+    }
+    expect(handsWithAtMostOneTriplet).toBeGreaterThan(240 * 0.7);
+  });
+
   it("乱数に応じて牌姿を変え、聴牌・牌の保存・再現性を維持する", () => {
     const availableTiles = (["man", "pin", "sou", "honor"] as const)
       .flatMap(suit => Array.from({ length: suit === "honor" ? 7 : 9 },
