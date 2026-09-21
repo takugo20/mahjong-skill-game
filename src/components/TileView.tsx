@@ -835,18 +835,6 @@ export function TileView({
     <span className="tile-rank">?</span>
   );
 
-  const lockOverlay = discardLocked && !faceDown ? (
-    <span className="tile-discard-lock" aria-hidden="true">
-      <svg viewBox="0 0 64 64" focusable="false">
-        <g transform="rotate(-35 32 32)" fill="none" stroke="currentColor" strokeWidth="6">
-          <rect x="21" y="5" width="22" height="32" rx="11" />
-          <rect x="21" y="27" width="22" height="32" rx="11" />
-        </g>
-      </svg>
-      <span>打牌不可</span>
-    </span>
-  ) : null;
-
   if (tile && onSelect) {
     return (
       <button
@@ -863,7 +851,6 @@ export function TileView({
         onClick={() => onSelect(tile.id)}
       >
         {content}
-        {lockOverlay}
       </button>
     );
   }
@@ -880,7 +867,6 @@ export function TileView({
       }
     >
       {content}
-      {lockOverlay}
     </span>
   );
 }
