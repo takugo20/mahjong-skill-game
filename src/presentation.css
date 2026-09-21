@@ -266,6 +266,8 @@ html[data-motion="reduced"] .game-table--win-presenting::after { display: none; 
   padding: 6px 4px;
 }
 /* E-19: show discard restrictions without blocking meld/skill selection. */
-.mahjong-tile--discard-locked > .tile-face-svg {
-  filter: grayscale(0.8) brightness(0.58);
+.human-hand .mahjong-tile--discard-locked {
+  background: #a0a0a0;
+  border-color: #787878;
+  border-bottom-color: #606060;
 }
