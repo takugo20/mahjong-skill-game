@@ -423,7 +423,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_3 = [
     },
     levels: createActiveLevels(
       10000,
-      [300, 290, 280, 270, 250],
+      [900, 850, 800, 750, 600],
       [
         { snapshotOpponentCount: 1 },
         { snapshotOpponentCount: 1 },
