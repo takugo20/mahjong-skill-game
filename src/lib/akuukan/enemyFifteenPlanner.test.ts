@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createInitialGameState, drawCpuTile } from "../mahjong/engine";
+import { createInitialGameState, drawCpuTile, discardTile } from "../mahjong/engine";
 import { calculateShanten } from "../mahjong/hand";
 import { evaluateWinningHand } from "../mahjong/winning";
 import type { Tile, GameState, Discard, MeldCallOption } from "../mahjong/types";
@@ -28,6 +28,59 @@ function fixture(hand: string, river: string, wall = 60): GameState {
 }
 
 describe("玄晶の河を使った手作り", () => {
+  it("再現局面：自分の河の一萬を別の一萬と交換しない", () => {
+    let seed = 18;
+    const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+    let s = createInitialGameState(random, { enemyId: "enemy-15", equippedSkills: [] });
+    const p = s.round.players[2];
+    const one = s.round.liveWall.find(t => t.suit === "man" && t.rank === 1)!;
+    s.round.liveWall = s.round.liveWall.filter(t => t.id !== one.id).slice(0, 50);
+    s.round.doraIndicatorCount = 0;
+    p.discards.push(discard(one)); s.round.phase = "drawing"; s.round.currentSeat = 2;
+    const shape = (hand: Tile[]) => hand.map(t => `${t.suit}:${t.rank}:${t.red}`).sort().join("|");
+    const visited = new Set([shape(p.hand)]);
+    for (let turn = 0; turn < 5; turn++) {
+      const choice = chooseEnemyFifteenRiverDraw(s, s.round.players[2], []);
+      const drawn = drawCpuTile(s, 2, random);
+      if (!choice) {
+        expect(drawn.round.players[2].drawnTileSource).toBe("liveWall");
+        break;
+      }
+      const dropped = chooseEnemyFifteenDiscard(drawn, drawn.round.players[2], [])!;
+      expect(dropped.id).toBe(choice.discardPlan!.discardTileId);
+      expect(dropped.suit !== choice.tile.suit || dropped.rank !== choice.tile.rank).toBe(true);
+      s = discardTile(drawn, dropped.id, false, random);
+      expect(s.round.players[2].riverDrawDiscardPlan).toBeUndefined();
+      const nextShape = shape(s.round.players[2].hand);
+      expect(visited.has(nextShape)).toBe(false); visited.add(nextShape);
+      s.round.liveWall = s.round.liveWall.slice(3); s.round.phase = "drawing"; s.round.currentSeat = 2;
+    }
+  });
+
+  it("拾う前の打牌計画を実際の打牌まで引き継ぐ", () => {
+    const s = fixture("11m22p33s4m5p6s7z89m1p", "4m5p6s7z");
+    const choice = chooseEnemyFifteenRiverDraw(s, s.round.players[2], []);
+    expect(choice?.discardPlan).toBeDefined();
+    const after = drawCpuTile(s, 2, () => 0);
+    const p = after.round.players[2];
+    expect(p.riverDrawDiscardPlan).toEqual(choice!.discardPlan);
+    const dropped = chooseEnemyFifteenDiscard(after, p, []);
+    expect(dropped?.id).toBe(choice!.discardPlan!.discardTileId);
+    const shape = (hand: Tile[]) => hand.map(t => `${t.suit}:${t.rank}:${t.red}`).sort();
+    expect(shape(p.hand.filter(t => t.id !== dropped!.id))).not.toEqual(shape(s.round.players[2].hand));
+    // A newly imposed legality restriction invalidates the stored choice.
+    expect(chooseEnemyFifteenDiscard(after, p, [], [dropped!.id])?.id).not.toBe(dropped!.id);
+  });
+
+  it("手牌が変わった後は古い計画を再利用しない", () => {
+    const s = fixture("11m22p33s4m5p6s7z89m1p", "4m5p6s7z");
+    const after = drawCpuTile(s, 2, () => 0); const p = after.round.players[2];
+    expect(p.riverDrawDiscardPlan).toBeDefined();
+    const stale = p.riverDrawDiscardPlan!.discardTileId;
+    p.hand = p.hand.map(t => t.id === stale ? tiles("2z")[0] : t);
+    expect(chooseEnemyFifteenDiscard(after, p, [])?.id).not.toBe(stale);
+  });
+
   it("河の幺九牌を1巡1枚ずつ集め、通常手から国士へ転換して完成する", () => {
     let s = fixture("19m19p19s1z234m456p", "234567z1m");
     let won = false;

@@ -163,19 +163,40 @@ function prepare(state: GameState, player: PlayerState, indicators: readonly Til
   const ctx = context(state, player, indicators); ctx.goals = makeGoals(ctx); return ctx;
 }
 
+const handKey = (hand: readonly Tile[]) => hand.map(t => `${t.id}:${t.red}`).sort().join("|");
+const productiveSwap = (picked: Tile, dropped: Tile) => getTileTypeIndex(picked) !== getTileTypeIndex(dropped)
+  || (picked.red && !dropped.red);
+
+function validRiverDiscard(player: PlayerState, dropped: Tile): boolean {
+  const picked = player.drawnTileSource === "river"
+    ? player.hand.find(t => t.id === player.drawnTileId) : undefined;
+  return !picked || productiveSwap(picked, dropped);
+}
+
+function plannedDiscard(player: PlayerState, forbidden: readonly string[] = []): Tile | undefined {
+  const plan = player.riverDrawDiscardPlan;
+  if (!plan || player.drawnTileSource !== "river" || player.drawnTileId !== plan.drawnTileId
+    || handKey(player.hand) !== plan.handKey || forbidden.includes(plan.discardTileId)) return undefined;
+  return player.hand.find(t => t.id === plan.discardTileId && validRiverDiscard(player, t));
+}
+
 export function chooseEnemyFifteenDiscard(state: GameState, player: PlayerState,
   indicators: readonly Tile[], forbidden: readonly string[] = []): Tile | null {
   if (!isEnemyFifteenPlannerEnabled(state, player) || player.riichi) return null;
+  const committed = plannedDiscard(player, forbidden);
+  if (committed) return committed;
   const ctx = prepare(state, player, indicators);
   if (!ctx.goals.length || !player.hand.some(tile => handValue(ctx, player.hand.filter(t => t.id !== tile.id)) > 0)) return null;
-  return player.hand.filter(t => !forbidden.includes(t.id)).map(tile => ({ tile,
+  return player.hand.filter(t => !forbidden.includes(t.id) && validRiverDiscard(player, t)).map(tile => ({ tile,
     value: handValue(ctx, player.hand.filter(t => t.id !== tile.id)) - risk(ctx, tile)
       - (Number(tile.red) + indicators.filter(d => isDora(tile, d)).length) * 0.01
   })).sort((a, b) => b.value - a.value)[0]?.tile ?? null;
 }
 
 export function chooseEnemyFifteenRiverDraw(state: GameState, player: PlayerState,
-  indicators: readonly Tile[]): AkuukanE28RiverDrawCandidate | null {
+  indicators: readonly Tile[]): (AkuukanE28RiverDrawCandidate & {
+    discardPlan?: NonNullable<PlayerState["riverDrawDiscardPlan"]>;
+  }) | null {
   const ctx = context(state, player, indicators);
   // Always take a legal immediate win, including a riichi/ippatsu river win.
   const wins = ctx.rivers.map(candidate => ({ candidate,
@@ -184,6 +205,9 @@ export function chooseEnemyFifteenRiverDraw(state: GameState, player: PlayerStat
   if (wins.length) return wins[0].candidate;
   if (player.riichi) return null;
   ctx.goals = makeGoals(ctx);
+  // Evaluate progress against retaining the current hand at the SAME horizon.
+  // Beating a pessimistic normal-draw estimate alone is not real progress.
+  const unchangedValue = handValue(ctx, player.hand, ctx.turns - 1);
   const penalties = new Map(player.hand.map(t => [t.id, risk(ctx, t)]));
   // Compare with a normal draw's expected outcome, not just standing still.
   // Unseen counts are public-information estimates, not the actual wall contents.
@@ -198,17 +222,22 @@ export function chooseEnemyFifteenRiverDraw(state: GameState, player: PlayerStat
       full.filter(t => t.id !== drop.id), ctx.turns - 1) - (penalties.get(drop.id) ?? risk(ctx, drop))));
     return sum + amount * value / ctx.unknownTotal;
   }, 0);
-  const choices = ctx.rivers.map(candidate => {
+  const choices = ctx.rivers.flatMap(candidate => {
     const full = [...player.hand, candidate.tile];
     const owner = state.round.players.find(p => p.seat === candidate.riverOwnerSeat);
     const removesSafety = owner && owner.seat !== player.seat
       && (owner.riichi || owner.melds.length >= 2)
       && !owner.discards.some((d, i) => i !== candidate.discardIndex && !d.faceDown
         && !d.called && !d.removedFromRiver && getTileTypeIndex(d.tile) === getTileTypeIndex(candidate.tile));
-    const value = Math.max(...player.hand.map(discard => handValue(ctx,
-      full.filter(t => t.id !== discard.id), ctx.turns - 1) - penalties.get(discard.id)!))
-      - (removesSafety ? 500 : 0);
-    return { candidate, value };
+    const options = player.hand.filter(discard => productiveSwap(candidate.tile, discard)).map(discard => {
+      const progress = handValue(ctx, full.filter(t => t.id !== discard.id), ctx.turns - 1);
+      return { discard, progress, value: progress - penalties.get(discard.id)! - (removesSafety ? 500 : 0) };
+    }).filter(o => o.progress > unchangedValue + 1).sort((a, b) => b.value - a.value);
+    const best = options[0];
+    if (!best) return [];
+    return [{ candidate: { ...candidate, discardPlan: {
+      drawnTileId: candidate.tile.id, discardTileId: best.discard.id, handKey: handKey(full)
+    } }, value: best.value }];
   }).filter(c => c.value > baseline + 1).sort((a, b) => b.value - a.value
     || Number(b.candidate.tile.red) - Number(a.candidate.tile.red));
   // No productive guaranteed pickup: leave the hand flexible and draw normally.
@@ -218,10 +247,14 @@ export function chooseEnemyFifteenRiverDraw(state: GameState, player: PlayerStat
 export function chooseEnemyFifteenRiichi(state: GameState, input: CpuRiichiDecisionInput): CpuRiichiDecision | null {
   if (!input.riichiDiscardTileIds.length) return null;
   const { player, doraIndicators } = input;
+  const committed = plannedDiscard(player);
   const ctx = prepare(state, player, doraIndicators);
   const plannedValue = Math.max(0, ...player.hand.map(tile =>
     handValue(ctx, player.hand.filter(t => t.id !== tile.id)) - risk(ctx, tile)));
   const options = input.riichiDiscardTileIds.flatMap(id => {
+    if (committed && committed.id !== id) return [];
+    const discard = player.hand.find(t => t.id === id);
+    if (!discard || !validRiverDiscard(player, discard)) return [];
     const hand = player.hand.filter(t => t.id !== id);
     const waits = getWinningTileTypes(hand, player.melds);
     const riverWaits = ctx.rivers.filter(c => waits.some(w => getTileTypeIndex(w) === getTileTypeIndex(c.tile)));

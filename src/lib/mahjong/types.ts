@@ -84,6 +84,12 @@ export interface PlayerState {
   temporaryFuriten?: boolean;
   riichiFuriten?: boolean;
   drawnTileId: string | null;
+  /** One-turn E-28 pickup/discard plan; ignored if the hand changes. */
+  riverDrawDiscardPlan?: {
+    drawnTileId: string;
+    discardTileId: string;
+    handKey: string;
+  };
   drawnTileSource?:
     DrawnTileSource | null;
 }

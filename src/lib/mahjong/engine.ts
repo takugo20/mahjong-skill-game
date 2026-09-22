@@ -3297,8 +3297,11 @@ export function drawCpuTile(
       drawerIsSelectedEnemy: seat === 2,
       players: state.round.players
     });
-  const selectedCandidate = isEnemyFifteenPlannerEnabled(state, drawer)
-    ? chooseEnemyFifteenRiverDraw(state, drawer, getDoraIndicatorsForCpu(state, seat))
+  const riverPlannerEnabled = isEnemyFifteenPlannerEnabled(state, drawer);
+  const riverPlan = riverPlannerEnabled
+    ? chooseEnemyFifteenRiverDraw(state, drawer, getDoraIndicatorsForCpu(state, seat)) : null;
+  const selectedCandidate = riverPlannerEnabled
+    ? riverPlan
     : selectAkuukanE28RiverDrawCandidate({
       drawer,
       players: state.round.players,
@@ -3329,9 +3332,12 @@ export function drawCpuTile(
       random
     );
 
-  return riverDrawState === state
-    ? drawTile(state, seat, random)
-    : riverDrawState;
+  if (riverDrawState === state) return drawTile(state, seat, random);
+  if (!riverPlan?.discardPlan) return riverDrawState;
+  return { ...riverDrawState, round: { ...riverDrawState.round,
+    players: riverDrawState.round.players.map(p => p.seat === seat
+      ? { ...p, riverDrawDiscardPlan: riverPlan.discardPlan } : p)
+  } };
 }
 
 export function discardTile(
@@ -3451,6 +3457,7 @@ export function discardTile(
 
   const updatedPlayer: PlayerState = {
     ...currentPlayer,
+    riverDrawDiscardPlan: undefined,
     hand: remainingHand,
     discards: [
       ...currentPlayer.discards,
