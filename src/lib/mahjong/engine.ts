@@ -1,4 +1,5 @@
 import { chooseSelectiveEnemySelfKan } from "../akuukan/selectiveEnemyCalls";
+import { isEnemyAbilityEnabled } from "../akuukan/winningEvaluationEnemyAbilityAdjustments";
 import {
   chooseEnemySixteenDiscard,
   getEnemySixteenForbiddenTileIds
@@ -386,7 +387,8 @@ import {
   calculateScore
 } from "./score";
 import {
-  isTenpai
+  isTenpai,
+  calculateShanten
 } from "./hand";
 import {
   createFullTileSet,
@@ -483,6 +485,7 @@ function createPlayer(
 ): PlayerState {
   return {
     id: `player-${seat}`,
+    normalDrawCount: 0,
     name,
     seat,
     seatWind: WINDS[seat],
@@ -1024,6 +1027,7 @@ export function createInitialGameState(
   }
 
   players[0].hand.push(dealerDraw);
+  players[0].normalDrawCount = 1;
   players[0].drawnTileId = dealerDraw.id;
   players[0].drawnTileSource = "liveWall";
 
@@ -2786,6 +2790,13 @@ function synchronizeAkuukanE19ForPlayerHand(
       };
 }
 
+function isSuireiFirstDraw(state: GameState, player: PlayerState): boolean {
+  return player.seat === 2 &&
+    !!state.akuukan &&
+    isEnemyAbilityEnabled(state.akuukan, "E-26") &&
+    (player.normalDrawCount ?? player.discards.length) === 0;
+}
+
 function getAkuukanLiveWallDrawIndex(
   state: GameState,
   player: PlayerState,
@@ -2803,7 +2814,7 @@ function getAkuukanLiveWallDrawIndex(
     ? haiteiCandidates.map(candidate => candidate.tile)
     : state.round.liveWall;
 
-  const candidateIndexes =
+  let candidateIndexes =
     getAkuukanLiveWallDrawCandidateIndexes({
       akuukan: state.akuukan,
       playerId: player.id,
@@ -2816,6 +2827,12 @@ function getAkuukanLiveWallDrawIndex(
       liveWall: drawCandidates,
       random
     });
+
+  if (isSuireiFirstDraw(state, player)) {
+    candidateIndexes = candidateIndexes.filter(index =>
+      calculateShanten([...player.hand, drawCandidates[index]], player.melds).minimum !== -1
+    );
+  }
 
   const isFirstNormalDrawAfterRiichi =
     player.riichi &&
@@ -3081,8 +3098,14 @@ function drawAkuukanPlayerSkill3_13ReservedTile(
   }
 
   const drawnTile = reservedDraw.tile;
+  // Keep a winning transfer reserved for a later turn; do not lose the tile.
+  if (isSuireiFirstDraw(state, currentPlayer) &&
+      calculateShanten([...currentPlayer.hand, drawnTile], currentPlayer.melds).minimum === -1) {
+    return state;
+  }
   const updatedPlayer: PlayerState = {
     ...currentPlayer,
+    normalDrawCount: (currentPlayer.normalDrawCount ?? currentPlayer.discards.length) + 1,
     hand: sortTiles([
       ...currentPlayer.hand,
       drawnTile
@@ -3200,7 +3223,8 @@ export function drawTile(
     ]),
     temporaryFuriten: false,
     drawnTileId: drawnTile.id,
-    drawnTileSource: "liveWall"
+    drawnTileSource: "liveWall",
+    normalDrawCount: (currentPlayer.normalDrawCount ?? currentPlayer.discards.length) + 1
   };
 
   const updatedMp =
@@ -8769,6 +8793,7 @@ function preparePlayersForNextRound(
 ): PlayerState[] {
   return players.map((player) => ({
     ...player,
+    normalDrawCount: 0,
     seatWind: getSeatWindForDealer(
       player.seat,
       dealerSeat

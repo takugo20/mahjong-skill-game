@@ -66,6 +66,8 @@ export interface Discard {
 }
 
 export interface PlayerState {
+  /** Normal turns drawn this round; optional for older saved games. */
+  normalDrawCount?: number;
   id: string;
   name: string;
   seat: SeatIndex;
