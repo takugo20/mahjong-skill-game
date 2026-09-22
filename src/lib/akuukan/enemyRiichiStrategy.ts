@@ -1,3 +1,4 @@
+import { chooseEnemyFifteenRiichi, isEnemyFifteenPlannerEnabled, preferEnemyFifteenDamaten } from "./enemyFifteenPlanner";
 import {
   getNormalCpuLevel,
   chooseLeveledNormalCpuRiichi
@@ -132,6 +133,10 @@ export function chooseEnemyRiichi(
     return chooseLeveledNormalCpuRiichi(state, input);
   }
 
+  if (isEnemyFifteenPlannerEnabled(state, input.player)) {
+    return chooseEnemyFifteenRiichi(state, input);
+  }
+
   const standard = chooseCpuRiichi(input);
 
   const fourteen = chooseEnemyFourteenRiichi(
@@ -206,6 +211,9 @@ export function shouldEnemyStayDamaten(
   decision: CpuRiichiDecision,
   indicators: readonly Tile[]
 ): boolean {
+  if (isEnemyFifteenPlannerEnabled(state, player)) {
+    return preferEnemyFifteenDamaten(state, player, decision, indicators);
+  }
   if (isEnemySixteenStrategyEnabled(state, player)) {
     return preferEnemySixteenDamaten(
       state,
