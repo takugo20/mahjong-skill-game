@@ -15,13 +15,13 @@ import {
 } from "./types";
 
 describe("敵図鑑", () => {
-  it("全16体をID順に統合する", () => {
+  it("全16体を挑戦順に統合し、内部IDを保持する", () => {
     expect(ENEMY_CATALOG).toHaveLength(16);
     expect(
       ENEMY_CATALOG.map(
         (enemy) => enemy.id
       )
-    ).toEqual(ENEMY_IDS);
+    ).toEqual([...ENEMY_IDS.slice(0, 13), "enemy-15", "enemy-16", "enemy-14"]);
   });
 
   it("図鑑番号1から16を重複なく保持する", () => {
@@ -50,10 +50,10 @@ describe("敵図鑑", () => {
 
   it("IDから対応する定義を取得する", () => {
     ENEMY_IDS.forEach(
-      (enemyId, index) => {
+      (enemyId) => {
         expect(
           getEnemyDefinition(enemyId)
-        ).toBe(ENEMY_CATALOG[index]);
+        ).toBe(ENEMY_CATALOG.find(enemy => enemy.id === enemyId));
       }
     );
   });

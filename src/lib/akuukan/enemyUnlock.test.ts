@@ -217,15 +217,15 @@ describe("敵の解放", () => {
     });
   });
 
-  it("敵15と敵16をそれぞれ1勝で順番に解放する", () => {
+  it("玄晶→蝕天→翠玲をそれぞれ1勝で順番に解放する", () => {
     const initial =
       createInitialEnemyProgressState();
     const enemy14Ready: EnemyProgressState = {
       ...initial,
       enemies: {
         ...initial.enemies,
-        "enemy-14": {
-          ...initial.enemies["enemy-14"],
+        "enemy-15": {
+          ...initial.enemies["enemy-15"],
           isUnlocked: true
         }
       }
@@ -233,38 +233,38 @@ describe("敵の解放", () => {
     const recorded14 =
       recordEnemyMatchResult(
         enemy14Ready,
-        "enemy-14",
+        "enemy-15",
         1
       );
     const unlocked15 =
       unlockNextEnemyAfterMatch(
         recorded14.state,
-        "enemy-14",
+        "enemy-15",
         1
       );
 
     expect(unlocked15.unlockedEnemyId).toBe(
-      "enemy-15"
+      "enemy-16"
     );
 
     const recorded15 =
       recordEnemyMatchResult(
         unlocked15.state,
-        "enemy-15",
+        "enemy-16",
         1
       );
     const unlocked16 =
       unlockNextEnemyAfterMatch(
         recorded15.state,
-        "enemy-15",
+        "enemy-16",
         1
       );
 
     expect(unlocked16.unlockedEnemyId).toBe(
-      "enemy-16"
+      "enemy-14"
     );
     expect(
-      unlocked16.state.enemies["enemy-16"]
+      unlocked16.state.enemies["enemy-14"]
         .isUnlocked
     ).toBe(true);
   });

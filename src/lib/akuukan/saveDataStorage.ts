@@ -7,6 +7,28 @@ import type {
 import {
   isAkuukanSaveData
 } from "./saveDataValidation";
+import { ENEMY_CATALOG } from "./enemyCatalog";
+import { unlockEligiblePlayerSkills } from "./playerSkillUnlock";
+
+function reconcileChallengeUnlocks(data: AkuukanSaveData): AkuukanSaveData {
+  const enemies = { ...data.enemyProgress.enemies };
+  for (const enemy of ENEMY_CATALOG) {
+    if (enemy.catalogNumber < 14) continue;
+    const condition = enemy.unlockCondition;
+    if (!enemies[enemy.id].isUnlocked && condition &&
+        enemies[condition.requiredEnemyId].firstPlaceCount >= condition.requiredFirstPlaceCount) {
+      enemies[enemy.id] = { ...enemies[enemy.id], isUnlocked: true };
+    }
+  }
+  // Skill progress IDs also remain attached to their original character.
+  const unlockProgress = { ...data.playerSkillGrowth.unlockProgress };
+  for (const id of ["enemy-14", "enemy-16"] as const) {
+    const conditionId = `${id}-first-place-count` as const;
+    unlockProgress[conditionId] = Math.max(unlockProgress[conditionId], enemies[id].firstPlaceCount);
+  }
+  const growth = unlockEligiblePlayerSkills({ ...data.playerSkillGrowth, unlockProgress }).state;
+  return { ...data, enemyProgress: { enemies }, playerSkillGrowth: growth };
+}
 
 export const AKUUKAN_SAVE_DATA_STORAGE_KEY =
   "mahjong-skill-game:akuukan-save-data";
@@ -98,7 +120,7 @@ export function loadAkuukanSaveData(
   }
 
   return {
-    saveData: parsed,
+    saveData: reconcileChallengeUnlocks(parsed),
     source: "storage",
     failureReason: null
   };

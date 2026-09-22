@@ -20,12 +20,14 @@ import type {
   EnemyId
 } from "./types";
 
-export const ENEMY_CATALOG = [
+// IDs are permanent character identities; catalogNumber is challenge order.
+export const ENEMY_CATALOG = ([
   ...ENEMY_CATALOG_GROUP_1,
   ...ENEMY_CATALOG_GROUP_2,
   ...ENEMY_CATALOG_GROUP_3,
   ...ENEMY_CATALOG_GROUP_4
-] as const satisfies readonly EnemyDefinition[];
+] as const satisfies readonly EnemyDefinition[])
+  .slice().sort((a, b) => a.catalogNumber - b.catalogNumber);
 
 const catalogValidation =
   validateEnemyCatalog(ENEMY_CATALOG);

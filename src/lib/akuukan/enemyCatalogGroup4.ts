@@ -48,14 +48,14 @@ export const ENEMY_CATALOG_GROUP_4 = [
     }
   },
   {
-    catalogNumber: 14,
+    catalogNumber: 16,
     id: "enemy-14",
-    displayName: "敵14",
+    displayName: "翠玲",
     unlockCondition: {
-      requiredEnemyId: "enemy-13",
-      requiredFirstPlaceCount: 3,
+      requiredEnemyId: "enemy-16",
+      requiredFirstPlaceCount: 1,
       description:
-        "敵13との対局で3回1位を取る。"
+        "蝕天との対局で1回1位を取る。"
     },
     baseExperience: 2000,
     abilities: [
@@ -92,14 +92,14 @@ export const ENEMY_CATALOG_GROUP_4 = [
     }
   },
   {
-    catalogNumber: 15,
+    catalogNumber: 14,
     id: "enemy-15",
-    displayName: "敵15",
+    displayName: "玄晶",
     unlockCondition: {
-      requiredEnemyId: "enemy-14",
-      requiredFirstPlaceCount: 1,
+      requiredEnemyId: "enemy-13",
+      requiredFirstPlaceCount: 3,
       description:
-        "敵14との対局で1回1位を取る。"
+        "トロンとの対局で3回1位を取る。"
     },
     baseExperience: 2200,
     abilities: [
@@ -149,14 +149,14 @@ export const ENEMY_CATALOG_GROUP_4 = [
     }
   },
   {
-    catalogNumber: 16,
+    catalogNumber: 15,
     id: "enemy-16",
-    displayName: "敵16",
+    displayName: "蝕天",
     unlockCondition: {
       requiredEnemyId: "enemy-15",
       requiredFirstPlaceCount: 1,
       description:
-        "敵15との対局で1回1位を取る。"
+        "玄晶との対局で1回1位を取る。"
     },
     baseExperience: 2500,
     abilities: [

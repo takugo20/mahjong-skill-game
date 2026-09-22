@@ -348,7 +348,7 @@ describe("プレイヤースキル第4グループ", () => {
       ["tsuuiisou-win-count", 1],
       ["chuuren-or-pure-nine-gates-win-count", 1],
       ["chiitoitsu-win-count", 30],
-      ["enemy-14-first-place-count", 3],
+      ["enemy-16-first-place-count", 3],
       ["enemy-9-first-place-count", 5]
     ]);
   });

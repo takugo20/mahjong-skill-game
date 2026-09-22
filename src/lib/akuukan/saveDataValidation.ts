@@ -312,7 +312,17 @@ function isEnemyProgressState(
       continue;
     }
 
+    // Old saves may have unlocked these characters in the former order.
+    // Never revoke a legitimate unlock or discard its character statistics.
+    const legacyRequirement = enemy.id === "enemy-14"
+      ? { id: "enemy-13" as const, wins: 3 }
+      : enemy.id === "enemy-15"
+        ? { id: "enemy-14" as const, wins: 1 }
+        : null;
+    const legacyUnlocked = legacyRequirement !== null &&
+      progressById[legacyRequirement.id].firstPlaceCount >= legacyRequirement.wins;
     if (
+      !legacyUnlocked &&
       enemy.unlockCondition !== null &&
       progressById[
         enemy.unlockCondition.requiredEnemyId

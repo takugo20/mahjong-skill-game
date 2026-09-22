@@ -474,9 +474,9 @@ export const PLAYER_SKILL_CATALOG_GROUP_3 = [
     usageScope: "round",
     unlockCondition: {
       conditionId:
-        "enemy-16-first-place-count",
+        "enemy-14-first-place-count",
       description:
-        "敵16との対局で3回1位を取る。",
+        "翠玲との対局で3回1位を取る。",
       targetValue: 3
     },
     levels: createActiveLevels(

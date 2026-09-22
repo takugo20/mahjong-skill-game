@@ -602,9 +602,9 @@ export const PLAYER_SKILL_CATALOG_GROUP_4 = [
     usageScope: "turn",
     unlockCondition: {
       conditionId:
-        "enemy-14-first-place-count",
+        "enemy-16-first-place-count",
       description:
-        "敵14との対局で3回1位を取る。",
+        "蝕天との対局で3回1位を取る。",
       targetValue: 3
     },
     levels: createActiveLevels(

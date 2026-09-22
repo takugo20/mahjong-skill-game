@@ -1,6 +1,7 @@
 import {
-  ENEMY_CATALOG
+  getEnemyDefinition
 } from "./enemyCatalog";
+import { ENEMY_IDS } from "./types";
 import type {
   EnemyId
 } from "./types";
@@ -22,7 +23,8 @@ export interface EnemyProgressState {
 export function createInitialEnemyProgressState():
   EnemyProgressState {
   const enemyEntries =
-    ENEMY_CATALOG.map((enemy) => {
+    ENEMY_IDS.map((id) => {
+      const enemy = getEnemyDefinition(id);
       const progress: EnemyProgress = {
         isUnlocked:
           enemy.unlockCondition === null,

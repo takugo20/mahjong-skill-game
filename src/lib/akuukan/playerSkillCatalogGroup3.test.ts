@@ -357,7 +357,7 @@ describe("プレイヤースキル第3グループ", () => {
       ["enemy-12-first-place-count", 1],
       ["enemy-6-first-place-count", 5],
       ["enemy-12-first-place-count", 5],
-      ["enemy-16-first-place-count", 3]
+      ["enemy-14-first-place-count", 3]
     ]);
   });
 });

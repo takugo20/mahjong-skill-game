@@ -73,7 +73,7 @@ export type EnemyCatalogIssue =
   | {
       type: "incorrectRequiredEnemyId";
       enemyId: EnemyId;
-      expected: EnemyId;
+      expected: EnemyId | undefined;
       actual: EnemyId;
     }
   | {
@@ -246,10 +246,8 @@ export function validateEnemyCatalog(
         enemyId: enemy.id
       });
     } else {
-      const enemyIndex =
-        ENEMY_IDS.indexOf(enemy.id);
       const expectedRequiredEnemyId =
-        ENEMY_IDS[enemyIndex - 1];
+        catalog.find(candidate => candidate.catalogNumber === enemy.catalogNumber - 1)?.id;
 
       if (
         expectedRequiredEnemyId !==
