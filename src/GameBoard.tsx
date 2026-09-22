@@ -3936,14 +3936,13 @@ function handlePlayerSkill4_21() {
               className="win-result-overlay"
               role="dialog"
               aria-modal="true"
-              aria-label="E-27特殊途中流局結果"
+              aria-label="玄晶の能力による特殊途中流局結果"
             >
               <article className="win-result-card triple-ron-result-card">
                 <header className="win-result-header">
                   <div>
                     <span>敵能力発動</span>
 
-                    <strong>E-27</strong>
                   </div>
 
                   <b className="draw-result-count">
@@ -3989,7 +3988,7 @@ function handlePlayerSkill4_21() {
                 </div>
 
                 <p className="triple-ron-description">
-                  敵15のE-27により和了が無効となり、
+                  玄晶の能力により和了が無効となり、
                   特殊途中流局です。親は連荘し、
                   本場を1つ増やします。
                   {round.riichiPool > 0

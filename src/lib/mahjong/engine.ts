@@ -1,3 +1,4 @@
+import { chooseEnemyFifteenDiscard, chooseEnemyFifteenRiverDraw, isEnemyFifteenPlannerEnabled, shouldEnemyFifteenCall, prefersEnemyFifteenSpecialHand } from "../akuukan/enemyFifteenPlanner";
 import { chooseSelectiveEnemySelfKan } from "../akuukan/selectiveEnemyCalls";
 import { isEnemyAbilityEnabled } from "../akuukan/winningEvaluationEnemyAbilityAdjustments";
 import {
@@ -3296,8 +3297,12 @@ export function drawCpuTile(
       drawerIsSelectedEnemy: seat === 2,
       players: state.round.players
     });
-  const selectedCandidate =
-    selectAkuukanE28RiverDrawCandidate({
+  const riverPlannerEnabled = isEnemyFifteenPlannerEnabled(state, drawer);
+  const riverPlan = riverPlannerEnabled
+    ? chooseEnemyFifteenRiverDraw(state, drawer, getDoraIndicatorsForCpu(state, seat)) : null;
+  const selectedCandidate = riverPlannerEnabled
+    ? riverPlan
+    : selectAkuukanE28RiverDrawCandidate({
       drawer,
       players: state.round.players,
       candidates,
@@ -3327,9 +3332,12 @@ export function drawCpuTile(
       random
     );
 
-  return riverDrawState === state
-    ? drawTile(state, seat, random)
-    : riverDrawState;
+  if (riverDrawState === state) return drawTile(state, seat, random);
+  if (!riverPlan?.discardPlan) return riverDrawState;
+  return { ...riverDrawState, round: { ...riverDrawState.round,
+    players: riverDrawState.round.players.map(p => p.seat === seat
+      ? { ...p, riverDrawDiscardPlan: riverPlan.discardPlan } : p)
+  } };
 }
 
 export function discardTile(
@@ -3449,6 +3457,7 @@ export function discardTile(
 
   const updatedPlayer: PlayerState = {
     ...currentPlayer,
+    riverDrawDiscardPlan: undefined,
     hand: remainingHand,
     discards: [
       ...currentPlayer.discards,
@@ -3536,6 +3545,9 @@ function chooseCpuDiscard(
   random: () => number,
   forbiddenTileIds: readonly string[] = []
 ): Tile {
+  const riverPlanned = chooseEnemyFifteenDiscard(state, player, doraIndicators, forbiddenTileIds);
+  if (riverPlanned) return riverPlanned;
+
   const planned = chooseEnemyThirteenDiscard(
     state,
     player,
@@ -5494,6 +5506,8 @@ function finishCpuNineTerminalsIfAvailable(
   const cpuPlayer =
     state.round.players[cpuSeat];
 
+  if (prefersEnemyFifteenSpecialHand(state, cpuPlayer, getDoraIndicatorsForCpu(state, cpuSeat), true)) return null;
+
   return finishRoundWithAbortiveDraw(
     state,
     result,
@@ -6162,7 +6176,10 @@ function getCpuCallDecisions(
         });
       }
 
-      return decisions;
+      return decisions.filter(d => shouldEnemyFifteenCall(
+        state, player, getDoraIndicatorsForCpu(state, player.seat), d.option,
+        d.kind === "meld" ? d.decision.discardTileId : undefined
+      ));
     })
     .sort((left, right) =>
       compareCallPriority(
@@ -6964,6 +6981,8 @@ function getCpuSelfKanDecision(
     )
   );
 
+  if (options.length && prefersEnemyFifteenSpecialHand(state, cpuPlayer, getDoraIndicatorsForCpu(state, cpuSeat))) return null;
+
   return chooseSelectiveEnemySelfKan(state, {
     player: cpuPlayer,
     options
@@ -7363,7 +7382,9 @@ function getCpuRiichiDecision(
   const cpuPlayer =
     state.round.players[cpuSeat];
   const forbiddenTileIdSet = new Set(
-    getEnemyDefenseForbiddenTileIds(
+    isEnemyFifteenPlannerEnabled(state, cpuPlayer)
+      ? getForbiddenDiscardTileIdsForPlayer(state, cpuPlayer)
+      : getEnemyDefenseForbiddenTileIds(
       state,
       cpuPlayer,
       getDoraIndicatorsForCpu(state, cpuSeat),

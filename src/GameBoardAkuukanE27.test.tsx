@@ -69,7 +69,7 @@ describe("敵15 E-27の結果画面", () => {
 
     const resultDialog =
       screen.getByRole("dialog", {
-        name: "E-27特殊途中流局結果"
+        name: "玄晶の能力による特殊途中流局結果"
       });
     const resultText =
       resultDialog.textContent ?? "";
@@ -77,7 +77,9 @@ describe("敵15 E-27の結果画面", () => {
     expect(resultText).toContain(
       "敵能力発動"
     );
-    expect(resultText).toContain("E-27");
+    expect(resultText).not.toContain("E-27");
+    expect(resultText).not.toContain("敵15");
+    expect(resultText).toContain("玄晶の能力により和了が無効となり、");
     expect(resultText).toContain(
       "和了無効"
     );
@@ -122,7 +124,7 @@ describe("敵15 E-27の結果画面", () => {
 
     expect(
       screen.queryByRole("dialog", {
-        name: "E-27特殊途中流局結果"
+        name: "玄晶の能力による特殊途中流局結果"
       })
     ).toBeNull();
     expect(
