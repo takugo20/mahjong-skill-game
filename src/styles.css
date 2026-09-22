@@ -4126,3 +4126,23 @@ body {
 .opponent-area--right .opponent-hand-tile .mahjong-tile {
   transform: rotate(-90deg);
 }
+
+/* iPhoneなど、高さの低い横画面向けの盤面調整 */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* 対面の情報欄・手牌を少し中央へ寄せる */
+  .opponent-area--top {
+    top: 3%;
+  }
+
+  /* 小画面でも対面の手牌を表示する */
+  .opponent-area--top .opponent-hand {
+    display: flex;
+  }
+
+  /* 自分の情報欄と手牌のための縦スペースを増やし、
+     全体を少し中央側へ寄せる */
+  .human-area {
+    bottom: 2%;
+    height: 24%;
+  }
+}

@@ -26,3 +26,11 @@
 html[data-motion="reduced"] .game-table .win-result-card { animation: none; }
 @media (max-width: 600px) { .match-tools { top: 12%; font-size: .5rem; } .match-tools button, .match-tools summary { padding: 3px; } }
 @media (prefers-reduced-motion: reduce) { .skill-toast, .game-table .win-result-card { animation: none; } }
+/* iPhoneなど、高さの低い横画面では
+   「保存して中断」を左上の対局情報パネルの下へ移動する */
+@media (orientation: landscape) and (max-height: 500px) {
+  .match-tools {
+    top: 13%;
+    left: 1.5%;
+  }
+}
