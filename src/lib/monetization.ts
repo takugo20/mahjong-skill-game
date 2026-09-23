@@ -37,6 +37,8 @@ let preparedInterstitialAdId: string | null = null;
 let interstitialListenersInstalled = false;
 let adsRemoved = false;
 let purchaseStateInitialized = false;
+let adInitializationPromise:
+    Promise<boolean> | null = null;
 
 let purchaseStatePromise:
     Promise<boolean> | null = null;
@@ -469,11 +471,6 @@ async function initializeAds(): Promise<boolean> {
         return false;
     }
 
-    /*
-     * StoreKitを先に確認することで、
-     * 広告削除購入済みユーザーに
-     * 起動直後だけ広告が一瞬表示されるのを防ぐ。
-     */
     const removeAdsPurchased =
         await initializePurchaseState();
 
@@ -489,56 +486,74 @@ async function initializeAds(): Promise<boolean> {
         return adsAllowed;
     }
 
-    console.log(
-        "[AKUUKAN-ADS] initializeAds start"
-    );
-
-    try {
-        await AdMob.initialize();
-
-        console.log(
-            "[AKUUKAN-ADS] AdMob.initialize completed"
-        );
-
-        await ensureInterstitialDebugListeners();
-
-        let consentInfo =
-            await AdMob.requestConsentInfo();
-
-        if (
-            consentInfo.isConsentFormAvailable &&
-            consentInfo.status ===
-            AdmobConsentStatus.REQUIRED
-        ) {
-            consentInfo =
-                await AdMob.showConsentForm();
-        }
-
-        console.log(
-            "[AKUUKAN-ADS] consent result",
-            {
-                status: consentInfo.status,
-                canRequestAds: consentInfo.canRequestAds,
-                isConsentFormAvailable:
-                    consentInfo.isConsentFormAvailable
-            }
-        );
-
-        adsAllowed = consentInfo.canRequestAds;
-        initialized = true;
-
-        return adsAllowed;
-    } catch (error) {
-        console.error(
-            "AdMob initialization failed:",
-            error
-        );
-
-        initialized = true;
-        adsAllowed = false;
-
-        return false;
+    /*
+     * バナーと全画面広告から同時に呼ばれても、
+     * AdMob初期化は1回だけ実行する。
+     */
+    if (adInitializationPromise) {
+        return adInitializationPromise;
     }
+
+    adInitializationPromise = (async () => {
+        console.log(
+            "[AKUUKAN-ADS] initializeAds start"
+        );
+
+        try {
+            await AdMob.initialize();
+
+            console.log(
+                "[AKUUKAN-ADS] AdMob.initialize completed"
+            );
+
+            await ensureInterstitialDebugListeners();
+
+            let consentInfo =
+                await AdMob.requestConsentInfo();
+
+            if (
+                consentInfo.isConsentFormAvailable &&
+                consentInfo.status ===
+                AdmobConsentStatus.REQUIRED
+            ) {
+                consentInfo =
+                    await AdMob.showConsentForm();
+            }
+
+            console.log(
+                "[AKUUKAN-ADS] consent result",
+                {
+                    status: consentInfo.status,
+                    canRequestAds:
+                        consentInfo.canRequestAds,
+                    isConsentFormAvailable:
+                        consentInfo
+                            .isConsentFormAvailable
+                }
+            );
+
+            adsAllowed =
+                consentInfo.canRequestAds;
+
+            initialized = true;
+
+            return adsAllowed;
+        } catch (error) {
+            console.error(
+                "AdMob initialization failed:",
+                error
+            );
+
+            initialized = true;
+            adsAllowed = false;
+
+            return false;
+        } finally {
+            adInitializationPromise = null;
+        }
+    })();
+
+    return adInitializationPromise;
 }
 
 export async function showTitleBanner():
