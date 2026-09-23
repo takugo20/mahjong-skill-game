@@ -13,7 +13,9 @@ import {
 } from "react";
 import {
   hideTitleBanner,
+  isNativeIOSApp,
   prepareMatchEndInterstitial,
+  showMatchEndInterstitial,
   showTitleBanner
 } from "./lib/monetization";
 import { SkillEquipment } from "./SkillEquipment";
@@ -48,6 +50,10 @@ export function AkuukanGame() {
   const [features, setFeatures] = useState(readFeatures);
   const [balanceOpen, setBalanceOpen] = useState(false);
   const [session, setSession] = useState<MatchSession | undefined>();
+  const [
+    interstitialTransitioning,
+    setInterstitialTransitioning
+  ] = useState(false);
   const shouldShowMenuBanner =
     !initialState &&
     !balanceOpen;
@@ -201,11 +207,50 @@ export function AkuukanGame() {
         onCheckpoint={checkpoint}
         onSuspend={() => { setInitialState(null); setFeatures(readFeatures()); setMessage("対局を保存しました。"); }}
         onMatchEnd={handleMatchEnd}
-        restartDisabled={saveStatus !== "saved"}
+        restartDisabled={
+          saveStatus !== "saved" ||
+          interstitialTransitioning
+        }
         onRestart={() => {
-          if (saveStatus === "saved") {
-            setInitialState(null);
+          console.log(
+            "[AKUUKAN-ADS] new match button pressed",
+            {
+              saveStatus,
+              interstitialTransitioning,
+              nativeIOS: isNativeIOSApp()
+            }
+          );
+
+          if (
+            saveStatus !== "saved" ||
+            interstitialTransitioning
+          ) {
+            return;
           }
+
+          /*
+           * Web版・Vitestでは広告を使わず、
+           * 今までどおり即座にタイトルへ戻す。
+           */
+          if (!isNativeIOSApp()) {
+            setInitialState(null);
+            return;
+          }
+
+          setInterstitialTransitioning(true);
+
+          /*
+           * iOS版では半荘終了後、
+           * 全画面広告を表示してからタイトルへ戻る。
+           *
+           * 広告の読み込み・表示に失敗しても
+           * finallyで必ずゲームへ戻れるようにする。
+           */
+          void showMatchEndInterstitial()
+            .finally(() => {
+              setInitialState(null);
+              setInterstitialTransitioning(false);
+            });
         }}
         matchSavePanel={
           <div aria-live="polite">

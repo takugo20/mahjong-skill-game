@@ -5,6 +5,7 @@ import {
     BannerAdPluginEvents,
     BannerAdPosition,
     BannerAdSize,
+    InterstitialAdPluginEvents,
     type AdMobBannerSize
 } from "@capacitor-community/admob";
 
@@ -18,6 +19,8 @@ let initialized = false;
 let adsAllowed = false;
 let bannerVisible = false;
 let interstitialReady = false;
+let preparedInterstitialAdId: string | null = null;
+let interstitialListenersInstalled = false;
 
 let bannerSizeListenerInstalled = false;
 
@@ -82,6 +85,90 @@ function isNativeIOS(): boolean {
     );
 }
 
+async function ensureInterstitialDebugListeners():
+    Promise<void> {
+    if (
+        !isNativeIOS() ||
+        interstitialListenersInstalled
+    ) {
+        return;
+    }
+
+    await AdMob.addListener(
+        InterstitialAdPluginEvents.Loaded,
+        info => {
+            console.log(
+                "[AKUUKAN-ADS] interstitial Loaded",
+                info
+            );
+        }
+    );
+
+    await AdMob.addListener(
+        InterstitialAdPluginEvents.FailedToLoad,
+        error => {
+            console.error(
+                "[AKUUKAN-ADS] interstitial FailedToLoad",
+                {
+                    code: error.code,
+                    message: error.message
+                }
+            );
+        }
+    );
+
+    await AdMob.addListener(
+        InterstitialAdPluginEvents.Showed,
+        () => {
+            console.log(
+                "[AKUUKAN-ADS] interstitial Showed"
+            );
+        }
+    );
+
+    await AdMob.addListener(
+        InterstitialAdPluginEvents.FailedToShow,
+        error => {
+            console.error(
+                "[AKUUKAN-ADS] interstitial FailedToShow",
+                {
+                    code: error.code,
+                    message: error.message
+                }
+            );
+        }
+    );
+
+    await AdMob.addListener(
+        InterstitialAdPluginEvents.AdImpression,
+        data => {
+            console.log(
+                "[AKUUKAN-ADS] interstitial AdImpression",
+                data
+            );
+        }
+    );
+
+    await AdMob.addListener(
+        InterstitialAdPluginEvents.Dismissed,
+        () => {
+            console.log(
+                "[AKUUKAN-ADS] interstitial Dismissed"
+            );
+        }
+    );
+
+    interstitialListenersInstalled = true;
+
+    console.log(
+        "[AKUUKAN-ADS] interstitial listeners installed"
+    );
+}
+
+export function isNativeIOSApp(): boolean {
+    return isNativeIOS();
+}
+
 async function initializeAds(): Promise<boolean> {
     if (!isNativeIOS()) {
         return false;
@@ -91,8 +178,18 @@ async function initializeAds(): Promise<boolean> {
         return adsAllowed;
     }
 
+    console.log(
+        "[AKUUKAN-ADS] initializeAds start"
+    );
+
     try {
         await AdMob.initialize();
+
+        console.log(
+            "[AKUUKAN-ADS] AdMob.initialize completed"
+        );
+
+        await ensureInterstitialDebugListeners();
 
         let consentInfo =
             await AdMob.requestConsentInfo();
@@ -105,6 +202,16 @@ async function initializeAds(): Promise<boolean> {
             consentInfo =
                 await AdMob.showConsentForm();
         }
+
+        console.log(
+            "[AKUUKAN-ADS] consent result",
+            {
+                status: consentInfo.status,
+                canRequestAds: consentInfo.canRequestAds,
+                isConsentFormAvailable:
+                    consentInfo.isConsentFormAvailable
+            }
+        );
 
         adsAllowed = consentInfo.canRequestAds;
         initialized = true;
@@ -190,28 +297,75 @@ export async function hideTitleBanner():
 
 export async function prepareMatchEndInterstitial():
     Promise<void> {
-    if (!isNativeIOS() || interstitialReady) {
+    console.log(
+        "[AKUUKAN-ADS] prepareMatchEndInterstitial called",
+        {
+            nativeIOS: isNativeIOS(),
+            interstitialReady
+        }
+    );
+
+    if (!isNativeIOS()) {
+        console.log(
+            "[AKUUKAN-ADS] prepare skipped: not native iOS"
+        );
+        return;
+    }
+
+    if (interstitialReady) {
+        console.log(
+            "[AKUUKAN-ADS] prepare skipped: already ready",
+            preparedInterstitialAdId
+        );
         return;
     }
 
     const canShow = await initializeAds();
 
+    console.log(
+        "[AKUUKAN-ADS] prepare consent check",
+        {
+            canShow
+        }
+    );
+
     if (!canShow) {
+        console.log(
+            "[AKUUKAN-ADS] prepare aborted: ads not allowed"
+        );
         return;
     }
 
     try {
-        await AdMob.prepareInterstitial({
-            adId: IOS_TEST_INTERSTITIAL_ID,
-            isTesting: true
-        });
+        console.log(
+            "[AKUUKAN-ADS] prepareInterstitial start",
+            IOS_TEST_INTERSTITIAL_ID
+        );
+
+        const info =
+            await AdMob.prepareInterstitial({
+                adId: IOS_TEST_INTERSTITIAL_ID,
+                isTesting: true
+            });
+
+        preparedInterstitialAdId =
+            info.adUnitId;
 
         interstitialReady = true;
+
+        console.log(
+            "[AKUUKAN-ADS] prepareInterstitial resolved",
+            {
+                adUnitId:
+                    preparedInterstitialAdId
+            }
+        );
     } catch (error) {
         interstitialReady = false;
+        preparedInterstitialAdId = null;
 
         console.error(
-            "Interstitial preparation failed:",
+            "[AKUUKAN-ADS] prepareInterstitial threw",
             error
         );
     }
@@ -219,29 +373,70 @@ export async function prepareMatchEndInterstitial():
 
 export async function showMatchEndInterstitial():
     Promise<void> {
+    console.log(
+        "[AKUUKAN-ADS] showMatchEndInterstitial called",
+        {
+            nativeIOS: isNativeIOS(),
+            interstitialReady,
+            preparedInterstitialAdId
+        }
+    );
+
     if (!isNativeIOS()) {
+        console.log(
+            "[AKUUKAN-ADS] show skipped: not native iOS"
+        );
         return;
     }
 
     if (!interstitialReady) {
+        console.log(
+            "[AKUUKAN-ADS] ad not ready; preparing now"
+        );
+
         await prepareMatchEndInterstitial();
     }
 
-    if (!interstitialReady) {
+    if (
+        !interstitialReady ||
+        !preparedInterstitialAdId
+    ) {
+        console.error(
+            "[AKUUKAN-ADS] show aborted: interstitial unavailable",
+            {
+                interstitialReady,
+                preparedInterstitialAdId
+            }
+        );
+
         return;
     }
 
     try {
+        console.log(
+            "[AKUUKAN-ADS] showInterstitial start",
+            preparedInterstitialAdId
+        );
+
         await AdMob.showInterstitial({
-            adId: IOS_TEST_INTERSTITIAL_ID
+            adId: preparedInterstitialAdId
         });
+
+        console.log(
+            "[AKUUKAN-ADS] showInterstitial promise resolved"
+        );
     } catch (error) {
         console.error(
-            "Interstitial display failed:",
+            "[AKUUKAN-ADS] showInterstitial threw",
             error
         );
     } finally {
         interstitialReady = false;
+        preparedInterstitialAdId = null;
+
+        console.log(
+            "[AKUUKAN-ADS] interstitial state reset"
+        );
 
         void prepareMatchEndInterstitial();
     }
