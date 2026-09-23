@@ -146,7 +146,7 @@ it("対戦相手の選択に合わせて詳細が切り替わる", () => {
   ).toBe(false);
 
   fireEvent.click(
-    screen.getByRole("button", { name: "タイトルに戻る" })
+    screen.getByRole("button", { name: "戻る" })
   );
 
   expect(

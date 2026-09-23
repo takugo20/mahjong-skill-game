@@ -32,10 +32,10 @@ export function SkillCatalog({ saveData, onBack }: Props) {
 
       <button
         type="button"
-        className="akuukan-skill-back"
+        className="akuukan-skill-back akuukan-back-button"
         onClick={onBack}
       >
-        開始画面に戻る
+        戻る
       </button>
 
       <label>
@@ -68,13 +68,13 @@ export function SkillCatalog({ saveData, onBack }: Props) {
       )}
 
       <div className="skill-card-grid">
-      {visible.map(skill => (
-        <PlayerSkillCard
-          key={skill.id}
-          skill={skill}
-          progress={growth.skills[skill.id]}
-        />
-      ))}
+        {visible.map(skill => (
+          <PlayerSkillCard
+            key={skill.id}
+            skill={skill}
+            progress={growth.skills[skill.id]}
+          />
+        ))}
       </div>
     </main>
   );

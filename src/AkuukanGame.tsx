@@ -5,7 +5,17 @@ import { unlockGameAudio } from "./lib/gameAudio";
 import { EnemyCatalog } from "./EnemyCatalog";
 import { SkillCatalog } from "./SkillCatalog";
 import { MatchGrowthResult } from "./MatchGrowthResult";
-import { useCallback, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from "react";
+import {
+  hideTitleBanner,
+  prepareMatchEndInterstitial,
+  showTitleBanner
+} from "./lib/monetization";
 import { SkillEquipment } from "./SkillEquipment";
 import { GameBoard } from "./GameBoard";
 import type { GameState } from "./lib/mahjong/types";
@@ -38,7 +48,22 @@ export function AkuukanGame() {
   const [features, setFeatures] = useState(readFeatures);
   const [balanceOpen, setBalanceOpen] = useState(false);
   const [session, setSession] = useState<MatchSession | undefined>();
+  const shouldShowMenuBanner =
+    !initialState &&
+    !balanceOpen;
 
+  useEffect(() => {
+    if (shouldShowMenuBanner) {
+      void showTitleBanner();
+      void prepareMatchEndInterstitial();
+    } else {
+      void hideTitleBanner();
+    }
+
+    return () => {
+      void hideTitleBanner();
+    };
+  }, [shouldShowMenuBanner]);
   const finishedRef = useRef<GameState | null>(null);
   const saveRef = useRef(loaded.saveData);
 
@@ -102,10 +127,12 @@ export function AkuukanGame() {
   }
 
   const checkpoint = useCallback((state: GameState, currentSession: MatchSession) => {
-    return updateFeatures(data => ({ ...data, resume: {
-      state, session: { ...currentSession, activations: { ...currentSession.activations } },
-      savedAt: Date.now(), progressSignature: progressSignature(saveRef.current)
-    } }));
+    return updateFeatures(data => ({
+      ...data, resume: {
+        state, session: { ...currentSession, activations: { ...currentSession.activations } },
+        savedAt: Date.now(), progressSignature: progressSignature(saveRef.current)
+      }
+    }));
   }, []);
 
   function resume() {
@@ -279,89 +306,88 @@ export function AkuukanGame() {
                 <ul>{ENEMY_DESCRIPTIONS[enemyId].map(text => <li key={text}>{text}</li>)}</ul>
               </div>
             </aside>
-          <fieldset className="akuukan-enemy-picker">
-            <legend>対戦相手を選択 <small>16 CHALLENGERS</small></legend>
+            <fieldset className="akuukan-enemy-picker">
+              <legend>対戦相手を選択 <small>16 CHALLENGERS</small></legend>
 
-            <div className="akuukan-enemy-buttons">
-              {ENEMY_CATALOG.map(enemy => {
-                const unlocked =
-                  loaded.saveData.enemyProgress
-                    .enemies[enemy.id].isUnlocked;
+              <div className="akuukan-enemy-buttons">
+                {ENEMY_CATALOG.map(enemy => {
+                  const unlocked =
+                    loaded.saveData.enemyProgress
+                      .enemies[enemy.id].isUnlocked;
 
-                return (
-                  <button
-                    key={enemy.id}
-                    type="button"
-                    className="akuukan-enemy-button"
-                    disabled={!unlocked}
-                    aria-pressed={enemyId === enemy.id}
-                    aria-label={
-                      `${ENEMY_NAMES[enemy.id]}${
-                        unlocked ? "" : "（未解放）"
-                      }`
-                    }
-                    onClick={() => setEnemyId(enemy.id)}
-                  >
-                    <EnemyPortrait enemyId={enemy.id} size="roster" />
-                    <span>{ENEMY_NAMES[enemy.id]}</span>
+                  return (
+                    <button
+                      key={enemy.id}
+                      type="button"
+                      className="akuukan-enemy-button"
+                      disabled={!unlocked}
+                      aria-pressed={enemyId === enemy.id}
+                      aria-label={
+                        `${ENEMY_NAMES[enemy.id]}${unlocked ? "" : "（未解放）"
+                        }`
+                      }
+                      onClick={() => setEnemyId(enemy.id)}
+                    >
+                      <EnemyPortrait enemyId={enemy.id} size="roster" />
+                      <span>{ENEMY_NAMES[enemy.id]}</span>
 
-                    <small>
-                      {!unlocked
-                        ? "未解放"
-                        : enemyId === enemy.id
-                          ? "選択中"
-                          : "挑戦可能"}
-                    </small>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
+                      <small>
+                        {!unlocked
+                          ? "未解放"
+                          : enemyId === enemy.id
+                            ? "選択中"
+                            : "挑戦可能"}
+                      </small>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
           </div>
 
           <div className="lobby-dock">
-          <div className="lobby-launch">
-          <div>
-          <p className="lobby-loadout">
-            装備スキル：
-            {loaded.saveData.equippedSkills.length} / 10
-          </p>
-          <span className="lobby-format">四人打ち・半荘戦・25,000点持ち</span>
-          </div>
+            <div className="lobby-launch">
+              <div>
+                <p className="lobby-loadout">
+                  装備スキル：
+                  {loaded.saveData.equippedSkills.length} / 10
+                </p>
+                <span className="lobby-format">四人打ち・半荘戦・25,000点持ち</span>
+              </div>
 
-          <button
-            type="button"
-            className="akuukan-lobby-start"
-            onClick={start}
-          >
-            対局を開始
-          </button>
-          </div>
+              <button
+                type="button"
+                className="akuukan-lobby-start"
+                onClick={start}
+              >
+                対局を開始
+              </button>
+            </div>
 
-          <div className="akuukan-lobby-actions akuukan-lobby-actions--three">
-            <button
-              type="button"
-              onClick={() => setEquipmentOpen(true)}
-            >
-              装備スキル変更
-            </button>
+            <div className="akuukan-lobby-actions akuukan-lobby-actions--three">
+              <button
+                type="button"
+                onClick={() => setEquipmentOpen(true)}
+              >
+                装備スキル変更
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setCatalogOpen(true)}
-            >
-              スキル図鑑
-            </button>
+              <button
+                type="button"
+                onClick={() => setCatalogOpen(true)}
+              >
+                スキル図鑑
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setEnemyCatalogOpen(true)}
-            >
-              敵図鑑
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setEnemyCatalogOpen(true)}
+              >
+                敵図鑑
+              </button>
+            </div>
 
-          {message && <p role="status">{message}</p>}
+            {message && <p role="status">{message}</p>}
           </div>
         </section>
       )}

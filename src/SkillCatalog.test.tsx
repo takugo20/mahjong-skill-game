@@ -23,7 +23,7 @@ it("全80件を表示し、未解放と検索を組み合わせられる", () =>
   render(
     <SkillCatalog
       saveData={createInitialAkuukanSaveData()}
-      onBack={() => {}}
+      onBack={() => { }}
     />
   );
 
@@ -84,7 +84,7 @@ it("現在レベルだけを強調し、開発用情報を表示しない", () =
   const before = JSON.stringify(changed);
 
   render(
-    <SkillCatalog saveData={changed} onBack={() => {}} />
+    <SkillCatalog saveData={changed} onBack={() => { }} />
   );
 
   const first = screen.getByRole("article", {
@@ -121,7 +121,7 @@ it("開始画面から往復してもセーブを書き換えない", () => {
     screen.getByRole("heading", { name: "スキル図鑑" })
   ).toBeTruthy();
 
-  fireEvent.click(screen.getByText("開始画面に戻る"));
+  fireEvent.click(screen.getByText("戻る"));
   expect(screen.getByText("対局を開始")).toBeTruthy();
   expect(localStorage.getItem(KEY)).toBe(previous);
 });

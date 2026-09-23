@@ -83,7 +83,11 @@ export function SkillEquipment({
           >
             装備を保存
           </button>
-          <button type="button" onClick={onCancel}>
+          <button
+            type="button"
+            className="akuukan-back-button"
+            onClick={onCancel}
+          >
             変更を破棄して戻る
           </button>
         </div>

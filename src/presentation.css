@@ -8,21 +8,41 @@
   --aqua: #91d9ce;
   color-scheme: dark;
 }
+
 body {
   background:
     radial-gradient(ellipse at 10% 5%, #24645455, transparent 45%),
     radial-gradient(ellipse at 95% 80%, #55513126, transparent 50%), #071511;
   color: var(--ink);
 }
-button, input, select, summary { touch-action: manipulation; }
-button { transition: background-color .16s, border-color .16s, box-shadow .16s; }
-button:not(:disabled) { cursor: pointer; }
-button:disabled { cursor: not-allowed; }
+
+button,
+input,
+select,
+summary {
+  touch-action: manipulation;
+}
+
+button {
+  transition: background-color .16s, border-color .16s, box-shadow .16s;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 :is(button, input, select, summary):focus-visible {
   outline: 3px solid var(--aqua);
   outline-offset: 4px;
 }
-button:active:not(:disabled) { filter: brightness(.88); }
+
+button:active:not(:disabled) {
+  filter: brightness(.88);
+}
 
 /* Lobby: portrait-led selection, with a single primary action. */
 .akuukan-lobby {
@@ -30,12 +50,14 @@ button:active:not(:disabled) { filter: brightness(.88); }
   padding: 28px clamp(20px, 5vw, 64px) max(24px, env(safe-area-inset-bottom));
   scrollbar-color: #526c5d transparent;
 }
+
 .akuukan-lobby-header {
   position: relative;
   margin: 0 0 20px;
   padding: 0 90px 18px 0;
   border-bottom: 1px solid var(--edge);
 }
+
 .lobby-eyebrow {
   display: block;
   color: var(--gold);
@@ -43,6 +65,7 @@ button:active:not(:disabled) { filter: brightness(.88); }
   font-weight: 700;
   letter-spacing: .25em;
 }
+
 .akuukan-lobby-header h1 {
   margin: 9px 0 0;
   font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
@@ -52,11 +75,41 @@ button:active:not(:disabled) { filter: brightness(.88); }
   letter-spacing: .14em;
   text-shadow: 0 2px 24px #ebcc881a;
 }
-.lobby-progress { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 12px; color: var(--muted); font-size: 12px; }
-.lobby-progress b { color: var(--ink); font-size: 16px; margin-left: 8px; font-variant-numeric: tabular-nums; }
-.akuukan-lobby-card { padding: 0; border: 0; background: transparent; box-shadow: none; }
-.lobby-matchup { display: grid; grid-template-columns: minmax(230px, .85fr) minmax(0, 1.5fr); gap: clamp(24px, 4vw, 52px); align-items: start; }
-.lobby-opponent { min-width: 0; }
+
+.lobby-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.lobby-progress b {
+  color: var(--ink);
+  font-size: 16px;
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.akuukan-lobby-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lobby-matchup {
+  display: grid;
+  grid-template-columns: minmax(230px, .85fr) minmax(0, 1.5fr);
+  gap: clamp(24px, 4vw, 52px);
+  align-items: start;
+}
+
+.lobby-opponent {
+  min-width: 0;
+}
+
 .lobby-portrait-stage {
   position: relative;
   max-width: 260px;
@@ -66,18 +119,86 @@ button:active:not(:disabled) { filter: brightness(.88); }
   box-shadow: 0 20px 40px #0005;
   animation: panel-arrive .3s ease-out both;
 }
-.lobby-portrait-stage::after { content: ""; position: absolute; inset: 7px; pointer-events: none; background: linear-gradient(transparent 55%, #08150fbb); }
-.lobby-portrait-stage .enemy-portrait { display: block !important; border-radius: 0 !important; outline: none !important; }
-.lobby-portrait-caption { position: absolute; z-index: 1; left: 22px; bottom: 22px; font-size: 10px; letter-spacing: .28em; color: #fff1ce; }
-.lobby-opponent-copy { margin-top: 22px; }
-.lobby-opponent-copy h2 { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; font-size: 30px; margin: 8px 0; letter-spacing: .06em; }
-.lobby-opponent-copy .lobby-wins { margin: 8px 0 16px; font-size: 12px; color: var(--muted); }
-.lobby-wins b { color: var(--gold); font-size: 18px; padding: 0 5px; }
-.lobby-opponent-copy ul { padding: 0 0 0 1.2em; color: #c0d0c8; font-size: 12px; line-height: 1.85; }
-.lobby-opponent-copy li + li { margin-top: 7px; }
-.akuukan-enemy-picker legend { width: 100%; color: var(--ink); font-size: 15px; margin-bottom: 18px; letter-spacing: .08em; }
-.akuukan-enemy-picker legend small { float: right; padding-top: 4px; font-size: 9px; letter-spacing: .12em; font-weight: 400; color: var(--muted); }
-.akuukan-enemy-buttons { gap: 10px; }
+
+.lobby-portrait-stage::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  pointer-events: none;
+  background: linear-gradient(transparent 55%, #08150fbb);
+}
+
+.lobby-portrait-stage .enemy-portrait {
+  display: block !important;
+  border-radius: 0 !important;
+  outline: none !important;
+}
+
+.lobby-portrait-caption {
+  position: absolute;
+  z-index: 1;
+  left: 22px;
+  bottom: 22px;
+  font-size: 10px;
+  letter-spacing: .28em;
+  color: #fff1ce;
+}
+
+.lobby-opponent-copy {
+  margin-top: 22px;
+}
+
+.lobby-opponent-copy h2 {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-size: 30px;
+  margin: 8px 0;
+  letter-spacing: .06em;
+}
+
+.lobby-opponent-copy .lobby-wins {
+  margin: 8px 0 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.lobby-wins b {
+  color: var(--gold);
+  font-size: 18px;
+  padding: 0 5px;
+}
+
+.lobby-opponent-copy ul {
+  padding: 0 0 0 1.2em;
+  color: #c0d0c8;
+  font-size: 12px;
+  line-height: 1.85;
+}
+
+.lobby-opponent-copy li+li {
+  margin-top: 7px;
+}
+
+.akuukan-enemy-picker legend {
+  width: 100%;
+  color: var(--ink);
+  font-size: 15px;
+  margin-bottom: 18px;
+  letter-spacing: .08em;
+}
+
+.akuukan-enemy-picker legend small {
+  float: right;
+  padding-top: 4px;
+  font-size: 9px;
+  letter-spacing: .12em;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.akuukan-enemy-buttons {
+  gap: 10px;
+}
+
 .akuukan-lobby .akuukan-enemy-button {
   position: relative;
   min-width: 0;
@@ -89,59 +210,314 @@ button:active:not(:disabled) { filter: brightness(.88); }
   color: #e5eee7;
   overflow: hidden;
 }
-.akuukan-enemy-button > span:not(.enemy-portrait) { font-size: clamp(11px, 1.25vw, 15px); line-height: 1.5; margin-top: 2px; }
-.akuukan-enemy-button .enemy-portrait { width: min(100%, 76px) !important; outline: none !important; border-radius: 3px !important; }
-.akuukan-enemy-button small { margin: 0; font-size: 9px; color: #adc3b3; }
+
+.akuukan-enemy-button>span:not(.enemy-portrait) {
+  font-size: clamp(11px, 1.25vw, 15px);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.akuukan-enemy-button .enemy-portrait {
+  width: min(100%, 76px) !important;
+  outline: none !important;
+  border-radius: 3px !important;
+}
+
+.akuukan-enemy-button small {
+  margin: 0;
+  font-size: 9px;
+  color: #adc3b3;
+}
+
 .akuukan-lobby .akuukan-enemy-button[aria-pressed="true"] {
-  border-color: var(--gold); background: #354032; color: #fff0c7;
+  border-color: var(--gold);
+  background: #354032;
+  color: #fff0c7;
   box-shadow: 0 0 0 1px var(--gold), 0 4px 18px #ebcc881a;
 }
-.akuukan-enemy-button[aria-pressed="true"] small { color: #ffe4a6; }
-.akuukan-lobby .akuukan-enemy-button:disabled { opacity: .42; filter: saturate(.25); }
-@media (hover: hover) {
-  .akuukan-lobby .akuukan-enemy-button:hover:not(:disabled) { border-color: var(--gold); background: #2a4035; }
-  .akuukan-lobby-actions button:hover, .akuukan-skill-back:hover { border-color: var(--gold); background: #233e33; }
+
+.akuukan-enemy-button[aria-pressed="true"] small {
+  color: #ffe4a6;
 }
-.lobby-launch { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 20px; padding: 18px 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); }
-.lobby-loadout { font-size: 14px; margin: 0 0 6px; color: #ead5a2; }
-.lobby-format { font-size: 11px; color: var(--muted); }
-.akuukan-lobby button.akuukan-lobby-start { width: min(48%, 340px); min-height: 60px; margin: 0; border: 1px solid #ffe3a3; border-radius: 6px; color: #253026; background: linear-gradient(120deg, #e2bc72, #f6dda2 55%, #d9b36e); font-size: 19px; letter-spacing: .12em; box-shadow: 0 6px 20px #0005, inset 0 1px #fff7; }
-.akuukan-lobby-actions { margin-top: 20px; gap: 12px; }
-.akuukan-lobby-actions--three button { min-height: 56px; border: 1px solid var(--edge); border-radius: 6px; background: #11271e; color: #dce8df; font-size: 14px; letter-spacing: .03em; }
-.akuukan-lobby { padding-bottom: calc(132px + env(safe-area-inset-bottom)); }
-.lobby-dock { position: fixed; z-index: 20; left: 50%; bottom: 0; transform: translateX(-50%); width: min(100%, 1280px); display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 24px; padding: 18px clamp(20px, 5vw, 64px) max(18px, env(safe-area-inset-bottom)); border-top: 1px solid #bba26966; background: #0b201bf7; box-shadow: 0 -10px 35px #0003; }
-.lobby-dock .lobby-launch { padding: 0; border: 0; margin: 0; gap: 16px; }
-.lobby-dock .akuukan-lobby-actions { margin: 0; gap: 8px; }
-.lobby-dock > [role="status"] { grid-column: 1 / -1; margin: 0; color: var(--aqua); font-size: 12px; }
+
+.akuukan-lobby .akuukan-enemy-button:disabled {
+  opacity: .42;
+  filter: saturate(.25);
+}
+
+@media (hover: hover) {
+  .akuukan-lobby .akuukan-enemy-button:hover:not(:disabled) {
+    border-color: var(--gold);
+    background: #2a4035;
+  }
+
+  .akuukan-lobby-actions button:hover,
+  .akuukan-skill-back:hover {
+    border-color: var(--gold);
+    background: #233e33;
+  }
+}
+
+.lobby-launch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+}
+
+.lobby-loadout {
+  font-size: 14px;
+  margin: 0 0 6px;
+  color: #ead5a2;
+}
+
+.lobby-format {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.akuukan-lobby button.akuukan-lobby-start {
+  width: min(48%, 340px);
+  min-height: 60px;
+  margin: 0;
+  border: 1px solid #ffe3a3;
+  border-radius: 6px;
+  color: #253026;
+  background: linear-gradient(120deg, #e2bc72, #f6dda2 55%, #d9b36e);
+  font-size: 19px;
+  letter-spacing: .12em;
+  box-shadow: 0 6px 20px #0005, inset 0 1px #fff7;
+}
+
+.akuukan-lobby-actions {
+  margin-top: 20px;
+  gap: 12px;
+}
+
+.akuukan-lobby-actions--three button {
+  min-height: 56px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: #11271e;
+  color: #dce8df;
+  font-size: 14px;
+  letter-spacing: .03em;
+}
+
+.akuukan-lobby {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom));
+}
+
+.lobby-dock {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, 1280px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 24px;
+  padding: 18px clamp(20px, 5vw, 64px) max(18px, env(safe-area-inset-bottom));
+  border-top: 1px solid #bba26966;
+  background: #0b201bf7;
+  box-shadow: 0 -10px 35px #0003;
+}
+
+.lobby-dock .lobby-launch {
+  padding: 0;
+  border: 0;
+  margin: 0;
+  gap: 16px;
+}
+
+.lobby-dock .akuukan-lobby-actions {
+  margin: 0;
+  gap: 8px;
+}
+
+.lobby-dock>[role="status"] {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--aqua);
+  font-size: 12px;
+}
 
 /* Catalogs share the lobby's typography and surface treatment. */
-.akuukan-skill-screen { width: min(100%, 1120px); padding: 40px clamp(18px, 4vw, 48px) max(40px, env(safe-area-inset-bottom)); scrollbar-color: #526c5d transparent; }
-.akuukan-skill-screen > h1 { margin: 0 95px 20px 0; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; color: #f1dfb4; font-size: clamp(25px, 3vw, 36px); letter-spacing: .08em; }
-.akuukan-skill-screen > p { color: var(--muted); line-height: 1.8; font-size: 14px; }
-.akuukan-skill-screen > label { font-size: 12px; letter-spacing: .03em; color: var(--muted); }
-.akuukan-skill-screen input:not([type="checkbox"]), .akuukan-skill-screen select { border: 1px solid var(--edge); background: #0b2019; border-radius: 7px; color: var(--ink); font-size: 16px; }
-.akuukan-skill-screen button { border: 1px solid var(--edge); background: #1c382b; border-radius: 6px; }
-.akuukan-skill-screen .akuukan-skill-back { position: static; margin-bottom: 16px; font-size: 13px; }
-.akuukan-skill-toolbar { top: 8px; border: 1px solid #d6b97466; background: #152e25f5; box-shadow: 0 8px 24px #0004; border-radius: 10px; z-index: 5; }
-.akuukan-skill-screen button.akuukan-skill-save { color: #17291d; border-color: #f3dc99; background: linear-gradient(120deg, #dfba75, #f5dfa6); }
-.skill-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 20px 0 0; }
-.akuukan-skill-screen .player-skill-card { margin: 0; padding: 20px; border: 1px solid #58796166; border-radius: 9px; background: linear-gradient(130deg, #1a3429, #10241d); box-shadow: 0 4px 16px #0002; }
-.player-skill-card h2 { font-size: 16px; color: #eff0db; }
-.player-skill-description { font-size: 13px; line-height: 1.95; }
-.player-skill-unlock { font-size: 11px; line-height: 1.7; padding-top: 12px; border-top: 1px solid #ffffff0f; }
-.player-skill-value { color: #73a7b0; }
-.player-skill-card--equipped { border-color: var(--gold) !important; box-shadow: inset 3px 0 var(--gold) !important; }
-.player-skill-choice { align-items: flex-start; }
-.akuukan-skill-screen input[type="checkbox"] { accent-color: #ebcc88; flex: 0 0 auto; }
-.akuukan-skill-screen .player-skill-card--locked { background: #101f19; color: #9aa89e; box-shadow: none; }
-.player-skill-card--locked h2 { color: #9aa89e; }
-.enemy-guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
-.enemy-guide-entry, .akuukan-skill-screen .enemy-guide-locked { margin: 0; padding: 18px; border: 1px solid var(--edge); border-radius: 9px; background: #132c22; font-size: 16px; }
-.enemy-guide-entry[open] { border-color: #d5b77480; box-shadow: 0 12px 25px #0003; }
-.enemy-guide-content { padding-top: 12px; border-top: 1px solid #fff1; font-size: 13px; line-height: 1.9; }
-.enemy-guide-content dt { color: var(--gold); margin-bottom: 10px; font-size: 11px; letter-spacing: .08em; }
-.akuukan-skill-screen table { border: 1px solid var(--edge); background: #11271e; border-radius: 10px; font-size: 14px; }
-.akuukan-skill-screen tr:nth-child(even) { background: #ffffff04; }
+.akuukan-skill-screen {
+  width: min(100%, 1120px);
+  padding: 40px clamp(18px, 4vw, 48px) max(40px, env(safe-area-inset-bottom));
+  scrollbar-color: #526c5d transparent;
+}
+
+.akuukan-skill-screen>h1 {
+  margin: 0 95px 20px 0;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  color: #f1dfb4;
+  font-size: clamp(25px, 3vw, 36px);
+  letter-spacing: .08em;
+}
+
+.akuukan-skill-screen>p {
+  color: var(--muted);
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.akuukan-skill-screen>label {
+  font-size: 12px;
+  letter-spacing: .03em;
+  color: var(--muted);
+}
+
+.akuukan-skill-screen input:not([type="checkbox"]),
+.akuukan-skill-screen select {
+  border: 1px solid var(--edge);
+  background: #0b2019;
+  border-radius: 7px;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.akuukan-skill-screen button {
+  border: 1px solid var(--edge);
+  background: #1c382b;
+  border-radius: 6px;
+}
+
+.akuukan-skill-screen .akuukan-skill-back {
+  position: static;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.akuukan-skill-toolbar {
+  top: 8px;
+  border: 1px solid #d6b97466;
+  background: #152e25f5;
+  box-shadow: 0 8px 24px #0004;
+  border-radius: 10px;
+  z-index: 5;
+}
+
+.akuukan-skill-screen button.akuukan-skill-save {
+  color: #17291d;
+  border-color: #f3dc99;
+  background: linear-gradient(120deg, #dfba75, #f5dfa6);
+}
+
+.skill-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0 0;
+}
+
+.akuukan-skill-screen .player-skill-card {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid #58796166;
+  border-radius: 9px;
+  background: linear-gradient(130deg, #1a3429, #10241d);
+  box-shadow: 0 4px 16px #0002;
+}
+
+.player-skill-card h2 {
+  font-size: 16px;
+  color: #eff0db;
+}
+
+.player-skill-description {
+  font-size: 13px;
+  line-height: 1.95;
+}
+
+.player-skill-unlock {
+  font-size: 11px;
+  line-height: 1.7;
+  padding-top: 12px;
+  border-top: 1px solid #ffffff0f;
+}
+
+.player-skill-value {
+  color: #73a7b0;
+}
+
+.player-skill-card--equipped {
+  border-color: var(--gold) !important;
+  box-shadow: inset 3px 0 var(--gold) !important;
+}
+
+.player-skill-choice {
+  align-items: flex-start;
+}
+
+.akuukan-skill-screen input[type="checkbox"] {
+  accent-color: #ebcc88;
+  flex: 0 0 auto;
+}
+
+.akuukan-skill-screen .player-skill-card--locked {
+  background: #101f19;
+  color: #9aa89e;
+  box-shadow: none;
+}
+
+.player-skill-card--locked h2 {
+  color: #9aa89e;
+}
+
+.enemy-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.enemy-guide-entry,
+.akuukan-skill-screen .enemy-guide-locked {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--edge);
+  border-radius: 9px;
+  background: #132c22;
+  font-size: 16px;
+}
+
+.enemy-guide-entry[open] {
+  border-color: #d5b77480;
+  box-shadow: 0 12px 25px #0003;
+}
+
+.enemy-guide-content {
+  padding-top: 12px;
+  border-top: 1px solid #fff1;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.enemy-guide-content dt {
+  color: var(--gold);
+  margin-bottom: 10px;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+.akuukan-skill-screen table {
+  border: 1px solid var(--edge);
+  background: #11271e;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.akuukan-skill-screen tr:nth-child(even) {
+  background: #ffffff04;
+}
 
 /* Table lighting and status emphasis; no changes to game rules. */
 .game-table {
@@ -151,103 +527,507 @@ button:active:not(:disabled) { filter: brightness(.88); }
     radial-gradient(ellipse at 50% 40%, #2b705d, #194c3f 55%, #0e3229);
   box-shadow: inset 0 0 0 5px #031c1780, inset 0 0 110px #00140e99, 0 0 30px #0008;
 }
-.game-table::before { border-color: #d0b57b33; }
-.table-emblem { position: absolute; left: 50%; top: 44%; width: 18vmin; height: 18vmin; transform: translate(-50%, -50%); color: #edd9a3; opacity: .12; pointer-events: none; }
-.table-emblem svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: .8; }
-.table-emblem span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 3vmin; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; letter-spacing: .1em; }
-.table-center { border-color: #c5ac7077; background: linear-gradient(145deg, #192b27, #081914); box-shadow: 0 4px 18px #0008, inset 0 1px #ffffff14; }
-.center-remaining strong { color: #f4dc99; font-variant-numeric: tabular-nums; }
-.center-stat-grid { color: #bfd3c5; }
-.round-corner-panel { text-shadow: 0 2px 4px #0008; }
-.round-corner-panel strong { color: #f2deb0; }
-.player-status { transition: border-color .2s, box-shadow .2s; }
-.opponent-area .player-status { background: linear-gradient(135deg, #13291fe8, #071c16eb); }
+
+.game-table::before {
+  border-color: #d0b57b33;
+}
+
+.table-emblem {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 18vmin;
+  height: 18vmin;
+  transform: translate(-50%, -50%);
+  color: #edd9a3;
+  opacity: .12;
+  pointer-events: none;
+}
+
+.table-emblem svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: .8;
+}
+
+.table-emblem span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 3vmin;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  letter-spacing: .1em;
+}
+
+.table-center {
+  border-color: #c5ac7077;
+  background: linear-gradient(145deg, #192b27, #081914);
+  box-shadow: 0 4px 18px #0008, inset 0 1px #ffffff14;
+}
+
+.center-remaining strong {
+  color: #f4dc99;
+  font-variant-numeric: tabular-nums;
+}
+
+.center-stat-grid {
+  color: #bfd3c5;
+}
+
+.round-corner-panel {
+  text-shadow: 0 2px 4px #0008;
+}
+
+.round-corner-panel strong {
+  color: #f2deb0;
+}
+
+.player-status {
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.opponent-area .player-status {
+  background: linear-gradient(135deg, #13291fe8, #071c16eb);
+}
+
 .game-table[data-current-seat="2"] .opponent-area--top .player-status,
 .game-table[data-current-seat="1"] .opponent-area--right .player-status,
 .game-table[data-current-seat="3"] .opponent-area--left .player-status,
-.game-table[data-current-seat="0"] .human-area .player-status { border-color: #f0d895; box-shadow: 0 0 0 1px #f0d89566, 0 0 14px #f0d89522; }
-.wind-badge { border-color: #e1c98c66; background: #172c22; color: #f4dc9b; }
-.mahjong-tile { box-shadow: inset 0 1px 0 #fff, 0 2px 1px #05150dcc, 0 4px 5px #0004; }
-.mahjong-tile--selected { box-shadow: 0 0 0 2px #fff0a8, 0 0 20px #e9d38870, 0 5px 6px #0005; }
-.table-actions { border-color: #c7b47855; background: linear-gradient(120deg, #0e271feb, #11271fee); box-shadow: 0 5px 18px #0004; }
-.table-actions .primary-button { border-color: #ffe2a0; color: #17271e; background: linear-gradient(120deg, #dfbd7a, #f9e3ae); }
-.table-actions .secondary-button { border-color: #829e8977; background: linear-gradient(#2b4939, #193727); }
-.table-actions .primary-button:disabled, .table-actions .secondary-button:disabled { opacity: .42; }
-.table-actions .win-button { background: linear-gradient(120deg, #ad3740, #d96758); border-color: #ffc2a3; color: white; }
-.table-actions .riichi-button:not(:disabled) { background: linear-gradient(120deg, #87414e, #bd6470); border-color: #ffd3ca; }
+.game-table[data-current-seat="0"] .human-area .player-status {
+  border-color: #f0d895;
+  box-shadow: 0 0 0 1px #f0d89566, 0 0 14px #f0d89522;
+}
+
+.wind-badge {
+  border-color: #e1c98c66;
+  background: #172c22;
+  color: #f4dc9b;
+}
+
+.mahjong-tile {
+  box-shadow: inset 0 1px 0 #fff, 0 2px 1px #05150dcc, 0 4px 5px #0004;
+}
+
+.mahjong-tile--selected {
+  box-shadow: 0 0 0 2px #fff0a8, 0 0 20px #e9d38870, 0 5px 6px #0005;
+}
+
+.table-actions {
+  border-color: #c7b47855;
+  background: linear-gradient(120deg, #0e271feb, #11271fee);
+  box-shadow: 0 5px 18px #0004;
+}
+
+.table-actions .primary-button {
+  border-color: #ffe2a0;
+  color: #17271e;
+  background: linear-gradient(120deg, #dfbd7a, #f9e3ae);
+}
+
+.table-actions .secondary-button {
+  border-color: #829e8977;
+  background: linear-gradient(#2b4939, #193727);
+}
+
+.table-actions .primary-button:disabled,
+.table-actions .secondary-button:disabled {
+  opacity: .42;
+}
+
+.table-actions .win-button {
+  background: linear-gradient(120deg, #ad3740, #d96758);
+  border-color: #ffc2a3;
+  color: white;
+}
+
+.table-actions .riichi-button:not(:disabled) {
+  background: linear-gradient(120deg, #87414e, #bd6470);
+  border-color: #ffd3ca;
+}
 
 /* Declarations use a cinematic strip, not a modal; all interaction timing is retained. */
-.declaration-overlay { flex-direction: column; width: min(70%, 540px); filter: drop-shadow(0 10px 18px #0008); }
-.declaration-overlay span { width: 100%; padding: 14px 36px; border-width: 1px 0; border-radius: 0; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; background: linear-gradient(90deg, transparent, #071813f5 16%, #163e30f5 50%, #071813f5 84%, transparent); box-shadow: 0 2px 0 #ffffff10; font-size: clamp(34px, 9vmin, 76px); animation: declaration-overlay-pop 500ms ease-out both; }
-.declaration-player { color: #f7edd3; font-size: clamp(11px, 2vmin, 16px); letter-spacing: .12em; margin-bottom: 8px; padding: 4px 20px; background: #071c16d9; }
-.win-result-overlay { background: #020e0bd9; backdrop-filter: blur(7px); }
-.win-result-card { border: 1px solid #d4b776; border-radius: 12px; background: radial-gradient(ellipse at 85% 0, #5a543733, transparent 55%), linear-gradient(150deg, #203c30, #091b14 70%); box-shadow: 0 25px 80px #000b, inset 0 1px #f6dea333; animation: panel-arrive .28s ease-out both; }
-.win-result-header strong { color: #f8dda0; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; letter-spacing: .08em; }
-.win-result-yaku > span { border-color: #82987855; background: #f0d3890b; color: #eee5c9; }
-.win-result-score { background: #081a12; border: 1px solid #b99c5755; }
-.win-result-score b { color: #ffe0a0; font-variant-numeric: tabular-nums; }
-.win-result-next { background: linear-gradient(110deg, #dfbd7c, #f8e0a4); border-color: #fbe4b1; color: #1a2b20; }
-.match-result-row--human { border-color: var(--gold); background: #e2c47d12; }
-@keyframes panel-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.declaration-overlay {
+  flex-direction: column;
+  width: min(70%, 540px);
+  filter: drop-shadow(0 10px 18px #0008);
+}
+
+.declaration-overlay span {
+  width: 100%;
+  padding: 14px 36px;
+  border-width: 1px 0;
+  border-radius: 0;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  background: linear-gradient(90deg, transparent, #071813f5 16%, #163e30f5 50%, #071813f5 84%, transparent);
+  box-shadow: 0 2px 0 #ffffff10;
+  font-size: clamp(34px, 9vmin, 76px);
+  animation: declaration-overlay-pop 500ms ease-out both;
+}
+
+.declaration-player {
+  color: #f7edd3;
+  font-size: clamp(11px, 2vmin, 16px);
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  padding: 4px 20px;
+  background: #071c16d9;
+}
+
+.win-result-overlay {
+  background: #020e0bd9;
+  backdrop-filter: blur(7px);
+}
+
+.win-result-card {
+  border: 1px solid #d4b776;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 85% 0, #5a543733, transparent 55%), linear-gradient(150deg, #203c30, #091b14 70%);
+  box-shadow: 0 25px 80px #000b, inset 0 1px #f6dea333;
+  animation: panel-arrive .28s ease-out both;
+}
+
+.win-result-header strong {
+  color: #f8dda0;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  letter-spacing: .08em;
+}
+
+.win-result-yaku>span {
+  border-color: #82987855;
+  background: #f0d3890b;
+  color: #eee5c9;
+}
+
+.win-result-score {
+  background: #081a12;
+  border: 1px solid #b99c5755;
+}
+
+.win-result-score b {
+  color: #ffe0a0;
+  font-variant-numeric: tabular-nums;
+}
+
+.win-result-next {
+  background: linear-gradient(110deg, #dfbd7c, #f8e0a4);
+  border-color: #fbe4b1;
+  color: #1a2b20;
+}
+
+.match-result-row--human {
+  border-color: var(--gold);
+  background: #e2c47d12;
+}
+
+@keyframes panel-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /* Native dialog keeps keyboard focus inside the settings panel. */
-.presentation-launcher { position: fixed; z-index: 110; top: max(22px, env(safe-area-inset-top)); right: max(22px, env(safe-area-inset-right)); display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 9px 14px; border: 1px solid #9bb49755; border-radius: 7px; color: #e1e8dc; background: #11271fee; font: inherit; font-size: 12px; }
-.presentation-launcher svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
-body:has(.app-shell) .presentation-launcher { top: 16%; right: 2%; z-index: 70; padding: 7px 10px; }
-body:has(.game-table) .presentation-launcher { display: none; }
-.presentation-dialog { width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 26px; border: 1px solid #ddc58b80; border-radius: 14px; color: var(--ink); background: #132a22; box-shadow: 0 25px 100px #000b; }
-.presentation-dialog::backdrop { background: #020b08bb; backdrop-filter: blur(5px); }
-.presentation-dialog header { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 30px; }
-.presentation-dialog h2 { margin: 8px 0 0; font-size: 24px; color: #f1ddb0; }
-.presentation-dialog button { min-height: 44px; padding: 9px 15px; border: 1px solid var(--edge); border-radius: 6px; background: #223f31; color: var(--ink); }
-.settings-volume { display: block; font-size: 15px; }
-.settings-volume output { float: right; color: var(--gold); font-variant-numeric: tabular-nums; }
-.settings-volume input { width: 100%; height: 44px; accent-color: var(--gold); }
-.settings-motion { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; padding: 22px 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); font-size: 14px; }
-.settings-motion small { display: block; margin-top: 8px; color: var(--muted); line-height: 1.7; font-size: 11px; }
-.settings-motion input { width: 24px; height: 24px; flex-shrink: 0; accent-color: var(--gold); }
-.settings-note { color: var(--muted); font-size: 11px; line-height: 1.8; }
+.presentation-launcher {
+  position: fixed;
+  z-index: 110;
+  top: max(22px, env(safe-area-inset-top));
+  right: max(22px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid #9bb49755;
+  border-radius: 7px;
+  color: #e1e8dc;
+  background: #11271fee;
+  font: inherit;
+  font-size: 12px;
+}
+
+.presentation-launcher svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+body:has(.app-shell) .presentation-launcher {
+  top: 16%;
+  right: 2%;
+  z-index: 70;
+  padding: 7px 10px;
+}
+
+body:has(.game-table) .presentation-launcher {
+  display: none;
+}
+
+.presentation-dialog {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 26px;
+  border: 1px solid #ddc58b80;
+  border-radius: 14px;
+  color: var(--ink);
+  background: #132a22;
+  box-shadow: 0 25px 100px #000b;
+}
+
+.presentation-dialog::backdrop {
+  background: #020b08bb;
+  backdrop-filter: blur(5px);
+}
+
+.presentation-dialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.presentation-dialog h2 {
+  margin: 8px 0 0;
+  font-size: 24px;
+  color: #f1ddb0;
+}
+
+.presentation-dialog button {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: #223f31;
+  color: var(--ink);
+}
+
+.settings-volume {
+  display: block;
+  font-size: 15px;
+}
+
+.settings-volume output {
+  float: right;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-volume input {
+  width: 100%;
+  height: 44px;
+  accent-color: var(--gold);
+}
+
+.settings-motion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 22px 0;
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+  font-size: 14px;
+}
+
+.settings-motion small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 11px;
+}
+
+.settings-motion input {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  accent-color: var(--gold);
+}
+
+.settings-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
 @media (max-width: 700px) {
-  .akuukan-lobby { padding-top: 26px; }
-  .lobby-matchup { grid-template-columns: 1fr; gap: 24px; }
-  .lobby-opponent { display: grid; grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr); gap: 20px; align-items: center; }
-  .lobby-opponent-copy { margin-top: 0; }
-  .lobby-opponent-copy h2 { font-size: 25px; }
-  .lobby-opponent-copy ul { font-size: 11px; }
-  .lobby-portrait-caption { left: 14px; bottom: 16px; font-size: 8px; }
-  .akuukan-enemy-buttons { gap: 8px; }
-  .akuukan-enemy-button > span:not(.enemy-portrait) { font-size: 12px; }
-  .skill-card-grid, .enemy-guide { grid-template-columns: 1fr; }
-  .lobby-launch { gap: 14px; }
-  .lobby-loadout { font-size: 12px; }
-  .lobby-format { font-size: 10px; }
-  .akuukan-lobby button.akuukan-lobby-start { font-size: 16px; min-height: 54px; }
-  .akuukan-lobby-actions--three button { font-size: 12px; }
-  .presentation-launcher { top: 18px; right: 18px; }
-  .akuukan-lobby { padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
-  .lobby-dock { grid-template-columns: 1fr; gap: 12px; padding-top: 12px; }
-  .lobby-dock .akuukan-lobby-actions--three button { min-height: 44px; }
+  .akuukan-lobby {
+    padding-top: 26px;
+  }
+
+  .lobby-matchup {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .lobby-opponent {
+    display: grid;
+    grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr);
+    gap: 20px;
+    align-items: center;
+  }
+
+  .lobby-opponent-copy {
+    margin-top: 0;
+  }
+
+  .lobby-opponent-copy h2 {
+    font-size: 25px;
+  }
+
+  .lobby-opponent-copy ul {
+    font-size: 11px;
+  }
+
+  .lobby-portrait-caption {
+    left: 14px;
+    bottom: 16px;
+    font-size: 8px;
+  }
+
+  .akuukan-enemy-buttons {
+    gap: 8px;
+  }
+
+  .akuukan-enemy-button>span:not(.enemy-portrait) {
+    font-size: 12px;
+  }
+
+  .skill-card-grid,
+  .enemy-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-launch {
+    gap: 14px;
+  }
+
+  .lobby-loadout {
+    font-size: 12px;
+  }
+
+  .lobby-format {
+    font-size: 10px;
+  }
+
+  .akuukan-lobby button.akuukan-lobby-start {
+    font-size: 16px;
+    min-height: 54px;
+  }
+
+  .akuukan-lobby-actions--three button {
+    font-size: 12px;
+  }
+
+  .presentation-launcher {
+    top: 18px;
+    right: 18px;
+  }
+
+  .akuukan-lobby {
+    padding-bottom: calc(180px + env(safe-area-inset-bottom));
+  }
+
+  .lobby-dock {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-top: 12px;
+  }
+
+  .lobby-dock .akuukan-lobby-actions--three button {
+    min-height: 44px;
+  }
 }
+
 @media (max-height: 500px) and (orientation: landscape) {
-  .akuukan-lobby { padding-top: 20px; }
-  .akuukan-lobby-header { padding-bottom: 16px; margin-bottom: 18px; }
-  .lobby-matchup { grid-template-columns: minmax(160px, .7fr) minmax(0, 1.5fr); gap: 24px; }
-  .lobby-opponent { display: block; }
-  .lobby-portrait-stage { max-width: 200px; }
-  .lobby-opponent-copy { margin-top: 16px; }
-  .presentation-launcher { top: 12px; }
-  body:has(.app-shell) .presentation-launcher { min-height: 32px; padding: 5px 8px; font-size: 10px; }
+  .akuukan-lobby {
+    padding-top: 20px;
+  }
+
+  .akuukan-lobby-header {
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+  }
+
+  .lobby-matchup {
+    grid-template-columns: minmax(160px, .7fr) minmax(0, 1.5fr);
+    gap: 24px;
+  }
+
+  .lobby-opponent {
+    display: block;
+  }
+
+  .lobby-portrait-stage {
+    max-width: 200px;
+  }
+
+  .lobby-opponent-copy {
+    margin-top: 16px;
+  }
+
+  .presentation-launcher {
+    top: 12px;
+  }
+
+  body:has(.app-shell) .presentation-launcher {
+    min-height: 32px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  .game-table--win-presenting::after { display: none; }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .game-table--win-presenting::after {
+    display: none;
+  }
 }
-html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-html[data-motion="reduced"] .game-table--win-presenting::after { display: none; }
+
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-motion="reduced"] .game-table--win-presenting::after {
+  display: none;
+}
 
 /* Keep long skill names and target labels inside the action buttons. */
-.game-table .table-actions { container-type: inline-size; max-height: 78%; overflow-y: auto; }
-.game-table .table-actions .control-buttons { min-width: 0; flex-shrink: 0; }
+.game-table .table-actions {
+  container-type: inline-size;
+  max-height: 78%;
+  overflow-y: auto;
+}
+
+.game-table .table-actions .control-buttons {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
 .game-table .table-actions .primary-button,
 .game-table .table-actions .secondary-button {
   box-sizing: border-box;
@@ -260,14 +1040,103 @@ html[data-motion="reduced"] .game-table--win-presenting::after { display: none; 
   word-break: normal;
   line-height: 1.35;
 }
+
 .game-table .table-actions .secondary-button {
   font-size: clamp(10px, 1.3vw, 16px);
   font-size: clamp(10px, 8cqi, 16px);
   padding: 6px 4px;
 }
+
 /* E-19: show discard restrictions without blocking meld/skill selection. */
 .human-hand .mahjong-tile--discard-locked {
   background: #a0a0a0;
   border-color: #787878;
   border-bottom-color: #606060;
+}
+
+/* iPhoneなど、高さの低い横画面では
+   上部表示の裏にある副露牌を見やすくする */
+@media (orientation: landscape) and (max-height: 500px) {
+
+  /* 左上：残り山牌数・供託・槓・ドラ表示 */
+  .table-center {
+    border-color: rgb(197 172 112 / 28%);
+    background:
+      linear-gradient(145deg,
+        rgb(25 43 39 / 28%),
+        rgb(8 25 20 / 22%));
+    box-shadow:
+      0 2px 8px rgb(0 0 0 / 14%),
+      inset 0 1px rgb(255 255 255 / 5%);
+  }
+
+  /* 右上：半荘戦・局・本場表示 */
+  .round-corner-panel {
+    opacity: 0.58;
+    text-shadow:
+      0 1px 2px rgb(0 0 0 / 45%);
+  }
+}
+
+/* ネイティブバナー表示中は、
+   タイトル・装備・図鑑画面を広告の下へ押し下げる */
+html[data-title-banner="visible"] .akuukan-lobby,
+html[data-title-banner="visible"] .akuukan-skill-screen {
+  padding-top:
+    calc(var(--title-banner-height, 60px) + 20px);
+}
+
+/* 設定ボタンもバナーの下へ移動 */
+html[data-title-banner="visible"] .presentation-launcher {
+  top:
+    calc(var(--title-banner-height, 60px) + 12px);
+}
+
+/* バナー表示中は設定ダイアログも広告の下側へ収める */
+html[data-title-banner="visible"] .presentation-dialog {
+  max-height:
+    calc(100dvh - var(--title-banner-height, 60px) - 24px);
+
+  transform:
+    translateY(var(--title-banner-dialog-shift, 30px));
+}
+
+/* 戻る・破棄系の操作は薄い赤で統一 */
+.akuukan-skill-screen button.akuukan-back-button {
+  border-color: #b9777c;
+  color: #ffe8e8;
+  background:
+    linear-gradient(120deg,
+      #573638,
+      #744448);
+}
+
+@media (hover: hover) {
+  .akuukan-skill-screen button.akuukan-back-button:hover {
+    border-color: #e1a0a4;
+    background:
+      linear-gradient(120deg,
+        #684044,
+        #895157);
+  }
+}
+
+/* iOS / WKWebViewで操作時にUI全体の文字サイズが
+   再計算されるのを防止する */
+html {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+.akuukan-skill-screen {
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
+}
+
+.akuukan-skill-screen :is(button,
+  input,
+  select,
+  summary) {
+  font-size: max(16px, 1em);
 }

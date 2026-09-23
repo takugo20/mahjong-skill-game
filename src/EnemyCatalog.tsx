@@ -62,14 +62,13 @@ export function EnemyCatalog({
       [
         "平均順位",
         matches
-          ? `${
-              (
-                data.ranks.reduce(
-                  (sum, n, i) => sum + n * (i + 1),
-                  0
-                ) / matches
-              ).toFixed(2)
-            }位`
+          ? `${(
+            data.ranks.reduce(
+              (sum, n, i) => sum + n * (i + 1),
+              0
+            ) / matches
+          ).toFixed(2)
+          }位`
           : "—"
       ],
       ["和了率", percent(data.wins, data.rounds)],
@@ -174,10 +173,10 @@ export function EnemyCatalog({
       >
         <button
           type="button"
-          className="akuukan-skill-back"
+          className="akuukan-skill-back akuukan-back-button"
           onClick={onBack}
         >
-          タイトルに戻る
+          戻る
         </button>
 
         <button
