@@ -8,6 +8,10 @@ import {
     InterstitialAdPluginEvents,
     type AdMobBannerSize
 } from "@capacitor-community/admob";
+import {
+    NativePurchases,
+    PURCHASE_TYPE
+} from "@capgo/native-purchases";
 
 const IOS_TEST_BANNER_ID =
     "ca-app-pub-3940256099942544/2435281174";
@@ -15,12 +19,30 @@ const IOS_TEST_BANNER_ID =
 const IOS_TEST_INTERSTITIAL_ID =
     "ca-app-pub-3940256099942544/4411468910";
 
+export const REMOVE_ADS_PRODUCT_ID =
+    "com.takugo20.akuukanmahjong.removeads";
+
+export interface RemoveAdsProductInfo {
+    available: boolean;
+    purchased: boolean;
+    title: string;
+    priceString: string;
+}
+
 let initialized = false;
 let adsAllowed = false;
 let bannerVisible = false;
 let interstitialReady = false;
 let preparedInterstitialAdId: string | null = null;
 let interstitialListenersInstalled = false;
+let adsRemoved = false;
+let purchaseStateInitialized = false;
+
+let purchaseStatePromise:
+    Promise<boolean> | null = null;
+
+let productInfoPromise:
+    Promise<RemoveAdsProductInfo> | null = null;
 
 let bannerSizeListenerInstalled = false;
 
@@ -169,8 +191,297 @@ export function isNativeIOSApp(): boolean {
     return isNativeIOS();
 }
 
+async function queryRemoveAdsEntitlement():
+    Promise<boolean> {
+    if (!isNativeIOS()) {
+        return false;
+    }
+
+    const billing =
+        await NativePurchases.isBillingSupported();
+
+    if (!billing.isBillingSupported) {
+        return false;
+    }
+
+    const { purchases } =
+        await NativePurchases.getPurchases({
+            productType: PURCHASE_TYPE.INAPP,
+            onlyCurrentEntitlements: true
+        });
+
+    return purchases.some(
+        purchase =>
+            purchase.productIdentifier ===
+            REMOVE_ADS_PRODUCT_ID &&
+            !purchase.revocationDate
+    );
+}
+
+async function initializePurchaseState():
+    Promise<boolean> {
+    if (!isNativeIOS()) {
+        return false;
+    }
+
+    if (purchaseStateInitialized) {
+        return adsRemoved;
+    }
+
+    if (purchaseStatePromise) {
+        return purchaseStatePromise;
+    }
+
+    purchaseStatePromise = (async () => {
+        try {
+            adsRemoved =
+                await queryRemoveAdsEntitlement();
+
+            purchaseStateInitialized = true;
+
+            console.log(
+                "[AKUUKAN-IAP] purchase state",
+                {
+                    adsRemoved
+                }
+            );
+
+            return adsRemoved;
+        } catch (error) {
+            console.error(
+                "[AKUUKAN-IAP] purchase state check failed",
+                error
+            );
+
+            /*
+             * StoreKitの確認に失敗しただけで
+             * アプリ自体を止めない。
+             */
+            adsRemoved = false;
+            purchaseStateInitialized = true;
+
+            return false;
+        } finally {
+            purchaseStatePromise = null;
+        }
+    })();
+
+    return purchaseStatePromise;
+}
+
+async function disableAdsAfterPurchase():
+    Promise<void> {
+    adsRemoved = true;
+    purchaseStateInitialized = true;
+
+    /*
+     * すでに読み込んである全画面広告も
+     * 今後表示させない。
+     */
+    interstitialReady = false;
+    preparedInterstitialAdId = null;
+
+    /*
+     * 現在表示中のバナーも即座に消す。
+     */
+    await hideTitleBanner();
+}
+
+export async function refreshRemoveAdsStatus():
+    Promise<boolean> {
+    purchaseStateInitialized = false;
+
+    const purchased =
+        await initializePurchaseState();
+
+    if (purchased) {
+        await disableAdsAfterPurchase();
+    }
+
+    return purchased;
+}
+
+export async function getRemoveAdsProductInfo():
+    Promise<RemoveAdsProductInfo> {
+    if (!isNativeIOS()) {
+        return {
+            available: false,
+            purchased: false,
+            title: "広告を削除",
+            priceString: ""
+        };
+    }
+
+    if (productInfoPromise) {
+        return productInfoPromise;
+    }
+
+    productInfoPromise = (async () => {
+        const purchased =
+            await initializePurchaseState();
+
+        try {
+            const billing =
+                await NativePurchases
+                    .isBillingSupported();
+
+            if (!billing.isBillingSupported) {
+                return {
+                    available: false,
+                    purchased,
+                    title: "広告を削除",
+                    priceString: ""
+                };
+            }
+
+            const { product } =
+                await NativePurchases.getProduct({
+                    productIdentifier:
+                        REMOVE_ADS_PRODUCT_ID,
+                    productType:
+                        PURCHASE_TYPE.INAPP
+                });
+
+            console.log(
+                "[AKUUKAN-IAP] product loaded",
+                {
+                    identifier:
+                        product.identifier,
+                    title:
+                        product.title,
+                    priceString:
+                        product.priceString
+                }
+            );
+
+            return {
+                available: true,
+                purchased,
+                title: product.title,
+                priceString:
+                    product.priceString
+            };
+        } catch (error) {
+            console.error(
+                "[AKUUKAN-IAP] product load failed",
+                error
+            );
+
+            return {
+                available: false,
+                purchased,
+                title: "広告を削除",
+                priceString: ""
+            };
+        }
+    })();
+
+    try {
+        return await productInfoPromise;
+    } finally {
+        productInfoPromise = null;
+    }
+}
+
+export async function purchaseRemoveAds():
+    Promise<boolean> {
+    if (!isNativeIOS()) {
+        return false;
+    }
+
+    const billing =
+        await NativePurchases.isBillingSupported();
+
+    if (!billing.isBillingSupported) {
+        throw new Error(
+            "この端末ではアプリ内課金を利用できません。"
+        );
+    }
+
+    console.log(
+        "[AKUUKAN-IAP] purchase start",
+        REMOVE_ADS_PRODUCT_ID
+    );
+
+    const transaction =
+        await NativePurchases.purchaseProduct({
+            productIdentifier:
+                REMOVE_ADS_PRODUCT_ID,
+            productType:
+                PURCHASE_TYPE.INAPP,
+            quantity: 1
+        });
+
+    console.log(
+        "[AKUUKAN-IAP] purchase completed",
+        {
+            productIdentifier:
+                transaction.productIdentifier,
+            transactionId:
+                transaction.transactionId,
+            revocationDate:
+                transaction.revocationDate
+        }
+    );
+
+    if (
+        transaction.productIdentifier !==
+        REMOVE_ADS_PRODUCT_ID ||
+        transaction.revocationDate
+    ) {
+        throw new Error(
+            "広告削除の購入を確認できませんでした。"
+        );
+    }
+
+    await disableAdsAfterPurchase();
+
+    return true;
+}
+
+export async function restoreRemoveAdsPurchase():
+    Promise<boolean> {
+    if (!isNativeIOS()) {
+        return false;
+    }
+
+    console.log(
+        "[AKUUKAN-IAP] restore start"
+    );
+
+    await NativePurchases.restorePurchases();
+
+    const purchased =
+        await refreshRemoveAdsStatus();
+
+    console.log(
+        "[AKUUKAN-IAP] restore completed",
+        {
+            purchased
+        }
+    );
+
+    return purchased;
+}
+
 async function initializeAds(): Promise<boolean> {
     if (!isNativeIOS()) {
+        return false;
+    }
+
+    /*
+     * StoreKitを先に確認することで、
+     * 広告削除購入済みユーザーに
+     * 起動直後だけ広告が一瞬表示されるのを防ぐ。
+     */
+    const removeAdsPurchased =
+        await initializePurchaseState();
+
+    if (removeAdsPurchased) {
+        console.log(
+            "[AKUUKAN-ADS] ads skipped: remove ads purchased"
+        );
+
         return false;
     }
 
@@ -386,6 +697,14 @@ export async function showMatchEndInterstitial():
         console.log(
             "[AKUUKAN-ADS] show skipped: not native iOS"
         );
+        return;
+    }
+
+    if (await initializePurchaseState()) {
+        console.log(
+            "[AKUUKAN-ADS] show skipped: ads removed"
+        );
+
         return;
     }
 

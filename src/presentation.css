@@ -1151,3 +1151,69 @@ html {
   box-shadow:
     0 2px 7px rgb(0 0 0 / 14%);
 }
+
+/* 設定画面：広告削除の買い切り課金 */
+.presentation-dialog {
+  overflow-y: auto;
+}
+
+.settings-purchases {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgb(255 255 255 / 14%);
+}
+
+.settings-purchases h3 {
+  margin: 0 0 14px;
+  color: #f1ddb0;
+  font-size: 18px;
+}
+
+.settings-product-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.settings-product-info strong {
+  color: #f5fff7;
+}
+
+.settings-product-info span {
+  flex: 0 0 auto;
+  color: #f1d58c;
+  font-weight: 700;
+}
+
+.settings-purchase-actions {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-purchase-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-purchase-owned {
+  margin: 0 0 14px;
+  color: #a9e3c4;
+  font-weight: 700;
+}
+
+.settings-purchase-status {
+  margin: 12px 0 0;
+  color: #b9e9f4;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+@media (max-width: 520px) {
+  .settings-purchase-actions {
+    grid-template-columns: 1fr;
+  }
+}
