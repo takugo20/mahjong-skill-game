@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { playGameSound, setGameSoundVolume, unlockGameAudio } from "./lib/gameAudio";
 import {
   getRemoveAdsProductInfo,
+  isAdPrivacyOptionsRequired,
   isNativeIOSApp,
   purchaseRemoveAds,
   restoreRemoveAdsPurchase,
+  showAdPrivacyOptions,
   type RemoveAdsProductInfo
 } from "./lib/monetization";
 
@@ -32,13 +34,22 @@ export function PresentationSettings() {
 
   const [purchaseMessage, setPurchaseMessage] =
     useState("");
+  const [adPrivacyOptionsAvailable, setAdPrivacyOptionsAvailable] =
+    useState(false);
+  const [adPrivacyBusy, setAdPrivacyBusy] =
+    useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setGameSoundVolume(preferences.volume);
-    document.documentElement.dataset.motion = preferences.reducedMotion ? "reduced" : "full";
-  }, [preferences]);
+
+    /*
+     * 「演出を控えめにする」設定は廃止したため、
+     * 過去に保存された設定が残っていても通常演出へ戻す。
+     */
+    document.documentElement.dataset.motion = "full";
+  }, [preferences.volume]);
 
   function update(next: Preferences) {
     setPreferences(next);
@@ -154,26 +165,80 @@ export function PresentationSettings() {
     }
   }
 
+  async function loadAdPrivacyOptionsAvailability() {
+    if (!isNativeIOSApp()) {
+      return;
+    }
+
+    try {
+      const required =
+        await isAdPrivacyOptionsRequired();
+
+      setAdPrivacyOptionsAvailable(required);
+    } catch (error) {
+      console.error(
+        "[AKUUKAN-ADS] privacy options check failed",
+        error
+      );
+
+      setAdPrivacyOptionsAvailable(false);
+    }
+  }
+
+  async function handleAdPrivacyOptions() {
+    if (adPrivacyBusy) {
+      return;
+    }
+
+    setAdPrivacyBusy(true);
+
+    try {
+      await showAdPrivacyOptions();
+
+      /*
+       * フォームを閉じた後、現在の状態を再確認する。
+       */
+      const required =
+        await isAdPrivacyOptionsRequired();
+
+      setAdPrivacyOptionsAvailable(required);
+    } catch (error) {
+      console.error(
+        "[AKUUKAN-ADS] privacy options failed",
+        error
+      );
+    } finally {
+      setAdPrivacyBusy(false);
+    }
+  }
+
   return (
     <>
       <button className="presentation-launcher" ref={trigger} type="button"
-        aria-label="音と演出の設定" onClick={() => {
+        aria-label="設定"
+        onClick={() => {
           dialog.current?.showModal();
 
-          if (
-            isNativeIOSApp() &&
-            removeAdsInfo === null
-          ) {
+          if (!isNativeIOSApp()) {
+            return;
+          }
+
+          if (removeAdsInfo === null) {
             void loadPurchaseInfo();
           }
-        }}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M16 14v6" /></svg>
+
+          void loadAdPrivacyOptionsAvailability();
+        }}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 17h16M9 4v6M16 14v6" /></svg>
         <span>設定</span>
       </button>
-      <dialog className="presentation-dialog" ref={dialog} aria-labelledby="presentation-title"
+      <dialog className="presentation-dialog"
+        ref={dialog} aria-labelledby="presentation-title"
         onClose={() => trigger.current?.focus()}>
         <form method="dialog">
-          <header><div><span className="lobby-eyebrow">PREFERENCES</span><h2 id="presentation-title">音と演出</h2></div>
+          <header><div><span className="lobby-eyebrow">PREFERENCES</span><h2 id="presentation-title">設定</h2></div>
             <button type="submit" className="settings-close" aria-label="設定を閉じる">閉じる</button></header>
           <label className="settings-volume">効果音 <output>{Math.round(preferences.volume * 100)}%</output>
             <input aria-label="効果音の音量" type="range" min="0" max="100" step="5"
@@ -183,11 +248,6 @@ export function PresentationSettings() {
           <button type="button" className="settings-preview" onClick={async () => {
             await unlockGameAudio(); playGameSound("drawTile");
           }}>音を確認</button>
-          <label className="settings-motion"><span>演出を控えめにする<small>動きや点滅を抑えます。対局速度は変わりません。</small></span>
-            <input type="checkbox" checked={preferences.reducedMotion}
-              onChange={e => update({ ...preferences, reducedMotion: e.target.checked })} />
-          </label>
-          <p className="settings-note">端末の「視差効果を減らす」設定にも対応しています。</p>
           {isNativeIOSApp() && (
             <section
               className="settings-purchases"
@@ -246,6 +306,20 @@ export function PresentationSettings() {
                 >
                   購入を復元
                 </button>
+                {adPrivacyOptionsAvailable && (
+                  <button
+                    type="button"
+                    className="settings-privacy-button"
+                    disabled={adPrivacyBusy}
+                    onClick={() => {
+                      void handleAdPrivacyOptions();
+                    }}
+                  >
+                    {adPrivacyBusy
+                      ? "プライバシー設定を開いています…"
+                      : "広告のプライバシー設定"}
+                  </button>
+                )}
               </div>
 
               {purchaseMessage && (

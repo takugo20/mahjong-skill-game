@@ -1217,3 +1217,8 @@ html {
     grid-template-columns: 1fr;
   }
 }
+
+.settings-privacy-button {
+  width: 100%;
+  margin-top: 10px;
+}

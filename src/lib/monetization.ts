@@ -31,6 +31,7 @@ export interface RemoveAdsProductInfo {
 
 let initialized = false;
 let adsAllowed = false;
+let privacyOptionsRequired = false;
 let bannerVisible = false;
 let interstitialReady = false;
 let preparedInterstitialAdId: string | null = null;
@@ -524,16 +525,20 @@ async function initializeAds(): Promise<boolean> {
                 "[AKUUKAN-ADS] consent result",
                 {
                     status: consentInfo.status,
-                    canRequestAds:
-                        consentInfo.canRequestAds,
+                    canRequestAds: consentInfo.canRequestAds,
                     isConsentFormAvailable:
+                        consentInfo.isConsentFormAvailable,
+                    privacyOptionsRequirementStatus:
                         consentInfo
-                            .isConsentFormAvailable
+                            .privacyOptionsRequirementStatus
                 }
             );
 
-            adsAllowed =
-                consentInfo.canRequestAds;
+            adsAllowed = consentInfo.canRequestAds;
+
+            privacyOptionsRequired =
+                consentInfo.privacyOptionsRequirementStatus ===
+                "REQUIRED";
 
             initialized = true;
 
@@ -554,6 +559,72 @@ async function initializeAds(): Promise<boolean> {
     })();
 
     return adInitializationPromise;
+}
+
+export async function isAdPrivacyOptionsRequired():
+    Promise<boolean> {
+    if (!isNativeIOS()) {
+        return false;
+    }
+
+    await initializeAds();
+
+    return privacyOptionsRequired;
+}
+
+export async function showAdPrivacyOptions():
+    Promise<void> {
+    if (!isNativeIOS()) {
+        return;
+    }
+
+    await initializeAds();
+
+    if (!privacyOptionsRequired) {
+        console.log(
+            "[AKUUKAN-ADS] privacy options not required"
+        );
+        return;
+    }
+
+    console.log(
+        "[AKUUKAN-ADS] show privacy options"
+    );
+
+    await AdMob.showPrivacyOptionsForm();
+
+    /*
+     * ユーザーが広告設定を変更した可能性があるため、
+     * 最新の同意状態を取得し直す。
+     */
+    const consentInfo =
+        await AdMob.requestConsentInfo();
+
+    adsAllowed =
+        consentInfo.canRequestAds;
+
+    privacyOptionsRequired =
+        consentInfo.privacyOptionsRequirementStatus ===
+        "REQUIRED";
+
+    console.log(
+        "[AKUUKAN-ADS] privacy options updated",
+        {
+            canRequestAds:
+                consentInfo.canRequestAds,
+            privacyOptionsRequirementStatus:
+                consentInfo
+                    .privacyOptionsRequirementStatus
+        }
+    );
+
+    /*
+     * 設定変更後に広告を要求できなくなった場合は、
+     * 表示中のバナーも消す。
+     */
+    if (!adsAllowed) {
+        await hideTitleBanner();
+    }
 }
 
 export async function showTitleBanner():
