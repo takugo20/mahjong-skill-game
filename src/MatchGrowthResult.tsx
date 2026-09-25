@@ -74,12 +74,6 @@ export function MatchGrowthResult({
                   />
                 </div>
 
-                {award.experienceDiscarded > 0 && (
-                  <p>
-                    最大レベル到達による余剰EXP：
-                    {award.experienceDiscarded}
-                  </p>
-                )}
               </li>
             );
           })}
