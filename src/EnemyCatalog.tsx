@@ -93,14 +93,14 @@ export function EnemyCatalog({
 
         <button
           type="button"
-          className="akuukan-skill-back"
+          className="akuukan-skill-back akuukan-back-button"
           onClick={() => setTarget(null)}
         >
-          敵図鑑に戻る
+          戻る
         </button>
 
         <p>
-          あなたの成績です。集計局数：{data.rounds}局
+          集計局数：{data.rounds}局
         </p>
 
         {matches === 0 && (
