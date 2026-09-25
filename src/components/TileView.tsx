@@ -1,8 +1,26 @@
+import { createContext, useContext, type ReactNode } from "react";
 import type { Tile } from "../lib/mahjong/types";
 import {
   getTileFace,
-  getTileLabel
+  getTileLabel,
+  isDora
 } from "../lib/mahjong/tiles";
+
+const DoraIndicatorsContext = createContext<readonly Tile[]>([]);
+
+export function TileDoraProvider({
+  indicators,
+  children
+}: {
+  indicators: readonly Tile[];
+  children: ReactNode;
+}) {
+  return (
+    <DoraIndicatorsContext.Provider value={indicators}>
+      {children}
+    </DoraIndicatorsContext.Provider>
+  );
+}
 
 interface TileViewProps {
   tile?: Tile;
@@ -13,6 +31,7 @@ interface TileViewProps {
   declarationTarget?: boolean;
   disabled?: boolean;
   discardLocked?: boolean;
+  markDora?: boolean;
   onSelect?: (tileId: string) => void;
 }
 
@@ -798,10 +817,17 @@ export function TileView({
   declarationTarget = false,
   disabled = false,
   discardLocked = false,
+  markDora = true,
   onSelect
 }: TileViewProps) {
+  const doraIndicators = useContext(DoraIndicatorsContext);
+  const dora = Boolean(
+    markDora && tile && !faceDown &&
+    (tile.red || doraIndicators.some(indicator => isDora(tile, indicator)))
+  );
   const classes = [
     "mahjong-tile",
+    dora && "mahjong-tile--dora",
     discardLocked && !faceDown && "mahjong-tile--discard-locked",
     compact && "mahjong-tile--compact",
     faceDown && "mahjong-tile--back",

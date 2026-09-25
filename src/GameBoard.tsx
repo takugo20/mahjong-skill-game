@@ -43,7 +43,7 @@ import {
   useRef,
   useState
 } from "react";
-import { TileView } from "./components/TileView";
+import { TileDoraProvider, TileView } from "./components/TileView";
 import { getAkuukanE19ForbiddenTileIds } from "./lib/akuukan/discardLegality";
 import {
   areAkuukanDoraIndicatorsVisible,
@@ -732,6 +732,7 @@ function WinResultDoraIndicators({
                 faceDown={
                   !doraIndicatorsVisible
                 }
+                markDora={false}
                 compact
               />
             ))}
@@ -750,6 +751,7 @@ function WinResultDoraIndicators({
               <TileView
                 key={`result-ura-dora-${tile.id}`}
                 tile={tile}
+                markDora={false}
                 compact
               />
             ))}
@@ -2394,6 +2396,7 @@ function handlePlayerSkill4_21() {
         void unlockGameAudio();
       }}
     >
+      <TileDoraProvider indicators={doraIndicatorsVisible ? doraIndicators : []}>
       <section
         className={
           isWinPresenting
@@ -2606,6 +2609,7 @@ function handlePlayerSkill4_21() {
               {doraIndicators.map((tile) => (
                 <TileView
                   key={tile.id}
+                  markDora={false}
                   tile={
                     doraIndicatorsVisible
                       ? tile
@@ -4379,6 +4383,7 @@ function handlePlayerSkill4_21() {
           </p>
         </div>
       </div>
+      </TileDoraProvider>
     </main>
   );
 }

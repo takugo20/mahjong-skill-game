@@ -307,6 +307,11 @@ button:focus-visible {
   -webkit-user-select: none;
 }
 
+.mahjong-tile--dora {
+  outline: 3px solid #ffd84a;
+  outline-offset: -2px;
+}
+
 button.mahjong-tile {
   cursor: pointer;
   transition:
