@@ -154,6 +154,7 @@ export function AkuukanGame() {
     setLoaded(current);
     finishedRef.current = null;
     setSaveStatus("idle");
+    setMessage("");
     setSession(saved.session);
     setInitialState(saved.state);
   }
