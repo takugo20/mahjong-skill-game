@@ -260,9 +260,7 @@ export function AkuukanGame() {
               }
             />
             {message && <p role="status">{message}</p>}
-            {saveStatus === "saved" ? (
-              <p>成長・解放結果を保存しました。</p>
-            ) : saveStatus === "failed" ? (
+            {saveStatus === "failed" ? (
               <>
                 <p role="alert">
                   保存できませんでした。結果を保持しています。
@@ -279,9 +277,9 @@ export function AkuukanGame() {
                   保存を再試行
                 </button>
               </>
-            ) : (
+            ) : saveStatus === "idle" ? (
               <p>対局結果を保存しています…</p>
-            )}
+            ) : null}
           </div>
         }
       />

@@ -111,9 +111,8 @@ describe("亜空間麻雀の開始・保存画面", () => {
 
     startAndFinish();
 
-    expect(
-      screen.getByText("成長・解放結果を保存しました。")
-    ).toBeTruthy();
+    expect(screen.queryByText("成長・解放結果を保存しました。")).toBeNull();
+    expect(screen.getByRole("button", { name: "戻る" })).toHaveProperty("disabled", false);
 
     fireEvent.click(
       screen.getByRole("button", { name: "戻る" })

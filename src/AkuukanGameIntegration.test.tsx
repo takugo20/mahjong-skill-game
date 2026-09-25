@@ -114,9 +114,8 @@ it("実際の結果画面で成長を表示し、次の対局にも引き継ぐ"
     screen.getByText("レベルアップ！ Lv.1 → Lv.2")
   ).toBeTruthy();
 
-  expect(
-    screen.getByText("成長・解放結果を保存しました。")
-  ).toBeTruthy();
+  expect(screen.queryByText("成長・解放結果を保存しました。")).toBeNull();
+  expect(screen.getAllByRole("button", { name: "新しい対局" }).every(button => !(button as HTMLButtonElement).disabled)).toBe(true);
 
   const first = JSON.parse(
     localStorage.getItem(KEY)!
@@ -200,9 +199,8 @@ it("実際の結果画面でも保存失敗中は再開を止め、再試行で�
     })
   );
 
-  expect(
-    screen.getByText("成長・解放結果を保存しました。")
-  ).toBeTruthy();
+  expect(screen.queryByText("成長・解放結果を保存しました。")).toBeNull();
+  expect(screen.getAllByRole("button", { name: "新しい対局" }).every(button => !(button as HTMLButtonElement).disabled)).toBe(true);
 
   const saved = JSON.parse(
     localStorage.getItem(KEY)!
