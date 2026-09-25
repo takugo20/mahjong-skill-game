@@ -311,7 +311,7 @@ export function AkuukanGame() {
             else setMessage("中断データを破棄できませんでした。");
           }}>中断対局を破棄</button></div>
       </section>}
-      <button onClick={() => setBalanceOpen(true)}>実戦バランス計測</button>
+      <button onClick={() => setBalanceOpen(true)}>対戦データ</button>
 
       {loaded.failureReason ? (
         <section className="akuukan-lobby-card">

@@ -48,7 +48,7 @@ it("装備セットを保存し、現在の成長レベルで呼び出す", () =
   const onLoad = vi.fn();
   const equipped = { ...save, equippedSkills: [{ id: "1-1" as const, level: 1 as const }] };
   const { rerender } = render(<EquipmentPresets draft={equipped} onLoad={onLoad} />);
-  fireEvent.change(screen.getByPlaceholderText("速度重視など"), { target: { value: "赤ドラ" } });
+  fireEvent.change(screen.getByLabelText("セット名"), { target: { value: "赤ドラ" } });
   fireEvent.click(screen.getByText("選択中の装備を登録"));
   const raised = { ...save, playerSkillGrowth: { ...save.playerSkillGrowth, skills: {
     ...save.playerSkillGrowth.skills, "1-1": { isUnlocked: true as const, level: 3 as const, currentExp: 0 }

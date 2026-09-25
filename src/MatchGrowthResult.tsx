@@ -7,9 +7,9 @@ import {
 import {
   getPlayerSkillMaxLevel
 } from "./lib/akuukan/playerSkillCatalogTypes";
-import {
-  getEnemyDefinition
-} from "./lib/akuukan/enemyCatalog";
+import { ENEMY_NAMES } from "./enemy-art/EnemyPortrait";
+import "./SkillExperience.css";
+import "./MatchGrowthResult.css";
 
 interface Props {
   settlement?: AkuukanMatchProgressSettlement | null;
@@ -21,13 +21,8 @@ export function MatchGrowthResult({
   if (!settlement) return null;
 
   return (
-    <section aria-label="今回の成長結果">
-      <h3>今回の成長結果</h3>
-
-      <p>
-        装備スキルごとの基本獲得EXP：
-        {settlement.experiencePerSkill}
-      </p>
+    <section aria-label="装備スキル獲得EXP">
+      <h3>装備スキル獲得EXP</h3>
 
       {settlement.awards.length === 0 ? (
         <p>
@@ -49,16 +44,16 @@ export function MatchGrowthResult({
 
             return (
               <li key={award.skillId}>
-                <strong>{skill.name}</strong>
+                <div className="match-growth-skill-heading">
+                  <strong>{skill.name}</strong>
+                  <span className="player-skill-level">Lv.{progress.level}</span>
+                </div>
 
-                <p>
-                  {award.levelsGained > 0
-                    ? `レベルアップ！ Lv.${
-                        progress.level - award.levelsGained
-                      } → Lv.${progress.level}`
-                    : `Lv.${progress.level}`}
-                  {maximum ? "（最大）" : ""}
-                </p>
+                {award.levelsGained > 0 && (
+                  <p className="match-growth-level-up">
+                    レベルアップ！ Lv.{progress.level - award.levelsGained} → Lv.{progress.level}
+                  </p>
+                )}
 
                 <p>
                   {award.failureReason === "maximumLevel"
@@ -66,14 +61,18 @@ export function MatchGrowthResult({
                     : `獲得EXP：+${award.experienceApplied}`}
                 </p>
 
-                {!maximum && (
-                  <p>
-                    次のレベルまで：あと
-                    {skill.levels[progress.level].requiredExp -
-                      progress.currentExp}
-                    {" EXP"}
-                  </p>
-                )}
+                <div className={`skill-experience${maximum ? " skill-experience--max" : ""}`}>
+                  <div className="skill-experience-label">
+                    <span>{maximum ? "最高レベル" : `Lv.${progress.level + 1}まで`}</span>
+                    <span>{maximum ? "MAX" : `${progress.currentExp} / ${skill.levels[progress.level].requiredExp} EXP`}</span>
+                  </div>
+                  <progress
+                    aria-label={`${skill.name}の経験値`}
+                    aria-valuetext={maximum ? "最高レベル" : `${progress.currentExp} / ${skill.levels[progress.level].requiredExp} EXP`}
+                    max={maximum ? 1 : skill.levels[progress.level].requiredExp}
+                    value={maximum ? 1 : progress.currentExp}
+                  />
+                </div>
 
                 {award.experienceDiscarded > 0 && (
                   <p>
@@ -89,11 +88,11 @@ export function MatchGrowthResult({
 
       {settlement.unlockedSkillIds.length > 0 && (
         <>
-          <h4>新しく解放したスキル</h4>
+          <h4 className="match-growth-unlock">新しく解放したスキル</h4>
 
           <ul>
             {settlement.unlockedSkillIds.map(id => (
-              <li key={id}>
+              <li key={id} className="match-growth-unlock">
                 {getPlayerSkillDefinition(id).name}（Lv.1）
               </li>
             ))}
@@ -106,13 +105,9 @@ export function MatchGrowthResult({
       )}
 
       {settlement.unlockedEnemyId && (
-        <p>
+        <p className="match-growth-unlock">
           新しい対戦相手：
-          {
-            getEnemyDefinition(
-              settlement.unlockedEnemyId
-            ).displayName
-          }
+          {ENEMY_NAMES[settlement.unlockedEnemyId]}
           {" を解放しました！"}
         </p>
       )}

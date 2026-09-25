@@ -69,6 +69,7 @@ it("経験値・レベルアップ・新規解放を表示する", () => {
     <MatchGrowthResult settlement={settlement} />
   );
 
+  expect(screen.getByText("装備スキル獲得EXP")).toBeTruthy();
   expect(
     screen.getByText("獲得EXP：+500")
   ).toBeTruthy();
@@ -77,11 +78,8 @@ it("経験値・レベルアップ・新規解放を表示する", () => {
     screen.getByText("レベルアップ！ Lv.1 → Lv.2")
   ).toBeTruthy();
 
-  expect(
-    screen.getByText(
-      "次のレベルまで：あと11600 EXP"
-    )
-  ).toBeTruthy();
+  expect(screen.getByText("400 / 12000 EXP")).toBeTruthy();
+  expect(screen.getByRole("progressbar", { name: `${getPlayerSkillDefinition("1-1").name}の経験値` })).toHaveProperty("value", 400);
 
   expect(
     screen.getByText(
@@ -91,7 +89,7 @@ it("経験値・レベルアップ・新規解放を表示する", () => {
 
   expect(
     screen.getByText(
-      "新しい対戦相手：敵2 を解放しました！"
+      "新しい対戦相手：ジン を解放しました！"
     )
   ).toBeTruthy();
 

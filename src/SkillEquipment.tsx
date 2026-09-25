@@ -70,9 +70,6 @@ export function SkillEquipment({
     <main className="akuukan-skill-screen">
       <h1>装備スキル変更</h1>
       <p>装備数：{draft.equippedSkills.length} / {MAX}</p>
-      <p>
-        解放済みスキルを選択してください。保存すると次の対局に反映されます。
-      </p>
 
       <div className="akuukan-skill-toolbar">
         <div className="akuukan-skill-actions">

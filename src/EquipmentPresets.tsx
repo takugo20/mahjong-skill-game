@@ -28,7 +28,7 @@ export function EquipmentPresets({ draft, onLoad }: { draft: AkuukanSaveData; on
     <label>保存先<select value={slot} onChange={e => { const i = Number(e.target.value); setSlot(i); setName(loaded.data.presets[i]?.name ?? ""); }}>
       {loaded.data.presets.map((p, i) => <option key={i} value={i}>{i + 1}：{p?.name ?? "未登録"}</option>)}
     </select></label>
-    <label>セット名<input maxLength={24} value={name} onChange={e => setName(e.target.value)} placeholder="速度重視など" /></label>
+    <label>セット名<input maxLength={24} value={name} onChange={e => setName(e.target.value)} /></label>
     <div className="feature-actions"><button onClick={save}>{loaded.data.presets[slot] ? "選択中の装備で上書き" : "選択中の装備を登録"}</button>
     <button disabled={!loaded.data.presets[slot]} onClick={load}>セットを呼び出す</button></div>
     {message && <p role="status">{message}</p>}

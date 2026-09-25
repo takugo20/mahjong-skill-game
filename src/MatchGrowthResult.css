@@ -1,0 +1,15 @@
+.match-growth-skill-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.match-growth-level-up {
+  color: #f0ca74;
+}
+
+.match-growth-unlock {
+  color: #a5f0f3;
+  font-weight: 700;
+}
