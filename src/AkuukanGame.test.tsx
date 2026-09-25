@@ -23,6 +23,17 @@ import {
   createInitialAkuukanSaveData
 } from "./lib/akuukan/saveData";
 import {
+  loadAkuukanSaveDataFromBrowser
+} from "./lib/akuukan/browserSaveData";
+import {
+  tryStartAkuukanMatchFromSaveData
+} from "./lib/akuukan/saveDataMatchStart";
+import {
+  createMatchSession,
+  progressSignature,
+  updateFeatures
+} from "./lib/gameFeatures";
+import {
   AKUUKAN_SAVE_DATA_STORAGE_KEY as KEY
 } from "./lib/akuukan/saveDataStorage";
 import { AkuukanGame } from "./AkuukanGame";
@@ -100,6 +111,33 @@ function startAndFinish() {
 }
 
 describe("亜空間麻雀の開始・保存画面", () => {
+  it("中断対局を再開して終了した後に開始案内を残さない", () => {
+    const save = loadAkuukanSaveDataFromBrowser().saveData;
+    const started = tryStartAkuukanMatchFromSaveData(save, "enemy-1", () => 0.5);
+    expect(started.succeeded).toBe(true);
+    if (!started.succeeded) return;
+
+    expect(updateFeatures(data => ({
+      ...data,
+      resume: {
+        state: started.gameState,
+        session: createMatchSession(),
+        savedAt: Date.now(),
+        progressSignature: progressSignature(save)
+      }
+    }))).toBe(true);
+
+    render(<AkuukanGame />);
+    fireEvent.click(screen.getByRole("button", { name: "対局を開始" }));
+    expect(screen.getByText("中断中の対局を再開するか、破棄してから新しい対局を開始してください。")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "続きから再開" }));
+    fireEvent.click(screen.getByRole("button", { name: "対局終了テスト" }));
+
+    expect(screen.queryByText("中断中の対局を再開するか、破棄してから新しい対局を開始してください。")).toBeNull();
+    expect(screen.getByRole("button", { name: "戻る" })).toHaveProperty("disabled", false);
+  });
+
   it("終了結果を保存して次の対局へ進める", () => {
     render(<AkuukanGame />);
 
