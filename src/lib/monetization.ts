@@ -14,10 +14,10 @@ import {
 } from "@capgo/native-purchases";
 
 const IOS_BANNER_ID =
-    "ca-app-pub-3940256099942544/2435281174";
+    "ca-app-pub-1500991866454901/4510162972";
 
 const IOS_INTERSTITIAL_ID =
-    "ca-app-pub-3940256099942544/4411468910";
+    "ca-app-pub-1500991866454901/6925496760";
 
 export const REMOVE_ADS_PRODUCT_ID =
     "com.takugo20.akuukanmahjong.removeads";
@@ -375,31 +375,6 @@ export async function getRemoveAdsProductInfo():
                 await NativePurchases
                     .isBillingSupported();
 
-            console.log(
-                "[AKUUKAN-IAP] billing support",
-                {
-                    isBillingSupported:
-                        billing.isBillingSupported,
-                    productIdentifier:
-                        REMOVE_ADS_PRODUCT_ID
-                }
-            );
-
-            try {
-                const storefront =
-                    await NativePurchases.getStorefront();
-
-                console.log(
-                    "[AKUUKAN-IAP] storefront",
-                    storefront
-                );
-            } catch (storefrontError) {
-                console.error(
-                    "[AKUUKAN-IAP] storefront check failed",
-                    storefrontError
-                );
-            }
-
             if (!billing.isBillingSupported) {
                 return {
                     available: false,
@@ -408,11 +383,6 @@ export async function getRemoveAdsProductInfo():
                     priceString: ""
                 };
             }
-
-            console.log(
-                "[AKUUKAN-IAP] product request",
-                REMOVE_ADS_PRODUCT_ID
-            );
 
             const { product } =
                 await NativePurchases.getProduct({
@@ -706,46 +676,19 @@ export async function showAdPrivacyOptions():
 
 export async function showTitleBanner():
     Promise<void> {
-    console.log(
-        "[AKUUKAN-ADS] showTitleBanner called",
-        {
-            nativeIOS: isNativeIOS(),
-            bannerVisible,
-            adId: IOS_BANNER_ID
-        }
-    );
-
     if (!isNativeIOS() || bannerVisible) {
         return;
     }
 
     const canShow = await initializeAds();
 
-    console.log(
-        "[AKUUKAN-ADS] banner consent check",
-        {
-            canShow
-        }
-    );
-
     if (!canShow) {
-        console.log(
-            "[AKUUKAN-ADS] banner aborted: ads not allowed"
-        );
         return;
     }
 
     try {
         await ensureBannerSizeListener();
         await ensureBannerDebugListeners();
-
-        console.log(
-            "[AKUUKAN-ADS] showBanner start",
-            {
-                adId: IOS_BANNER_ID,
-                isTesting: false
-            }
-        );
 
         /*
          * SizeChangedが返ってくるまでの一瞬も
@@ -763,10 +706,6 @@ export async function showTitleBanner():
         });
 
         bannerVisible = true;
-
-        console.log(
-            "[AKUUKAN-ADS] showBanner resolved"
-        );
     } catch (error) {
         setTitleBannerInset(0);
 
