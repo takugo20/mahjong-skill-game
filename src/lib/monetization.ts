@@ -654,7 +654,7 @@ export async function showTitleBanner():
             adSize: BannerAdSize.ADAPTIVE_BANNER,
             position: BannerAdPosition.TOP_CENTER,
             margin: 0,
-            isTesting: true
+            isTesting: false
         });
 
         bannerVisible = true;
@@ -742,7 +742,7 @@ export async function prepareMatchEndInterstitial():
         const info =
             await AdMob.prepareInterstitial({
                 adId: IOS_INTERSTITIAL_ID,
-                isTesting: true
+                isTesting: false
             });
 
         preparedInterstitialAdId =
