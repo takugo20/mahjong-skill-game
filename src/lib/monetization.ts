@@ -14,10 +14,10 @@ import {
 } from "@capgo/native-purchases";
 
 const IOS_BANNER_ID =
-    "ca-app-pub-1500991866454901/4510162972";
+    "ca-app-pub-3940256099942544/2435281174";
 
 const IOS_INTERSTITIAL_ID =
-    "ca-app-pub-1500991866454901/6925496760";
+    "ca-app-pub-3940256099942544/4411468910";
 
 export const REMOVE_ADS_PRODUCT_ID =
     "com.takugo20.akuukanmahjong.removeads";
