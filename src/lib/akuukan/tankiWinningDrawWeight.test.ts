@@ -22,11 +22,11 @@ function input(level: SkillLevel = 5) {
 
 describe("5-5 単騎和了牌の抽選重量", () => {
   it.each([
-    [1, 1.1],
-    [2, 1.25],
-    [3, 1.5],
-    [4, 1.75],
-    [5, 2]
+    [1, 1.5],
+    [2, 2],
+    [3, 2.5],
+    [4, 3],
+    [5, 3.5]
   ] as const)(
     "Lv.%sで%s倍になる",
     (level, expected) => {

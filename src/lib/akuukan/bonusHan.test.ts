@@ -135,7 +135,7 @@ describe("プレイヤースキル1-7のボーナス翻", () => {
             currentCase.minimumHonorDiscards
           )
         )
-      ).toBe(1);
+      ).toBe(2);
 
       expect(
         getBonusHan(
@@ -190,7 +190,7 @@ describe("プレイヤースキル1-7のボーナス翻", () => {
         discards
       )
     ).toBe(3);
-    expect(getBonusHan(5, discards)).toBe(1);
+    expect(getBonusHan(5, discards)).toBe(2);
   });
 
   it("数牌は河の字牌枚数に含めない", () => {

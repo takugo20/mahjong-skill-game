@@ -77,12 +77,12 @@ describe("プレイヤースキル3-11の画面操作", () => {
     expect(
       document.body.textContent
         ?.replace(/\s/g, "")
-    ).toContain("MP250／900");
+    ).toContain("MP230／900");
     expect(
       document.body.textContent
         ?.replace(/\s/g, "")
     ).toContain(
-      "防御結界【改】残り2巡"
+      "防御結界【改】残り1巡"
     );
     expect(
       screen.queryByRole("button", {

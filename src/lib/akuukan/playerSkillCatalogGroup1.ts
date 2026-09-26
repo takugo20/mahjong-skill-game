@@ -155,11 +155,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_1 = [
       targetValue: 1
     },
     levels: createPassiveLevels(5900, [
-      { chancePercent: 5 },
       { chancePercent: 10 },
       { chancePercent: 20 },
       { chancePercent: 30 },
-      { chancePercent: 50 }
+      { chancePercent: 50 },
+      { chancePercent: 80 }
     ])
   },
   {
@@ -179,11 +179,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_1 = [
       targetValue: 1
     },
     levels: createPassiveLevels(3600, [
-      { doraDrawWeightMultiplier: 1.1 },
-      { doraDrawWeightMultiplier: 1.2 },
       { doraDrawWeightMultiplier: 1.3 },
       { doraDrawWeightMultiplier: 1.5 },
-      { doraDrawWeightMultiplier: 2 }
+      { doraDrawWeightMultiplier: 1.8 },
+      { doraDrawWeightMultiplier: 3 },
+      { doraDrawWeightMultiplier: 5 }
     ])
   },
   {
@@ -259,7 +259,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_1 = [
     evaluation: "A",
     kind: "passive",
     description:
-      "自分の河に指定枚数以上の字牌がある状態で和了した場合、ボーナス翻を1翻加算する。この翻加算自体は役にならず、有効な役がない手は条件を満たしていても和了できない。",
+      "自分の河に指定枚数以上の字牌がある状態で和了した場合、ボーナス翻を2翻加算する。この翻加算自体は役にならず、有効な役がない手は条件を満たしていても和了できない。",
     activationHooks: ["hanFuCalculation"],
     usageScope: null,
     unlockCondition: {
@@ -271,23 +271,23 @@ export const PLAYER_SKILL_CATALOG_GROUP_1 = [
     levels: createPassiveLevels(5100, [
       {
         minimumHonorDiscards: 9,
-        bonusHan: 1
+        bonusHan: 2
       },
       {
         minimumHonorDiscards: 8,
-        bonusHan: 1
+        bonusHan: 2
       },
       {
         minimumHonorDiscards: 7,
-        bonusHan: 1
+        bonusHan: 2
       },
       {
         minimumHonorDiscards: 5,
-        bonusHan: 1
+        bonusHan: 2
       },
       {
         minimumHonorDiscards: 3,
-        bonusHan: 1
+        bonusHan: 2
       }
     ])
   },

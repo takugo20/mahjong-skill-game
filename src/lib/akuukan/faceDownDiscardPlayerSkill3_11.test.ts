@@ -44,10 +44,10 @@ describe("プレイヤースキル3-11 防御結界【改】", () => {
       durationTurns: number;
     }[] = [
       { level: 1, mpCost: 500, durationTurns: 1 },
-      { level: 2, mpCost: 450, durationTurns: 2 },
-      { level: 3, mpCost: 400, durationTurns: 3 },
-      { level: 4, mpCost: 350, durationTurns: 4 },
-      { level: 5, mpCost: 300, durationTurns: 6 }
+      { level: 2, mpCost: 470, durationTurns: 1 },
+      { level: 3, mpCost: 440, durationTurns: 2 },
+      { level: 4, mpCost: 400, durationTurns: 2 },
+      { level: 5, mpCost: 350, durationTurns: 3 }
     ];
 
     for (const currentCase of cases) {
@@ -87,7 +87,7 @@ describe("プレイヤースキル3-11 防御結界【改】", () => {
   it("次のプレイヤー行動前に巡数を進め、終了時に効果を除く", () => {
     const activated =
       tryActivateAkuukanPlayerSkill3_11(
-        createState(2)
+        createState(3)
       );
     const afterFirstTurn =
       advanceAkuukanPlayerSkill3_11BeforePlayerAction(
@@ -135,7 +135,7 @@ describe("プレイヤースキル3-11 防御結界【改】", () => {
     expect(second.failureReason).toBe(
       "sourceUnavailable"
     );
-    expect(second.state.playerMp).toBe(250);
+    expect(second.state.playerMp).toBe(230);
   });
 
   it("MP不足、未装備、E-18無効化中は発動しない", () => {

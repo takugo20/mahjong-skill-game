@@ -68,7 +68,7 @@ function createRandom(
 }
 
 describe("プレイヤースキル1-4の重量抽選", () => {
-  it("レベル1では表ドラ牌の抽選重量を1.1倍にする", () => {
+  it("レベル1では表ドラ牌の抽選重量を1.3倍にする", () => {
     const liveWall = [
       createTile("pin", 1),
       createTile("man", 4)
@@ -77,7 +77,7 @@ describe("プレイヤースキル1-4の重量抽選", () => {
       "man",
       3
     );
-    const boundary = 1 / 2.1;
+    const boundary = 1 / 2.3;
 
     expect(
       getAkuukanPlayerSkill1_4LiveWallDrawIndex({
@@ -101,7 +101,7 @@ describe("プレイヤースキル1-4の重量抽選", () => {
     ).toBe(1);
   });
 
-  it("レベル5では表ドラ牌1枚ごとに抽選重量を2倍にする", () => {
+  it("レベル5では表ドラ牌1枚ごとに抽選重量を5倍にする", () => {
     const liveWall = [
       createTile("pin", 1),
       createTile("man", 4),

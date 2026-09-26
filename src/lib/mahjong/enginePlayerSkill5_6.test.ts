@@ -77,7 +77,7 @@ function prepare(
 
 describe("5-6 愚形強化のエンジン統合", () => {
   it.each(["penchan", "kanchan"] as const)(
-    "%sの和了牌の重量を2倍にする",
+    "%sの和了牌の重量を3.5倍にする",
     wait => {
       const state = prepare(wait);
       const before = JSON.stringify(state);
@@ -85,12 +85,12 @@ describe("5-6 愚形強化のエンジン統合", () => {
       const normal = drawTile(
         state,
         0,
-        () => 1 / 3 - 0.000001
+        () => 1 / 4.5 - 0.000001
       );
       const winning = drawTile(
         state,
         0,
-        () => 1 / 3 + 0.000001
+        () => 1 / 4.5 + 0.000001
       );
 
       expect(

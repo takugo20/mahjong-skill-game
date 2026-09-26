@@ -73,19 +73,19 @@ function prepare(
 }
 
 describe("5-5 単騎強化のエンジン統合", () => {
-  it("立直していなくても単騎和了牌の重量を2倍にする", () => {
+  it("立直していなくても単騎和了牌の重量を3.5倍にする", () => {
     const state = prepare();
     const before = JSON.stringify(state);
 
     const normal = drawTile(
       state,
       0,
-      () => 1 / 3 - 0.000001
+      () => 1 / 4.5 - 0.000001
     );
     const winning = drawTile(
       state,
       0,
-      () => 1 / 3 + 0.000001
+      () => 1 / 4.5 + 0.000001
     );
 
     expect(

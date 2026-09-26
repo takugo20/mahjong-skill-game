@@ -289,7 +289,7 @@ describe("プレイヤースキル1-3のエンジン統合", () => {
     const state = preparePlayerTsumoState();
     const failed = declarePlayerTsumo(
       state,
-      () => 0.05
+      () => 0.11
     );
     const succeeded = declarePlayerTsumo(
       state,
@@ -324,7 +324,7 @@ describe("プレイヤースキル1-3のエンジン統合", () => {
     const state = prepareRonState([0]);
     const failed = declarePlayerRon(
       state,
-      () => 0.05
+      () => 0.11
     );
     const succeeded = declarePlayerRon(
       state,
@@ -418,7 +418,7 @@ describe("プレイヤースキル1-3のエンジン統合", () => {
 
     const failed = declarePlayerTsumo(
       state,
-      () => 0.05
+      () => 0.11
     );
     const succeeded = declarePlayerTsumo(
       state,

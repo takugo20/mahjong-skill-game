@@ -24,11 +24,11 @@ function input(level: SkillLevel = 5) {
 
 describe("5-8 海底和了牌の抽選重量", () => {
   it.each([
-    [1, 3],
-    [2, 3.2],
-    [3, 3.5],
-    [4, 4],
-    [5, 5]
+    [1, 5],
+    [2, 6],
+    [3, 7],
+    [4, 8],
+    [5, 10]
   ] as const)("Lv.%sで%s倍になる", (level, expected) => {
     expect(multiplier(input(level))).toBe(expected);
   });

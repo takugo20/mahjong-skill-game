@@ -163,7 +163,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_3 = [
     evaluation: "C",
     kind: "passive",
     description:
-      "他家が門前・非立直のままノーテンから聴牌へ移行した直後、指定確率で一度だけ察知する。配牌聴牌も対象とし、闇聴継続中の待ち変化・継続・解除は察知しない。",
+      "他家が立直せずノーテンから聴牌へ移行した直後、指定確率で一度だけ察知する。配牌聴牌も対象とし、闇聴継続中の待ち変化・継続・解除は察知しない。",
     activationHooks: [
       "informationVisibility"
     ],
@@ -394,13 +394,13 @@ export const PLAYER_SKILL_CATALOG_GROUP_3 = [
     },
     levels: createActiveLevels(
       9900,
-      [500, 450, 400, 350, 300],
+      [500, 470, 440, 400, 350],
       [
         { durationTurns: 1 },
+        { durationTurns: 1 },
         { durationTurns: 2 },
-        { durationTurns: 3 },
-        { durationTurns: 4 },
-        { durationTurns: 6 }
+        { durationTurns: 2 },
+        { durationTurns: 3 }
       ]
     )
   },

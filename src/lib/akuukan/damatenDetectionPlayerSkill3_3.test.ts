@@ -217,7 +217,7 @@ describe("プレイヤースキル3-3 闇聴察知", () => {
     ).toEqual(["player-1"]);
   });
 
-  it("立直中・副露中・プレイヤー自身の聴牌を対象にしない", () => {
+  it("立直中とプレイヤー自身を対象外とし副露中の聴牌を察知する", () => {
     const openMeld: Meld = {
       kind: "chi",
       tiles: createTiles(
@@ -260,11 +260,11 @@ describe("プレイヤースキル3-3 闇聴察知", () => {
 
     expect(
       result.detectedPlayerIds
-    ).toEqual([]);
+    ).toEqual(["player-2"]);
     expect(
       result.akuukan
         .playerSkill3_3DamatenPlayerIds
-    ).toEqual([]);
+    ).toEqual(["player-2"]);
   });
 
   it("未装備なら状態を変更しない", () => {

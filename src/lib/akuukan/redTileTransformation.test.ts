@@ -69,6 +69,38 @@ function createRandom(
 }
 
 describe("プレイヤースキルの赤ドラ化共通処理", () => {
+  it("異なる紅牌錬成が順に成功すると未赤牌を別々に赤ドラ化する", () => {
+    const akuukan = createInitialAkuukanGameState({
+      enemyId: "enemy-1",
+      equippedSkills: [
+        { id: "1-1", level: 5 },
+        { id: "1-2", level: 5 }
+      ]
+    });
+    const tiles = [
+      createTile("man", 1),
+      createTile("pin", 2),
+      createTile("sou", 3)
+    ];
+    const first = applyAkuukanRedTileTransformation({
+      akuukan,
+      skillId: "1-1",
+      tiles,
+      random: createRandom([0, 0]).random
+    });
+    const second = applyAkuukanRedTileTransformation({
+      akuukan,
+      skillId: "1-2",
+      tiles: first.tiles,
+      random: createRandom([0, 0]).random
+    });
+
+    expect(second.transformedTileId).toBe(tiles[1].id);
+    expect(second.tiles.map((tile) => tile.red)).toEqual([
+      true, true, false
+    ]);
+  });
+
   it("確率判定成功時は未赤牌から選んだ字牌も赤ドラ化できる", () => {
     const tiles = [
       createTile("man", 1),

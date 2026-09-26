@@ -42,25 +42,25 @@ function input() {
 }
 
 describe("5-8 海底和了牌の重量抽選", () => {
-  it("Lv.5では通常牌と海底和了牌の重量比が1対5になる", () => {
+  it("Lv.5では通常牌と海底和了牌の重量比が1対10になる", () => {
     const value = input();
 
     expect(
       drawIndex({
         ...value,
-        random: () => 1 / 6 - 0.000001
+        random: () => 1 / 11 - 0.000001
       })
     ).toBe(0);
 
     expect(
       drawIndex({
         ...value,
-        random: () => 1 / 6 + 0.000001
+        random: () => 1 / 11 + 0.000001
       })
     ).toBe(1);
   });
 
-  it("1-4のドラ倍率2倍と5-8の5倍を掛け合わせる", () => {
+  it("1-4のドラ倍率5倍と5-8の10倍を掛け合わせる", () => {
     const value = {
       ...input(),
       akuukan: createInitialAkuukanGameState({
@@ -81,14 +81,14 @@ describe("5-8 海底和了牌の重量抽選", () => {
     expect(
       drawIndex({
         ...value,
-        random: () => 1 / 11 - 0.000001
+        random: () => 1 / 51 - 0.000001
       })
     ).toBe(0);
 
     expect(
       drawIndex({
         ...value,
-        random: () => 1 / 11 + 0.000001
+        random: () => 1 / 51 + 0.000001
       })
     ).toBe(1);
   });

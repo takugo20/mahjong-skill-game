@@ -609,7 +609,7 @@ describe("敵能力対応の役決定パイプライン", () => {
         (candidate) => candidate.id
       )
     ).toEqual(["iipeikou"]);
-    expect(result.normalYakuHan).toBe(3);
+    expect(result.normalYakuHan).toBe(4);
   });
 
   it("E-17を立直以外の標準1翻役へ適用する", () => {

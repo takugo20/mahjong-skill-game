@@ -93,11 +93,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_5 = [
       targetValue: 1
     },
     levels: createPassiveLevels(4700, [
-      { uraDoraIndicatorWeightMultiplier: 1.1 },
-      { uraDoraIndicatorWeightMultiplier: 1.4 },
+      { uraDoraIndicatorWeightMultiplier: 1.3 },
       { uraDoraIndicatorWeightMultiplier: 1.8 },
-      { uraDoraIndicatorWeightMultiplier: 2.3 },
-      { uraDoraIndicatorWeightMultiplier: 3 }
+      { uraDoraIndicatorWeightMultiplier: 2.5 },
+      { uraDoraIndicatorWeightMultiplier: 3.5 },
+      { uraDoraIndicatorWeightMultiplier: 5 }
     ])
   },
   {
@@ -149,10 +149,10 @@ export const PLAYER_SKILL_CATALOG_GROUP_5 = [
     },
     levels: createPassiveLevels(6800, [
       { ippatsuDurationTurns: 2 },
-      { ippatsuDurationTurns: 3 },
       { ippatsuDurationTurns: 4 },
-      { ippatsuDurationTurns: 5 },
-      { ippatsuDurationTurns: 6 }
+      { ippatsuDurationTurns: 6 },
+      { ippatsuDurationTurns: 8 },
+      { ippatsuDurationTurns: 12 }
     ])
   },
   {
@@ -172,11 +172,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_5 = [
       targetValue: 30
     },
     levels: createPassiveLevels(1500, [
-      { winningTileDrawWeightMultiplier: 1.1 },
-      { winningTileDrawWeightMultiplier: 1.25 },
       { winningTileDrawWeightMultiplier: 1.5 },
-      { winningTileDrawWeightMultiplier: 1.75 },
-      { winningTileDrawWeightMultiplier: 2 }
+      { winningTileDrawWeightMultiplier: 2 },
+      { winningTileDrawWeightMultiplier: 2.5 },
+      { winningTileDrawWeightMultiplier: 3 },
+      { winningTileDrawWeightMultiplier: 3.5 }
     ])
   },
   {
@@ -197,11 +197,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_5 = [
       targetValue: 30
     },
     levels: createPassiveLevels(1800, [
-      { winningTileDrawWeightMultiplier: 1.1 },
-      { winningTileDrawWeightMultiplier: 1.25 },
       { winningTileDrawWeightMultiplier: 1.5 },
-      { winningTileDrawWeightMultiplier: 1.75 },
-      { winningTileDrawWeightMultiplier: 2 }
+      { winningTileDrawWeightMultiplier: 2 },
+      { winningTileDrawWeightMultiplier: 2.5 },
+      { winningTileDrawWeightMultiplier: 3 },
+      { winningTileDrawWeightMultiplier: 3.5 }
     ])
   },
   {
@@ -222,11 +222,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_5 = [
       targetValue: 1
     },
     levels: createPassiveLevels(700, [
-      { rinshanWinningTileWeightMultiplier: 3 },
-      { rinshanWinningTileWeightMultiplier: 3.2 },
-      { rinshanWinningTileWeightMultiplier: 3.5 },
-      { rinshanWinningTileWeightMultiplier: 4 },
-      { rinshanWinningTileWeightMultiplier: 5 }
+      { rinshanWinningTileWeightMultiplier: 5 },
+      { rinshanWinningTileWeightMultiplier: 6 },
+      { rinshanWinningTileWeightMultiplier: 7 },
+      { rinshanWinningTileWeightMultiplier: 8 },
+      { rinshanWinningTileWeightMultiplier: 10 }
     ])
   },
   {
@@ -246,11 +246,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_5 = [
       targetValue: 1
     },
     levels: createPassiveLevels(700, [
-      { haiteiWinningTileWeightMultiplier: 3 },
-      { haiteiWinningTileWeightMultiplier: 3.2 },
-      { haiteiWinningTileWeightMultiplier: 3.5 },
-      { haiteiWinningTileWeightMultiplier: 4 },
-      { haiteiWinningTileWeightMultiplier: 5 }
+      { haiteiWinningTileWeightMultiplier: 5 },
+      { haiteiWinningTileWeightMultiplier: 6 },
+      { haiteiWinningTileWeightMultiplier: 7 },
+      { haiteiWinningTileWeightMultiplier: 8 },
+      { haiteiWinningTileWeightMultiplier: 10 }
     ])
   }
 ] as const satisfies readonly PlayerSkillDefinition[];

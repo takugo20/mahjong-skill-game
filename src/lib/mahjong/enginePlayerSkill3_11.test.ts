@@ -168,7 +168,7 @@ describe("プレイヤースキル3-11 防御結界【改】のエンジン統�
     const activated =
       activatePlayerSkill3_11(state);
 
-    expect(activated.playerMp).toBe(250);
+    expect(activated.playerMp).toBe(230);
     expect(
       activated.akuukan?.activeEffects[0]
         ?.sourceId

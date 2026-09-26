@@ -144,7 +144,7 @@ describe("プレイヤースキル第5グループ", () => {
         "5-2",
         "uraDoraIndicatorWeightMultiplier"
       )
-    ).toEqual(strongWeightSeries);
+    ).toEqual([1.3, 1.8, 2.5, 3.5, 5]);
     expect(
       getEffectSeries(
         "5-3",
@@ -162,7 +162,7 @@ describe("プレイヤースキル第5グループ", () => {
           "winningTileDrawWeightMultiplier"
         )
       ).toEqual([
-        1.1, 1.25, 1.5, 1.75, 2
+        1.5, 2, 2.5, 3, 3.5
       ]);
     }
 
@@ -171,13 +171,13 @@ describe("プレイヤースキル第5グループ", () => {
         "5-7",
         "rinshanWinningTileWeightMultiplier"
       )
-    ).toEqual([3, 3.2, 3.5, 4, 5]);
+    ).toEqual([5, 6, 7, 8, 10]);
     expect(
       getEffectSeries(
         "5-8",
         "haiteiWinningTileWeightMultiplier"
       )
-    ).toEqual([3, 3.2, 3.5, 4, 5]);
+    ).toEqual([5, 6, 7, 8, 10]);
   });
 
   it("紫電一閃【改】の一発期間を保持する", () => {
@@ -186,7 +186,7 @@ describe("プレイヤースキル第5グループ", () => {
         "5-4",
         "ippatsuDurationTurns"
       )
-    ).toEqual([2, 3, 4, 5, 6]);
+    ).toEqual([2, 4, 6, 8, 12]);
   });
 
   it("発動段階・種別・使用範囲を保持する", () => {

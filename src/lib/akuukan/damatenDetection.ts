@@ -5,9 +5,6 @@ import type {
   PlayerState
 } from "../mahjong/types";
 import {
-  isClosedHand
-} from "../mahjong/yaku";
-import {
   getEquippedPlayerSkill
 } from "./equipment";
 import {
@@ -51,7 +48,6 @@ function getDamatenPlayerIds(
       (player) =>
         player.seat !== 0 &&
         !player.riichi &&
-        isClosedHand(player.melds) &&
         isTenpai(
           player.hand,
           player.melds

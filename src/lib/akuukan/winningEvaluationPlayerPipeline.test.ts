@@ -240,11 +240,11 @@ describe("プレイヤーの役決定パイプライン", () => {
           candidate.id === "ryanpeikou"
       );
 
-    expect(result.normalYakuHan).toBe(8);
+    expect(result.normalYakuHan).toBe(9);
     expect(ryanpeikou?.hanAdditions).toEqual([
       {
         sourceId: "player-skill:2-15",
-        han: 2
+        han: 3
       }
     ]);
   });
@@ -327,7 +327,7 @@ describe("プレイヤーの役決定パイプライン", () => {
           "sanshokuDoujun"
       );
 
-    expect(result.normalYakuHan).toBe(4);
+    expect(result.normalYakuHan).toBe(5);
     expect(sanshoku).toMatchObject({
       standardHan: 1,
       openReductionCancelledBy: [
@@ -336,7 +336,7 @@ describe("プレイヤーの役決定パイプライン", () => {
       hanAdditions: [
         {
           sourceId: "player-skill:2-8",
-          han: 2
+          han: 3
         }
       ]
     });

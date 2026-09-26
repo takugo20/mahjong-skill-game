@@ -39,20 +39,20 @@ function input() {
 }
 
 describe("5-7 嶺上牌の選択", () => {
-  it("重量比1対5の境界で選択が変わる", () => {
+  it("重量比1対10の境界で選択が変わる", () => {
     const value = input();
 
     expect(
       select({
         ...value,
-        random: () => 1 / 6 - 0.000001
+        random: () => 1 / 11 - 0.000001
       })
     ).toBe(value.candidates[0]);
 
     expect(
       select({
         ...value,
-        random: () => 1 / 6
+        random: () => 1 / 11
       })
     ).toBe(value.candidates[1]);
   });

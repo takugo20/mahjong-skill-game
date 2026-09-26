@@ -24,10 +24,10 @@ function input(level: SkillLevel = 5) {
 describe("5-4 一発期間の延長", () => {
   it.each([
     [1, 2],
-    [2, 3],
-    [3, 4],
-    [4, 5],
-    [5, 6]
+    [2, 4],
+    [3, 6],
+    [4, 8],
+    [5, 12]
   ] as const)(
     "Lv.%sでは第%s巡の反応完了で終了する",
     (level, duration) => {

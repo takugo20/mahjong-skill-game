@@ -189,7 +189,7 @@ describe("プレイヤースキルの役変更生成", () => {
               yakuId,
               sourceId:
                 `player-skill:${testCase.skillId}`,
-              han: 1
+              han: ["2-11", "2-13", "2-17"].includes(testCase.skillId) ? 3 : 2
             })
           )
       });
@@ -384,7 +384,7 @@ describe("プレイヤースキルの役変更生成", () => {
           yakuId: "sanshokuDoujun",
           sourceId:
             "player-skill:2-8",
-          han: 2
+          han: 3
         }
       ]
     });

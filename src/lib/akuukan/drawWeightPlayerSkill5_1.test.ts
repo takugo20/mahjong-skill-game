@@ -46,7 +46,7 @@ describe("5-1 紫電一閃のツモ抽選への適用", () => {
     })).toBe(1);
   });
 
-  it("1-4のドラ倍率2倍と5-1の3倍を掛け合わせる", () => {
+  it("1-4のドラ倍率5倍と5-1の3倍を掛け合わせる", () => {
     const input = createInput();
     const combined = {
       ...input,
@@ -67,12 +67,12 @@ describe("5-1 紫電一閃のツモ抽選への適用", () => {
 
     expect(drawIndex({
       ...combined,
-      random: () => 1 / 7 - 0.000001
+      random: () => 1 / 16 - 0.000001
     })).toBe(0);
 
     expect(drawIndex({
       ...combined,
-      random: () => 1 / 7 + 0.000001
+      random: () => 1 / 16 + 0.000001
     })).toBe(1);
   });
 

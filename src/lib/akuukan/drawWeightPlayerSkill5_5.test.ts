@@ -40,25 +40,25 @@ function input() {
 }
 
 describe("5-5 単騎和了牌の重量抽選", () => {
-  it("Lv.5では通常牌と単騎和了牌の重量比が1対2になる", () => {
+  it("Lv.5では通常牌と単騎和了牌の重量比が1対3.5になる", () => {
     const value = input();
 
     expect(
       drawIndex({
         ...value,
-        random: () => 1 / 3 - 0.000001
+        random: () => 1 / 4.5 - 0.000001
       })
     ).toBe(0);
 
     expect(
       drawIndex({
         ...value,
-        random: () => 1 / 3 + 0.000001
+        random: () => 1 / 4.5 + 0.000001
       })
     ).toBe(1);
   });
 
-  it("1-4のドラ倍率2倍と5-5の2倍を掛け合わせる", () => {
+  it("1-4のドラ倍率5倍と5-5の3.5倍を掛け合わせる", () => {
     const value = {
       ...input(),
       akuukan: createInitialAkuukanGameState({
@@ -79,14 +79,14 @@ describe("5-5 単騎和了牌の重量抽選", () => {
     expect(
       drawIndex({
         ...value,
-        random: () => 0.199999
+        random: () => (1 / 18.5 - 0.000001)
       })
     ).toBe(0);
 
     expect(
       drawIndex({
         ...value,
-        random: () => 0.2
+        random: () => 1 / 18.5 + 0.000001
       })
     ).toBe(1);
   });

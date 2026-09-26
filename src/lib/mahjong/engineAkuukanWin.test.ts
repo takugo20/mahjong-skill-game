@@ -957,9 +957,9 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(result.round.winResult).toMatchObject({
       winnerSeat: 0,
       winMethod: "tsumo",
-      han: 5,
+      han: 6,
       fu: 25,
-      totalPoints: 12000
+      totalPoints: 18000
     });
     expect(
       result.round.winResult?.yakuNames
@@ -974,10 +974,10 @@ describe("ゲーム本体の亜空間和了判定", () => {
         (player) => player.score
       )
     ).toEqual([
-      37000,
-      21000,
-      21000,
-      21000
+      43000,
+      19000,
+      19000,
+      19000
     ]);
   });
 
@@ -1974,7 +1974,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toBe(1500);
   });
 
-    it("三色強化Lv.5でプレイヤーの副露三色同順へ2翻加算する", () => {
+    it("三色強化Lv.5でプレイヤーの副露三色同順へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2019,16 +2019,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "sanshokuDoujun",
         name: "三色同順",
-        han: 3
+        han: 4
       }
     ]);
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(5800);
+    ).toBe(12000);
   });
 
-    it("一通強化Lv.5でプレイヤーの副露一気通貫へ2翻加算する", () => {
+    it("一通強化Lv.5でプレイヤーの副露一気通貫へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2073,16 +2073,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "ittsuu",
         name: "一気通貫",
-        han: 3
+        han: 4
       }
     ]);
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(5800);
+    ).toBe(12000);
   });
 
-    it("混全帯強化Lv.5でプレイヤーの副露チャンタへ2翻加算する", () => {
+    it("混全帯強化Lv.5でプレイヤーの副露チャンタへ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2127,16 +2127,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "chanta",
         name: "混全帯么九",
-        han: 3
+        han: 4
       }
     ]);
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(7700);
+    ).toBe(12000);
   });
 
-    it("純全帯強化Lv.5でプレイヤーの副露純チャンへ2翻加算する", () => {
+    it("純全帯強化Lv.5でプレイヤーの副露純チャンへ4翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2181,16 +2181,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "junchan",
         name: "純全帯么九",
-        han: 4
+        han: 6
       }
     ]);
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(12000);
+    ).toBe(18000);
   });
 
-    it("混一色強化Lv.5でプレイヤーの副露混一色へ2翻加算する", () => {
+    it("混一色強化Lv.5でプレイヤーの副露混一色へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2235,7 +2235,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "honitsu",
         name: "混一色",
-        han: 4
+        han: 5
       }
     ]);
     expect(
@@ -2244,7 +2244,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toBe(12000);
   });
 
-    it("清一色強化Lv.5でプレイヤーの副露清一色へ2翻加算する", () => {
+    it("清一色強化Lv.5でプレイヤーの副露清一色へ4翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2291,16 +2291,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(chinitsu).toEqual({
       id: "chinitsu",
       name: "清一色",
-      han: 7
+      han: 9
     });
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(18000);
+    ).toBe(24000);
   });
 
   
-    it("盃口強化Lv.5でプレイヤーの一盃口へ2翻加算する", () => {
+    it("盃口強化Lv.5でプレイヤーの一盃口へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2349,16 +2349,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "iipeikou",
         name: "一盃口",
-        han: 3
+        han: 4
       }
     ]);
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(5800);
+    ).toBe(12000);
   });
 
- it("盃口強化Lv.5でプレイヤーの二盃口へ2翻加算する", () => {
+ it("盃口強化Lv.5でプレイヤーの二盃口へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2407,7 +2407,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "ryanpeikou",
         name: "二盃口",
-        han: 5
+        han: 6
       }
     ]);
     expect(
@@ -2419,10 +2419,10 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(12000);
+    ).toBe(18000);
   });
 
-    it("対刻槓強化Lv.5でプレイヤーの対々和へ2翻加算する", () => {
+    it("対刻槓強化Lv.5でプレイヤーの対々和へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2467,7 +2467,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "toitoi",
         name: "対々和",
-        han: 4
+        han: 5
       }
     ]);
     expect(
@@ -2476,7 +2476,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toBe(12000);
   });
 
-    it("対刻槓強化Lv.5でプレイヤーの三色同刻へ2翻加算する", () => {
+    it("対刻槓強化Lv.5でプレイヤーの三色同刻へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2521,7 +2521,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "sanshokuDoukou",
         name: "三色同刻",
-        han: 4
+        han: 5
       }
     ]);
     expect(
@@ -2530,7 +2530,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toBe(12000);
   });
 
-    it("対刻槓強化Lv.5でプレイヤーの三暗刻へ2翻加算する", () => {
+    it("対刻槓強化Lv.5でプレイヤーの三暗刻へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2573,7 +2573,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "sanankou",
         name: "三暗刻",
-        han: 4
+        han: 5
       }
     ]);
     expect(
@@ -2582,7 +2582,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toBe(12000);
   });
 
-    it("対刻槓強化Lv.5でプレイヤーの三槓子へ2翻加算する", () => {
+    it("対刻槓強化Lv.5でプレイヤーの三槓子へ3翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2627,7 +2627,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "sankantsu",
         name: "三槓子",
-        han: 4
+        han: 5
       }
     ]);
     expect(
@@ -2636,7 +2636,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     ).toBe(12000);
   });
 
-    it("花天月地Lv.5でプレイヤーの河底撈魚へ2翻加算する", () => {
+    it("花天月地Lv.5でプレイヤーの河底撈魚へ4翻加算する", () => {
     const {
       state
     } = prepareRonState(
@@ -2684,16 +2684,16 @@ describe("ゲーム本体の亜空間和了判定", () => {
       {
         id: "houtei",
         name: "河底撈魚",
-        han: 3
+        han: 5
       }
     ]);
     expect(
       candidate?.evaluation.best.score
         .totalPoints
-    ).toBe(5800);
+    ).toBe(12000);
   });
 
-    it("花天月地Lv.5でプレイヤーの海底摸月へ2翻加算する", () => {
+    it("花天月地Lv.5でプレイヤーの海底摸月へ4翻加算する", () => {
     const state = createBaseState({
       enemyId: "enemy-1",
       equippedSkills: [
@@ -2734,15 +2734,15 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(result.round.winResult).toMatchObject({
       winnerSeat: 0,
       winMethod: "tsumo",
-      han: 3,
-      totalPoints: 6000
+      han: 5,
+      totalPoints: 12000
     });
     expect(
       result.round.winResult?.yakuNames
     ).toEqual(["海底摸月"]);
   });
 
-    it("花天月地Lv.5でプレイヤーの嶺上開花へ2翻加算する", () => {
+    it("花天月地Lv.5でプレイヤーの嶺上開花へ4翻加算する", () => {
     const state = createBaseState({
       enemyId: "enemy-1",
       equippedSkills: [
@@ -2788,15 +2788,15 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(result.round.winResult).toMatchObject({
       winnerSeat: 0,
       winMethod: "tsumo",
-      han: 3,
-      totalPoints: 7800
+      han: 5,
+      totalPoints: 12000
     });
     expect(
       result.round.winResult?.yakuNames
     ).toEqual(["嶺上開花"]);
   });
 
-    it("恩恵享受【横】Lv.5でロン和了後に90MP回復する", () => {
+    it("恩恵享受【横】Lv.5でロン和了後に240MP回復する", () => {
     const {
       state
     } = prepareRonState(
@@ -2841,10 +2841,10 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(
       result.round.winResult?.yakuNames
     ).toEqual(["平和"]);
-    expect(result.playerMp).toBe(510);
+    expect(result.playerMp).toBe(660);
   });
 
-    it("恩恵享受【横】Lv.5でツモ和了後に90MP回復する", () => {
+    it("恩恵享受【横】Lv.5でツモ和了後に240MP回復する", () => {
     const state = createBaseState({
       enemyId: "enemy-1",
       equippedSkills: [
@@ -2888,7 +2888,7 @@ describe("ゲーム本体の亜空間和了判定", () => {
     expect(
       result.round.winResult?.yakuNames
     ).toEqual(["平和"]);
-    expect(result.playerMp).toBe(510);
+    expect(result.playerMp).toBe(660);
   });
 
     it("恩恵享受【縦】でロン和了後に次局の対子保証を予約する", () => {

@@ -70,18 +70,19 @@ function createPassiveLevels(
 }
 
 function createAdditionalHanLevels(
-  baseRequiredExp: number
+  baseRequiredExp: number,
+  bonusHan: 2 | 3 = 2
 ): PlayerSkillLevelTable<
   PassivePlayerSkillLevelDefinition
 > {
   return createPassiveLevels(
     baseRequiredExp,
     [
-      { additionalYakuHan: 1 },
-      { additionalYakuHan: 1 },
-      { additionalYakuHan: 1 },
-      { additionalYakuHan: 1 },
-      { additionalYakuHan: 2 }
+      { additionalYakuHan: bonusHan },
+      { additionalYakuHan: bonusHan },
+      { additionalYakuHan: bonusHan },
+      { additionalYakuHan: bonusHan },
+      { additionalYakuHan: bonusHan + 1 }
     ]
   );
 }
@@ -320,7 +321,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_2 = [
         "純チャンを通算10回和了する。",
       targetValue: 10
     },
-    levels: createAdditionalHanLevels(4100)
+    levels: createAdditionalHanLevels(4100, 3)
   },
   {
     catalogNumber: 27,
@@ -356,7 +357,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_2 = [
         "清一色を通算10回和了する。",
       targetValue: 10
     },
-    levels: createAdditionalHanLevels(4300)
+    levels: createAdditionalHanLevels(4300, 3)
   },
   {
     catalogNumber: 29,
@@ -431,7 +432,7 @@ export const PLAYER_SKILL_CATALOG_GROUP_2 = [
         "嶺上開花、海底摸月、河底撈魚のいずれかを含む和了を通算3回成立させる。",
       targetValue: 3
     },
-    levels: createAdditionalHanLevels(800)
+    levels: createAdditionalHanLevels(800, 3)
   },
   {
     catalogNumber: 33,
@@ -451,11 +452,11 @@ export const PLAYER_SKILL_CATALOG_GROUP_2 = [
       targetValue: 1
     },
     levels: createPassiveLevels(7300, [
-      { mpRecoveryPerYaku: 10 },
-      { mpRecoveryPerYaku: 20 },
-      { mpRecoveryPerYaku: 40 },
       { mpRecoveryPerYaku: 60 },
-      { mpRecoveryPerYaku: 90 }
+      { mpRecoveryPerYaku: 90 },
+      { mpRecoveryPerYaku: 120 },
+      { mpRecoveryPerYaku: 180 },
+      { mpRecoveryPerYaku: 240 }
     ])
   },
   {

@@ -141,13 +141,13 @@ describe("プレイヤースキル第1グループ", () => {
     ).toEqual([3, 5, 8, 10, 20]);
     expect(
       getEffectSeries("1-3", "chancePercent")
-    ).toEqual([5, 10, 20, 30, 50]);
+    ).toEqual([10, 20, 30, 50, 80]);
     expect(
       getEffectSeries(
         "1-4",
         "doraDrawWeightMultiplier"
       )
-    ).toEqual([1.1, 1.2, 1.3, 1.5, 2]);
+    ).toEqual([1.3, 1.5, 1.8, 3, 5]);
     expect(
       getEffectSeries("1-5", "chancePercent")
     ).toEqual([20, 25, 30, 35, 50]);
@@ -169,6 +169,9 @@ describe("プレイヤースキル第1グループ", () => {
         "minimumHonorDiscards"
       )
     ).toEqual([9, 8, 7, 5, 3]);
+    expect(
+      getEffectSeries("1-7", "bonusHan")
+    ).toEqual([2, 2, 2, 2, 2]);
     expect(
       getEffectSeries("1-8", "bonusHan")
     ).toEqual([1, 1, 1, 1, 2]);

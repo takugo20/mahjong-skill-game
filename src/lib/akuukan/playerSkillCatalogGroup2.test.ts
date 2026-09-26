@@ -231,9 +231,8 @@ describe("プレイヤースキル第2グループ", () => {
 
   it("役強化・MP・次局配牌のレベル値を保持する", () => {
     const yakuBoostSkillIds = [
-      "2-8", "2-9", "2-10", "2-11",
-      "2-12", "2-13", "2-14",
-      "2-15", "2-16", "2-17"
+      "2-8", "2-9", "2-10",
+      "2-12", "2-14", "2-15", "2-16"
     ] as const;
 
     for (const skillId of yakuBoostSkillIds) {
@@ -242,7 +241,11 @@ describe("プレイヤースキル第2グループ", () => {
           skillId,
           "additionalYakuHan"
         )
-      ).toEqual([1, 1, 1, 1, 2]);
+      ).toEqual([2, 2, 2, 2, 3]);
+    }
+
+    for (const skillId of ["2-11", "2-13", "2-17"] as const) {
+      expect(getEffectSeries(skillId, "additionalYakuHan")).toEqual([3, 3, 3, 3, 4]);
     }
 
     expect(
@@ -250,7 +253,7 @@ describe("プレイヤースキル第2グループ", () => {
         "2-18",
         "mpRecoveryPerYaku"
       )
-    ).toEqual([10, 20, 40, 60, 90]);
+    ).toEqual([60, 90, 120, 180, 240]);
     expect(
       getEffectSeries(
         "2-19",

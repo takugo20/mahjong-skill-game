@@ -261,7 +261,7 @@ function preparePlayerRonState(
 }
 
 describe("プレイヤースキル1-7のエンジン統合", () => {
-  it("必要枚数の字牌が河にあればツモ和了へ1翻加算する", () => {
+  it("必要枚数の字牌が河にあればツモ和了へ2翻加算する", () => {
     const below = declarePlayerTsumo(
       preparePlayerTsumoState(2)
     );
@@ -270,7 +270,7 @@ describe("プレイヤースキル1-7のエンジン統合", () => {
     );
 
     expect(reached.round.winResult?.han).toBe(
-      (below.round.winResult?.han ?? 0) + 1
+      (below.round.winResult?.han ?? 0) + 2
     );
     expect(
       reached.round.winResult?.totalPoints
@@ -294,7 +294,7 @@ describe("プレイヤースキル1-7のエンジン統合", () => {
     );
   });
 
-  it("ロン和了にも河の字牌による1翻を加算する", () => {
+  it("ロン和了にも河の字牌による2翻を加算する", () => {
     const below = declarePlayerRon(
       preparePlayerRonState(2)
     );
@@ -303,7 +303,7 @@ describe("プレイヤースキル1-7のエンジン統合", () => {
     );
 
     expect(reached.round.winResult?.han).toBe(
-      (below.round.winResult?.han ?? 0) + 1
+      (below.round.winResult?.han ?? 0) + 2
     );
     expect(
       reached.round.winResult?.totalPoints
@@ -325,7 +325,7 @@ describe("プレイヤースキル1-7のエンジン統合", () => {
     );
 
     expect(reached.round.winResult?.han).toBe(
-      (below.round.winResult?.han ?? 0) + 1
+      (below.round.winResult?.han ?? 0) + 2
     );
   });
 
