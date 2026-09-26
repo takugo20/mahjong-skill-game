@@ -13,11 +13,11 @@ import {
     PURCHASE_TYPE
 } from "@capgo/native-purchases";
 
-const IOS_TEST_BANNER_ID =
-    "ca-app-pub-3940256099942544/2435281174";
+const IOS_BANNER_ID =
+    "ca-app-pub-1500991866454901/4510162972";
 
-const IOS_TEST_INTERSTITIAL_ID =
-    "ca-app-pub-3940256099942544/4411468910";
+const IOS_INTERSTITIAL_ID =
+    "ca-app-pub-1500991866454901/6925496760";
 
 export const REMOVE_ADS_PRODUCT_ID =
     "com.takugo20.akuukanmahjong.removeads";
@@ -650,7 +650,7 @@ export async function showTitleBanner():
         setTitleBannerInset(60);
 
         await AdMob.showBanner({
-            adId: IOS_TEST_BANNER_ID,
+            adId: IOS_BANNER_ID,
             adSize: BannerAdSize.ADAPTIVE_BANNER,
             position: BannerAdPosition.TOP_CENTER,
             margin: 0,
@@ -736,12 +736,12 @@ export async function prepareMatchEndInterstitial():
     try {
         console.log(
             "[AKUUKAN-ADS] prepareInterstitial start",
-            IOS_TEST_INTERSTITIAL_ID
+            IOS_INTERSTITIAL_ID
         );
 
         const info =
             await AdMob.prepareInterstitial({
-                adId: IOS_TEST_INTERSTITIAL_ID,
+                adId: IOS_INTERSTITIAL_ID,
                 isTesting: true
             });
 
