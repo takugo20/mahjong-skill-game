@@ -48,6 +48,7 @@ let productInfoPromise:
     Promise<RemoveAdsProductInfo> | null = null;
 
 let bannerSizeListenerInstalled = false;
+let bannerDebugListenersInstalled = false;
 
 function setTitleBannerInset(height: number): void {
     const root = document.documentElement;
@@ -98,6 +99,52 @@ async function ensureBannerSizeListener():
     } catch (error) {
         console.error(
             "Banner size listener failed:",
+            error
+        );
+    }
+}
+
+
+async function ensureBannerDebugListeners():
+    Promise<void> {
+    if (
+        !isNativeIOS() ||
+        bannerDebugListenersInstalled
+    ) {
+        return;
+    }
+
+    try {
+        await AdMob.addListener(
+            BannerAdPluginEvents.Loaded,
+            () => {
+                console.log(
+                    "[AKUUKAN-ADS] banner Loaded"
+                );
+            }
+        );
+
+        await AdMob.addListener(
+            BannerAdPluginEvents.FailedToLoad,
+            error => {
+                console.error(
+                    "[AKUUKAN-ADS] banner FailedToLoad",
+                    {
+                        code: error.code,
+                        message: error.message
+                    }
+                );
+            }
+        );
+
+        bannerDebugListenersInstalled = true;
+
+        console.log(
+            "[AKUUKAN-ADS] banner listeners installed"
+        );
+    } catch (error) {
+        console.error(
+            "[AKUUKAN-ADS] banner listener setup failed",
             error
         );
     }
@@ -328,6 +375,31 @@ export async function getRemoveAdsProductInfo():
                 await NativePurchases
                     .isBillingSupported();
 
+            console.log(
+                "[AKUUKAN-IAP] billing support",
+                {
+                    isBillingSupported:
+                        billing.isBillingSupported,
+                    productIdentifier:
+                        REMOVE_ADS_PRODUCT_ID
+                }
+            );
+
+            try {
+                const storefront =
+                    await NativePurchases.getStorefront();
+
+                console.log(
+                    "[AKUUKAN-IAP] storefront",
+                    storefront
+                );
+            } catch (storefrontError) {
+                console.error(
+                    "[AKUUKAN-IAP] storefront check failed",
+                    storefrontError
+                );
+            }
+
             if (!billing.isBillingSupported) {
                 return {
                     available: false,
@@ -336,6 +408,11 @@ export async function getRemoveAdsProductInfo():
                     priceString: ""
                 };
             }
+
+            console.log(
+                "[AKUUKAN-IAP] product request",
+                REMOVE_ADS_PRODUCT_ID
+            );
 
             const { product } =
                 await NativePurchases.getProduct({
@@ -629,18 +706,46 @@ export async function showAdPrivacyOptions():
 
 export async function showTitleBanner():
     Promise<void> {
+    console.log(
+        "[AKUUKAN-ADS] showTitleBanner called",
+        {
+            nativeIOS: isNativeIOS(),
+            bannerVisible,
+            adId: IOS_BANNER_ID
+        }
+    );
+
     if (!isNativeIOS() || bannerVisible) {
         return;
     }
 
     const canShow = await initializeAds();
 
+    console.log(
+        "[AKUUKAN-ADS] banner consent check",
+        {
+            canShow
+        }
+    );
+
     if (!canShow) {
+        console.log(
+            "[AKUUKAN-ADS] banner aborted: ads not allowed"
+        );
         return;
     }
 
     try {
         await ensureBannerSizeListener();
+        await ensureBannerDebugListeners();
+
+        console.log(
+            "[AKUUKAN-ADS] showBanner start",
+            {
+                adId: IOS_BANNER_ID,
+                isTesting: false
+            }
+        );
 
         /*
          * SizeChangedが返ってくるまでの一瞬も
@@ -658,6 +763,10 @@ export async function showTitleBanner():
         });
 
         bannerVisible = true;
+
+        console.log(
+            "[AKUUKAN-ADS] showBanner resolved"
+        );
     } catch (error) {
         setTitleBannerInset(0);
 
